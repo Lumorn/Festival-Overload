@@ -22,7 +22,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
 - Overload-Änderungen im Log und in den Overlays berücksichtigen die tatsächliche Deckelung bei 0/12.
-- Pool-Bonus wird deterministisch pro Camper verteilt (Reihenfolge ab Aufdecker, aktuelle Richtung), Logs zeigen Live→Camp und Pool→Camp pro Spieler.
+- Pool-Bonus bei simultanem Campen wird rundenbasiert verteilt (max. +1 pro Runde je Camper, Reihenfolge ab Aufdecker), Logs zeigen die Priorität sowie Live→Camp/Pool→Camp.
+- Stabilisieren hat eine Null-Stabi-Regel: Bei Overload 0 gibt es +1 Pool, klar geloggt.
 - Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und markieren min 0/Cap 12 inklusive Statuswerte.
 - Anti-Solo camped den letzten Spieler inkl. Pool-Bonus und Trostpunkt bei 0 Live; Stage Dive stapelt keinen „Muss bleiben“-Zwang.
 - KNALL-Phase loggt Pflaster (1 Live → +1 Camp) pro Spieler, RoundReset blockt Entscheidungen ohne Event und Logs nutzen die Reihenfolge Overload → Pool → Live → Camp.

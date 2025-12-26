@@ -107,6 +107,7 @@ Wenn eine Stabilisieren-Karte aufgedeckt wird:
 
 * War der Overload **vor dem Senken 8 oder höher**, erhält der aufdeckende Spieler **+1 Live** (aus dem Vorrat).
 * War der Overload **unter 8**, gibt es **keinen Live-Ertrag**.
+* **Null-Stabi:** War der Overload **vor dem Senken 0**, erhält die Bühne **+1 Pool**.
 
 Stabilisieren ist damit **Rettung mit Risiko-Belohnung**, aber keine sichere Punktequelle bei niedrigem Overload.
 
@@ -171,7 +172,8 @@ Wenn du campst (nur mit mindestens 1 Live):
 ### Pool-Bonus bei simultanem Campen
 
 * **Reihenfolge:** beginnend beim **aktuellen Aufdecker**, dann in der **aktuellen Richtung**.
-* Jeder Camper nimmt seinen **Pool-Bonus sofort** gemäß `poolTake`.
+* **Rundenverteilung:** Runde 1 – jeder Camper erhält max. **+1 Pool** in Reihenfolge.
+* **Runde 2 (nur bei Overload 8+):** Wieder je **+1**, solange Pool übrig ist.
 
 **Wichtig:** Maßgeblich ist der **Overload nach dem Event** (inkl. Countdown und Overload-Checks), **direkt vor der Camp-Entscheidung**.
 
