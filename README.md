@@ -21,6 +21,16 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Steuerungsmodi für Bots (Bots automatisch, Bots manuell, alles automatisch) und auswählbares Bot-Profil für modular erweiterbare KI.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
+- Overload-Änderungen im Log und in den Overlays berücksichtigen die tatsächliche Deckelung bei 0/12.
+- Stage Dive wählt nie den Aufdecker selbst als Ziel; ungültige Bot-Anzahlen werden abgefangen.
+- Bot-Anzahl wird auf eine ganze Zahl gerundet, um inkonsistente Zustände zu vermeiden.
+- Selbsttests laufen nur noch bei `?selftest=1`, damit der normale Spielstart keine Test-Logs erzeugt.
+- Der Aufdecker-Index wird vor dem Event normalisiert; bei fehlender Spielerliste wird sicher neu gestartet.
+- Leere Spielerliste wird bei Entscheidung/Rundenende abgefangen, Bot-Autopump läuft dann nicht.
+- Aufdecker-Index wird auch vor der Entscheidungsreihenfolge und im Bot-Autopump normalisiert.
+- Event-Handler in den Einstellungen werden nur gebunden, wenn die UI-Elemente vorhanden sind.
+- Status-Chips werden nur aktualisiert, wenn die UI-Elemente vorhanden sind.
+- Zentrale UI-Labels werden nur aktualisiert, wenn die Elemente vorhanden sind.
 
 ## Feste Pflege-Regeln
 
