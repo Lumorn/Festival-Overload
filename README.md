@@ -29,7 +29,9 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Endkarte Encore! gibt allen Aktiven +1 Live und triggert eine finale Camp-Entscheidung.
 - DecisionWindows öffnen nur, wenn eine sinnvolle Entscheidung möglich ist oder ein Zwangseffekt greift (sonst automatisches „alle bleiben“ mit Logeintrag).
 - Final Push gewährt dem letzten aktiven Spieler 1 Gnaden-Bleib, danach folgt ein erzwungenes Camp (Last Call).
-- Catch-up-Bonus: Letzte Camp-Stände erhalten bei Overload ≥8 +1 Camp beim Campen (geloggt).
+- Catch-up-Bonus: Nur bei Overload ≥8, **strict** hinter dem Leader und mindestens 2 Camp Abstand; maximal 1× pro Spieler und Runde (geloggt).
+- Countdown startet sofort, sobald Overload erstmals ≥8 erreicht, tickt im selben Zug und führt ggf. den Check aus, bevor Camp-Entscheidungen öffnen.
+- RNG nutzt einen numerischen Seed im State/Log; Debug-Helper prüft Catch-up/Countdown/EffectIds deterministisch.
 - Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und markieren min 0/Cap 12 inklusive Statuswerte.
 - Anti-Solo läuft als Final Push: letzter aktiver Spieler bekommt 1 Extra-Event mit 1 Gnaden-Bleib, danach erzwungenes Camp.
 - KNALL halbiert Live der aktiven Spieler, Pflaster rettet +1 Live nach der Halbierung; Logs nutzen Step-IDs, ActionType und Delta-Reasons.
