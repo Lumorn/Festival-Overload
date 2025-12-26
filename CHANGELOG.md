@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- RoundReset räumt Entscheidungszustände konsequent auf und blockt Entscheidungen nach Knall/Rundenende.
+- KNALL-Pflaster ist als feste Regel umgesetzt und pro Spieler vollständig geloggt.
+- Stage Dive setzt „Muss bleiben“ nur einmal, loggt Zwang in der Entscheidung und nutzt den Ersatz-Effekt bei erneuter Anwendung.
+- Rundenende loggt Pool-Verfall, Richtungswechsel/Setwechsel zeigen den nächsten Aufdecker.
+- Logs folgen überall der Reihenfolge Overload, Pool, Live, Camp; Selftest prüft RoundReset.
 - Logs zeigen jetzt konsistent Overload/Live/Camp/Pool bei Push/Stabilisieren/Countdown/Camp-Auflösung.
 - Stage-Dive-Logs vereinheitlicht (Ersatz-Effekt + „Bleib wählen“-Hinweis).
 - Pool-Bonus wird deterministisch pro Camper verteilt (Reihenfolge ab Aufdecker, aktuelle Richtung) und sauber geloggt.

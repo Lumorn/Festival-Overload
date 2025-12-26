@@ -218,7 +218,8 @@ Bei Knall:
 
 **Optionale Frustbremse („Pflaster“):**
 
-* Jeder aktive Spieler darf **1 Live als Camp retten**.
+* Jeder aktive Spieler darf **genau 1 Live** als **+1 Camp** retten (**nur wenn er mindestens 1 Live hat**).
+* Danach ist sein **Live = 0**.
 
 ---
 
@@ -307,7 +308,7 @@ Sobald ein Spieler **8 Camp-Punkte** erreicht:
 * Richtungswechsel ×2 – 🌀 Drehe die Aufdeck-Reihenfolge um
 * Feedback ×4 – 🌀∞ Bis Rundenende: Jeder ⚡ gibt zusätzlich +1 Overload
 * Pyro ×3 – 🌀 Overload +2
-* Stage Dive ×3 – 🌀 Wähle einen aktiven Spieler: Er zahlt 1 Live oder bleibt beim nächsten Camp automatisch drin. Ist er bereits betroffen, greift ein Ersatz-Effekt (Overload +1, cap 12).
+* Stage Dive ×3 – 🌀 Wähle einen aktiven Spieler: Er zahlt 1 Live oder bleibt beim **nächsten Camp-Entscheid** automatisch drin (Bleib-Zwang für genau 1 Entscheidung). Ist er bereits betroffen, greift ein **Ersatz-Effekt** (Overload +1, cap 12).
 * Setwechsel ×2 – 🌀 Der nächste Event wird vom gleichen Spieler aufgedeckt
 
 **Encore! (🎤) – 6**
