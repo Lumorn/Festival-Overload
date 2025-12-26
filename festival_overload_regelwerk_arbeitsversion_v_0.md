@@ -103,11 +103,12 @@ Wenn eine Stabilisieren-Karte aufgedeckt wird:
 
 1. **Overload −X** (nicht unter 0).
 
-**Ertrag (nur wenn es wirklich brenzlig ist):**
+**Ertrag (abhängig vom Overload vor dem Senken):**
 
-* War der Overload **vor dem Senken 8 oder höher**, erhält der aufdeckende Spieler **+1 Live** (aus dem Vorrat).
-* War der Overload **unter 8**, gibt es **keinen Live-Ertrag**.
-* **Null-Stabi:** War der Overload **vor dem Senken 0**, erhält die Bühne **+1 Pool**.
+* Overload **0** → **Null-Stabi: +1 Pool** (exklusiv, kein weiterer Ertrag).
+* Overload **1–3** → **kein Ertrag**.
+* Overload **4–7** → **+1 Pool**.
+* Overload **8+** → **+1 Live** (aus dem Vorrat).
 
 Stabilisieren ist damit **Rettung mit Risiko-Belohnung**, aber keine sichere Punktequelle bei niedrigem Overload.
 
@@ -166,14 +167,12 @@ Wenn du campst:
 
 Wenn du campst (nur mit mindestens 1 Live):
 
-* **poolTake = min(Pool, 1 + dangerBonus)**
-* **dangerBonus = 1**, wenn Overload **8 oder höher** ist, sonst **0**.
+* **poolTake = min(Pool, 1)** → maximal **+1 Pool** pro Camper (**cap1**).
 
 ### Pool-Bonus bei simultanem Campen
 
 * **Reihenfolge:** beginnend beim **aktuellen Aufdecker**, dann in der **aktuellen Richtung**.
-* **Rundenverteilung:** Runde 1 – jeder Camper erhält max. **+1 Pool** in Reihenfolge.
-* **Runde 2 (nur bei Overload 8+):** Wieder je **+1**, solange Pool übrig ist.
+* Jeder Camper erhält **maximal +1 Pool** in dieser Reihenfolge, solange Pool übrig ist.
 
 **Wichtig:** Maßgeblich ist der **Overload nach dem Event** (inkl. Countdown und Overload-Checks), **direkt vor der Camp-Entscheidung**.
 
@@ -214,14 +213,14 @@ Immer wenn Overload **12 erreicht**:
 
 Bei Knall:
 
-* Alle **aktiven Spieler** verlieren ihr gesamtes Live.
+* Alle **aktiven Spieler** verlieren Live **teilweise**:  
+  **live_after = floor(live_before / 2)** (Abrunden).
 * Gecampte Spieler sind nicht betroffen.
 * Die Runde endet **sofort**.
 
 **Optionale Frustbremse („Pflaster“):**
 
-* Jeder aktive Spieler darf **genau 1 Live** als **+1 Camp** retten (**nur wenn er mindestens 1 Live hat**).
-* Danach ist sein **Live = 0**.
+* Wenn ein aktiver Spieler **vor dem Knall mindestens 1 Live** hatte, bekommt er nach der Halbierung **+1 Live**.
 
 ---
 
@@ -245,16 +244,15 @@ Eine Runde endet, wenn:
 * ein **Knall** passiert, oder
 * **alle Spieler gecampt** haben.
 
-### 13a) Anti-Solo-Downtime (letzter aktiver Spieler)
+### 13a) Anti-Solo-Final-Push (letzter aktiver Spieler)
 
-Sobald nur noch **1 Spieler aktiv** ist:
+Wenn nach einer Camp-Phase nur noch **1 Spieler aktiv** ist:
 
-* Die Runde endet **sofort**.
-* Der letzte aktive Spieler **camped sofort** (Live → Camp).
-* Er nimmt **Pool-Bonus** gemäß `poolTake` (Regel aus Abschnitt 9).
-* Falls sein Live **0** ist, erhält er **+1 Trostpunkt** aus dem Vorrat.
-
-**Ziel:** Keine Solo-Downtime und trotzdem ein fairer Abschluss ohne „0-Punkte“-Ende.
+1. Die Runde endet **nicht sofort**.
+2. Der letzte aktive Spieler erhält **genau 1 Extra-Event** (**Final Push**).
+3. Danach folgt eine **normale Camp-Entscheidung** (nur dieser Spieler).
+4. **Camp** → Runde endet.
+5. **Bleib** → Spiel läuft normal weiter. Bleibt er weiterhin allein aktiv, **endet die Runde** (Final Push wiederholt sich nicht).
 
 ### Neustart
 

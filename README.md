@@ -22,11 +22,12 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
 - Overload-Änderungen im Log und in den Overlays berücksichtigen die tatsächliche Deckelung bei 0/12.
-- Pool-Bonus bei simultanem Campen wird rundenbasiert verteilt (max. +1 pro Runde je Camper, Reihenfolge ab Aufdecker), Logs zeigen die Priorität sowie Live→Camp/Pool→Camp.
-- Stabilisieren hat eine Null-Stabi-Regel: Bei Overload 0 gibt es +1 Pool, klar geloggt.
+- Pool-Bonus bei simultanem Campen ist auf +1 pro Camper begrenzt (cap1) und wird in Zugreihenfolge verteilt; Logs zeigen PoolToCampRequested/Granted.
+- Stabilisieren belohnt Overload 4–7 mit +1 Pool, Overload 8+ mit +1 Live; Null-Stabi (Overload 0) gibt exklusiv +1 Pool.
 - Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und markieren min 0/Cap 12 inklusive Statuswerte.
-- Anti-Solo camped den letzten Spieler inkl. Pool-Bonus und Trostpunkt bei 0 Live; Stage Dive stapelt keinen „Muss bleiben“-Zwang.
-- KNALL-Phase loggt Pflaster (1 Live → +1 Camp) pro Spieler, RoundReset blockt Entscheidungen ohne Event und Logs nutzen die Reihenfolge Overload → Pool → Live → Camp.
+- Anti-Solo läuft jetzt als Final Push: letzter aktiver Spieler bekommt 1 Extra-Event, danach normale Camp-Entscheidung.
+- KNALL halbiert Live der aktiven Spieler, Pflaster rettet +1 Live nach der Halbierung; Logs nutzen Step-IDs, ActionType und Delta-Reasons.
+- Debug-Export liefert JSON-Snapshots pro Turn für spätere Analyse.
 - Entscheidungs-Logs sind getrennt (Choices vs. Camp/Anti-Solo/Reset-Abwicklung).
 - Feedback-Bühnenregel stapelt Level (max. 3) und erhöht Push entsprechend; Log/Chips zeigen den Level.
 - Katastrophen-Checks und Countdown-Logs enthalten konsistente Overload/Pool-Hinweise.
