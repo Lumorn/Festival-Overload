@@ -895,11 +895,11 @@
               <div class="hint">
                 <b>Camp (nur mit Live):</b> Ohne mindestens <b>1 Live</b> gibt es keinen Cashout.
                 <br>
-                <b>Pool-Bonus:</b> Beim Campen (mit Live) beträgt dein <b>Max-Bonus</b> <b>1</b> (Overload &lt;8) oder <b>2</b> (Overload <b>8+</b>).
+                <b>Pool-Bonus:</b> Beim Campen (mit Live) beträgt dein <b>Max-Bonus</b> immer <b>1</b> (cap1).
                 <br>
                 <b>Wichtig:</b> Maßgeblich ist der <b>Overload nach dem Event</b> (inkl. Countdown/Checks), direkt vor der Camp-Entscheidung.
                 <br>
-                <b>Verteilung (gleichzeitig campen):</b> Runde 1: jeder Camper erhält max. <b>+1 Pool</b> in Zugreihenfolge (ab Aufdecker). Runde 2 (nur bei Overload 8+): wieder je <b>+1</b>, solange Pool übrig ist.
+                <b>Verteilung (gleichzeitig campen):</b> In Zugreihenfolge (ab Aufdecker) erhält jeder Camper maximal <b>+1 Pool</b>, solange Pool verfügbar ist.
               </div>
             </details>
           </div>
@@ -912,7 +912,7 @@
                 <div class="poolCard"></div>
                 <div class="poolCard"></div>
               </div>
-              <div class="mini" id="poolHint">Camp-Bonus: max. 1 pro Runde (Overload 8+ = 2 Runden)</div>
+              <div class="mini" id="poolHint">Camp-Bonus: max. 1 pro Camper (cap1)</div>
             </div>
 
             <div class="tableau">
@@ -971,6 +971,7 @@
             <b>Log</b>
             <div class="logActions">
               <button class="btn slim" id="btnCopyLog">Log kopieren</button>
+              <button class="btn slim" id="btnExportDebug">Debug exportieren</button>
             </div>
           </div>
           <div class="log" id="log"></div>
@@ -978,7 +979,7 @@
         <div class="sideSection">
           <div class="sideTitle">Einstellungen</div>
           <div class="toggle">
-            <label class="mini"><input id="optPflaster" type="checkbox" checked> Pflaster nach Knall: Aktiver Spieler rettet 1 Live als Camp</label>
+            <label class="mini"><input id="optPflaster" type="checkbox" checked> Pflaster nach Knall: +1 Live nach Halbierung (nur wenn Live vorher ≥1)</label>
             <label class="mini"><input id="optAggCountdown" type="checkbox"> Countdown aggressiv: +1 extra wenn Pool ≥3</label>
             <label class="mini">Steuerung:
               <select id="optControlMode">
@@ -1104,7 +1105,7 @@
         <ul class="ruleList mini">
           <li><b>Nach jedem Event</b>: Alle aktiven Spieler entscheiden simultan Bleib oder Camp.</li>
           <li><b>Camp</b> ist nur mit mindestens 1 Live möglich.</li>
-          <li><b>Pool-Bonus</b>: Rundenverteilung (max. +1 pro Runde je Camper), Overload 8+ aktiviert Runde 2.</li>
+          <li><b>Pool-Bonus</b>: Maximal +1 Pool pro Camper (cap1), Reihenfolge ab Aufdecker.</li>
           <li><b>Overload 12</b>: Katastrophen-Check – Push bedeutet Knall.</li>
         </ul>
       </div>
@@ -1115,7 +1116,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.34';
+    var VERSION = 'v0.35';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
     var STABILIZE_CARDS = [
@@ -1129,6 +1130,17 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.35',
+        date: '2026-01-20',
+        items: [
+          'Neu: KNALL halbiert Live der aktiven Spieler (Abrunden), Pflaster rettet +1 Live nach Halbierung (nur wenn Live vorher ≥1).',
+          'Neu: Final-Push-Regel ersetzt Anti-Solo – letzter aktiver Spieler bekommt 1 Extra-Event, danach normale Camp-Entscheidung.',
+          'Neu: Stabilisieren gibt +1 Pool bei Overload 4–7, +1 Live bei 8+, Null-Stabi (0) bleibt exklusiv.',
+          'Neu: Pool→Camp ist auf +1 pro Camper begrenzt (cap1), Rundenverteilung bleibt nur als Reihenfolge.',
+          'Neu: Schritt-Logformat mit Step-ID, Actor/ActionType, Delta-Reasons und Debug-Export (JSON-Snapshots).'
+        ]
+      },
       {
         ver: 'v0.34',
         date: '2026-01-19',
@@ -1450,6 +1462,9 @@
       askOpen: false,
       encoreChain: 0,
       humanLockedIn: false,
+      finalPushUsed: false,
+      logSubStep: 0,
+      debugSnapshots: [],
 
       autoTimer: null,
       decisionTimer: { enabled:true, seconds:20, remaining:20, timerId:null },
@@ -1485,6 +1500,121 @@
 
     function formatDelta(delta){
       return (delta >= 0 ? '+' : '') + delta;
+    }
+
+    function resetLogSubStep(){
+      state.logSubStep = 0;
+    }
+
+    function nextLogStepId(){
+      state.logSubStep = (state.logSubStep || 0) + 1;
+      return 'R' + state.round + '-T' + state.turnId + '-S' + state.logSubStep;
+    }
+
+    function actorSnapshot(actorIdx){
+      if (typeof actorIdx !== 'number' || !state.players[actorIdx]){
+        return {
+          overload: state.overload,
+          pool: state.pool,
+          live: null,
+          camp: null
+        };
+      }
+      return {
+        overload: state.overload,
+        pool: state.pool,
+        live: state.players[actorIdx].live,
+        camp: state.players[actorIdx].camp
+      };
+    }
+
+    function formatValue(val){
+      if (val === null || typeof val === 'undefined') return '—';
+      return String(val);
+    }
+
+    function formatCoreValues(actorName, before, after){
+      return 'Overload ' + before.overload + '->' + after.overload +
+        ' | Pool ' + before.pool + '->' + after.pool +
+        ' | Live(' + esc(actorName) + ') ' + formatValue(before.live) + '->' + formatValue(after.live) +
+        ' | Camp(' + esc(actorName) + ') ' + formatValue(before.camp) + '->' + formatValue(after.camp);
+    }
+
+    function formatReasonBlock(reasons){
+      if (!reasons) return '';
+      var parts = [];
+      if (reasons.overload) parts.push('OverloadChangeReason="' + esc(reasons.overload) + '"');
+      if (reasons.pool) parts.push('PoolChangeReason="' + esc(reasons.pool) + '"');
+      if (reasons.live) parts.push('LiveChangeReason="' + esc(reasons.live) + '"');
+      if (reasons.camp) parts.push('CampChangeReason="' + esc(reasons.camp) + '"');
+      if (reasons.extra) parts.push('Reason="' + esc(reasons.extra) + '"');
+      return parts.join(' | ');
+    }
+
+    function logStep(kind, opts){
+      var el = document.getElementById('log');
+      var play = document.getElementById('logPlay');
+      var t = new Date();
+      var hh = String(t.getHours()); if (hh.length < 2) hh = '0'+hh;
+      var mm = String(t.getMinutes()); if (mm.length < 2) mm = '0'+mm;
+      var cls = kind || 'info';
+      var stepId = nextLogStepId();
+      var actor = opts.actor || 'System';
+      var action = opts.action || 'CHECK';
+      var before = opts.before || actorSnapshot(opts.actorIdx);
+      var after = opts.after || actorSnapshot(opts.actorIdx);
+      var core = formatCoreValues(actor, before, after);
+      var reasonBlock = formatReasonBlock(opts.reasons);
+      var extra = opts.msgHtml ? (' | ' + opts.msgHtml) : '';
+      var reasonChunk = reasonBlock ? (' | ' + reasonBlock) : '';
+      var entry = '<div class="evt ' + cls + '"><span class="t">['+hh+':'+mm+']</span> <span class="t">(' + stepId + ')</span> ActionType=' + esc(action) + ' | Actor=' + esc(actor) + extra + ' | ' + core + reasonChunk + '</div>';
+      el.innerHTML += entry;
+      el.scrollTop = el.scrollHeight;
+      if (play){
+        play.innerHTML += entry;
+        play.scrollTop = play.scrollHeight;
+      }
+    }
+
+    function recordDebugSnapshot(label){
+      var activeNames = [];
+      var playersSnapshot = {};
+      for (var i=0;i<state.players.length;i++){
+        var p = state.players[i];
+        if (p.roundState === 'active') activeNames.push(p.name);
+        playersSnapshot[p.name] = {
+          live: p.live,
+          camp: p.camp,
+          roundState: p.roundState,
+          forcedStay: !!p.forcedStay
+        };
+      }
+      state.debugSnapshots.push({
+        round: state.round,
+        turn: state.turnId,
+        overload: state.overload,
+        pool: state.pool,
+        feedbackLevel: feedbackLevel(),
+        countdownActive: state.countdownActive,
+        direction: state.direction,
+        revealer: state.revealer,
+        activePlayers: activeNames,
+        label: label || '',
+        players: playersSnapshot
+      });
+    }
+
+    function exportDebug(){
+      var payload = JSON.stringify(state.debugSnapshots, null, 2);
+      if (!payload){ toast('Debug leer', 'Keine Snapshots vorhanden.'); return payload; }
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(payload)
+          .then(function(){ toast('Debug kopiert', 'JSON wurde kopiert.'); })
+          .catch(function(){ fallbackCopy(payload); });
+      } else {
+        fallbackCopy(payload);
+      }
+      return payload;
     }
 
     function normalizeRevealerIndex(){
@@ -1546,19 +1676,13 @@
     }
 
     function log(kind, msgHtml){
-      var el = document.getElementById('log');
-      var play = document.getElementById('logPlay');
-      var t = new Date();
-      var hh = String(t.getHours()); if (hh.length < 2) hh = '0'+hh;
-      var mm = String(t.getMinutes()); if (mm.length < 2) mm = '0'+mm;
-      var cls = kind || 'info';
-      var entry = '<div class="evt ' + cls + '"><span class="t">['+hh+':'+mm+']</span> <span class="t">(T'+state.turnId+')</span> ' + msgHtml + '</div>';
-      el.innerHTML += entry;
-      el.scrollTop = el.scrollHeight;
-      if (play){
-        play.innerHTML += entry;
-        play.scrollTop = play.scrollHeight;
-      }
+      logStep(kind, {
+        action: 'CHECK',
+        actor: 'System',
+        msgHtml: msgHtml,
+        before: actorSnapshot(null),
+        after: actorSnapshot(null)
+      });
     }
 
     function shuffle(a){
@@ -1578,9 +1702,23 @@
           if (state.discard.length){
             state.deck = shuffle(state.discard);
             state.discard = [];
-            log('warn','<b>Deck leer</b> – Ablage wird gemischt.');
+            logStep('warn', {
+              action: 'CHECK',
+              actor: 'System',
+              msgHtml: '<b>Deck leer</b> – Ablage wird gemischt.',
+              before: actorSnapshot(null),
+              after: actorSnapshot(null),
+              reasons: { extra: 'DeckReshuffle' }
+            });
           } else {
-            log('bad','<b>Deck & Ablage leer</b> – keine Karte verfügbar.');
+            logStep('bad', {
+              action: 'CHECK',
+              actor: 'System',
+              msgHtml: '<b>Deck & Ablage leer</b> – keine Karte verfügbar.',
+              before: actorSnapshot(null),
+              after: actorSnapshot(null),
+              reasons: { extra: 'DeckEmpty' }
+            });
             break;
           }
         }
@@ -1662,20 +1800,17 @@
       return out;
     }
 
-    function poolTakeFor(overload, pool){
-      var dangerBonus = (overload >= 8) ? 1 : 0;
-      return Math.min(pool, 1 + dangerBonus);
+    function poolTakeFor(pool){
+      return Math.min(pool, 1);
     }
 
-    function planCampPoolDistribution(order, overloadAtDecision, poolAvailable){
-      var dangerBonus = (overloadAtDecision >= 8) ? 1 : 0;
-      var maxPerCamper = 1 + dangerBonus;
+    function planCampPoolDistribution(order, poolAvailable){
+      var maxPerCamper = 1;
       var takes = {};
       for (var i=0;i<order.length;i++) takes[String(order[i])] = 0;
       var rounds = [];
       var remaining = poolAvailable;
-      for (var r=1;r<=maxPerCamper;r++){
-        if (remaining <= 0) break;
+      if (remaining > 0){
         var round = [];
         for (var j=0;j<order.length;j++){
           if (remaining <= 0) break;
@@ -1776,7 +1911,9 @@
       else if (t === 'stabilize'){
         var d = (typeof c.delta === 'number' ? c.delta : -2);
         parts.push('<span class="imp good">🛠️ <b>Overload ' + d + '</b></span>');
-        parts.push('<span class="imp blue">🎟️ <b>+1 Live nur bei 8+ vorher</b></span>');
+        parts.push('<span class="imp warn">🎁 <b>+1 Pool bei Overload 4–7</b></span>');
+        parts.push('<span class="imp blue">🎟️ <b>+1 Live bei 8+ vorher</b></span>');
+        parts.push('<span class="imp warn">🧯 <b>Null-Stabi: +1 Pool</b></span>');
         parts.push('<span class="imp blue">👥 <b>Danach: Entscheidung</b></span>');
       }
       else if (t === 'twist'){
@@ -1856,7 +1993,9 @@
         chips.push({ cls:'warn', text:'Pool +1' });
       } else if (t === 'stabilize'){
         chips.push({ cls:'good', text:'Overload ' + (card.delta || -2) });
-        chips.push({ cls:'blue', text:'Live +1 nur bei 8+ vorher' });
+        chips.push({ cls:'warn', text:'Pool +1 bei Overload 4–7' });
+        chips.push({ cls:'blue', text:'Live +1 bei 8+ vorher' });
+        chips.push({ cls:'warn', text:'Null-Stabi: Pool +1' });
       } else if (t === 'twist'){
         if (card.stage) chips.push({ cls:'warn', text:'Bühnenregel: ' + card.name });
         if (card.fx === 'pyro') chips.push({ cls:'bad', text:'Overload +2' });
@@ -2233,9 +2372,8 @@
       if (stageRule) stageRule.textContent = stageRuleLabel();
       var poolHint = document.getElementById('poolHint');
       if (poolHint){
-        var dangerBonus = (state.overload >= 8) ? 1 : 0;
-        var poolTake = poolTakeFor(state.overload, state.pool);
-        poolHint.textContent = 'Camp-Bonus (max): +' + poolTake + ' (Pool ' + state.pool + ', Gefahr +' + dangerBonus + ')';
+        var poolTake = poolTakeFor(state.pool);
+        poolHint.textContent = 'Camp-Bonus (max): +' + poolTake + ' (Pool ' + state.pool + ', cap1)';
       }
 
       var pill = document.getElementById('stateChip');
@@ -2361,7 +2499,7 @@
       } else if (state.overload >= 10){
         showBanner('bad','Gefahr hoch','Bei Overload 12 kommt sofort der Katastrophen-Check.');
       } else if (state.overload >= 8){
-        showBanner('warn','Overload 8+','Beim Campen gibt es +1 extra aus dem Pool (falls vorhanden).');
+        showBanner('warn','Overload 8+','Hohe Spannung: Knall-Gefahr steigt.');
       }
 
       renderPlayers();
@@ -2516,7 +2654,7 @@
         totalLine.textContent = '—';
       } else {
         preview.style.opacity = '1';
-        var poolBonus = poolTakeFor(state.overload, state.pool);
+        var poolBonus = poolTakeFor(state.pool);
         if (human.roundState !== 'active'){
           gainLine.textContent = 'Du beobachtest diese Runde.';
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
@@ -2528,7 +2666,7 @@
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
         } else {
           gainLine.textContent = 'Du sicherst: +' + human.live + ' Camp';
-          totalLine.textContent = 'Pool-Bonus (max): +' + poolBonus + ' · Gesamt danach: ' + (human.camp + human.live + poolBonus);
+          totalLine.textContent = 'Pool-Bonus (max, cap1): +' + poolBonus + ' · Gesamt danach: ' + (human.camp + human.live + poolBonus);
         }
       }
 
@@ -2736,7 +2874,7 @@
       for (i=0;i<10;i++) deck.push({ type:'push', name:'Crowd Surf', delta:2, text:'Overload +2. Aufdecker +1 Live. +1 in Pool.' });
       for (i=0;i<6;i++) deck.push({ type:'push', name:'Bassdrop', delta:3, text:'Overload +3. Aufdecker +1 Live. +1 in Pool.' });
 
-      // Stabilisieren (14) – Patch P2: Ertrag nur bei Overload 8+ (vor dem Senken)
+      // Stabilisieren (14) – Ertrag: 4–7 → +1 Pool, 8+ → +1 Live, 0 → Null-Stabi +1 Pool
       for (i=0;i<STABILIZE_CARDS.length;i++){
         var sc = STABILIZE_CARDS[i];
         for (var j=0;j<sc.count;j++){
@@ -2744,7 +2882,7 @@
             type:'stabilize',
             name: sc.name,
             delta: -sc.value,
-            text:'Overload −' + sc.value + '. Wenn Overload vor dem Senken 8+ war: Aufdecker +1 Live (Vorrat).'
+            text:'Overload −' + sc.value + '. Overload 4–7 vorher: +1 Pool. Overload 8+ vorher: +1 Live. Null-Stabi (0): +1 Pool.'
           });
         }
       }
@@ -2768,7 +2906,14 @@
         if (state.players[i].camp >= WIN_CAMP){
           if (!state.gameOver){
             state.gameOver = true;
-            log('good','<b>' + esc(state.players[i].name) + ' gewinnt!</b> (' + state.players[i].camp + ' Camp)');
+            logStep('good', {
+              action: 'ROUND_END',
+              actor: 'System',
+              msgHtml: 'WIN | player=' + esc(state.players[i].name) + ' | camp=' + state.players[i].camp,
+              before: actorSnapshot(i),
+              after: actorSnapshot(i),
+              reasons: { extra: 'Win' }
+            });
             screenFlash('good');
             toast('Spiel beendet', state.players[i].name + ' gewinnt mit ' + state.players[i].camp + ' Camp.');
           }
@@ -2781,7 +2926,14 @@
     function endRound(reason){
       if (state.gameOver) return;
       if (!state.players.length){
-        log('bad','Keine Spieler gefunden → Neustart.');
+        logStep('bad', {
+          action: 'ROUND_END',
+          actor: 'System',
+          msgHtml: 'ROUND_END_ABORT | reason=NoPlayers',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'NoPlayers' }
+        });
         restart();
         return;
       }
@@ -2793,9 +2945,17 @@
         state.discard.push(state.stageRule._cardRef);
       }
 
-      if (state.pool > 0){
-        log('warn','Rundenende: Pool verfällt. ' + formatOverPoolLine(state.overload, 0, state.pool, 0) + '.');
-      }
+      logStep('warn', {
+        action: 'ROUND_END',
+        actor: 'System',
+        msgHtml: 'ROUND_END | reason=' + esc(reason || 'Rundenende') + ' | PoolExpired=' + (state.pool > 0 ? 'yes' : 'no') + ' | OverloadReset=0',
+        before: { overload: state.overload, pool: state.pool, live: null, camp: null },
+        after: { overload: 0, pool: 0, live: null, camp: null },
+        reasons: {
+          pool: (state.pool > 0 ? 'PoolExpired' : ''),
+          extra: 'RoundEnd'
+        }
+      });
       state.pool = 0;
       state.stageRule = null;
       state.feedbackLevel = 0;
@@ -2805,6 +2965,7 @@
       state.extraRevealSame = false;
       state.overload = 0;
       state.encoreChain = 0;
+      state.finalPushUsed = false;
 
       for (var i=0;i<state.players.length;i++){
         state.players[i].live = 0;
@@ -2813,6 +2974,7 @@
       }
 
       state.round += 1;
+      resetLogSubStep();
       state.startPlayer = (state.startPlayer + 1) % state.players.length;
       state.revealer = state.startPlayer;
       state.awaitingDecision = false;
@@ -2827,7 +2989,14 @@
         askBack.setAttribute('aria-hidden','true');
       }
 
-      log('good','<b>Neue Runde ' + state.round + '</b> – Overload=0, Pool leer, Bühnenregel entfernt. ' + (reason ? '('+esc(reason)+')' : ''));
+      logStep('good', {
+        action: 'ROUND_START',
+        actor: 'System',
+        msgHtml: 'ROUND_START | round=' + state.round + (reason ? ' | prevReason=' + esc(reason) : ''),
+        before: { overload: 0, pool: 0, live: null, camp: null },
+        after: { overload: 0, pool: 0, live: null, camp: null },
+        reasons: { extra: 'RoundStart' }
+      });
       setEventCard(null);
       updateUI();
       setPhase('reveal');
@@ -2837,25 +3006,36 @@
     function doKnall(reason){
       // all active players lose live, camped safe
       var pfl = !!document.getElementById('optPflaster').checked;
-      log('bad','<b>KNALL</b>: ' + esc(reason) + '. ' + formatOverPoolLine(state.overload, state.overload, state.pool, state.pool) + ' · Live/Camp folgt pro Spieler.');
+      logStep('bad', {
+        action: 'KNALL',
+        actor: 'System',
+        msgHtml: 'KNALL_START | reason=' + esc(reason),
+        before: { overload: state.overload, pool: state.pool, live: null, camp: null },
+        after: { overload: state.overload, pool: state.pool, live: null, camp: null },
+        reasons: { extra: 'KnallStart' }
+      });
 
       for (var i=0;i<state.players.length;i++){
         var p = state.players[i];
         if (p.roundState !== 'active') continue;
         var liveBefore = p.live;
         var campBefore = p.camp;
-        var campAfter = campBefore;
-        if (pfl && liveBefore > 0){
-          campAfter = campBefore + 1;
-        }
-        p.camp = campAfter;
-        p.live = 0;
+        var liveAfterHalve = Math.floor(liveBefore / 2);
+        var bandageApplied = (pfl && liveBefore >= 1);
+        var liveFinal = liveAfterHalve + (bandageApplied ? 1 : 0);
+        p.live = liveFinal;
 
-        if (pfl){
-          log('bad','KNALL: <b>' + esc(p.name) + '</b> Live ' + liveBefore + '→0, Pflaster: +1 Camp (wenn möglich). ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, liveBefore, 0, campBefore, campAfter) + '.');
-        } else {
-          log('bad','KNALL: <b>' + esc(p.name) + '</b> Live ' + liveBefore + '→0, Pflaster: aus. ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, liveBefore, 0, campBefore, campAfter) + '.');
-        }
+        var reasonLive = 'Knall halve';
+        if (bandageApplied) reasonLive += ', Pflaster +1';
+        logStep('bad', {
+          action: 'KNALL',
+          actor: p.name,
+          actorIdx: i,
+          msgHtml: 'KNALL_PLAYER | live_before=' + liveBefore + ' | halve=' + liveAfterHalve + ' | bandage=' + (bandageApplied ? 'true(+1)' : 'false') + ' | live_final=' + liveFinal,
+          before: { overload: state.overload, pool: state.pool, live: liveBefore, camp: campBefore },
+          after: { overload: state.overload, pool: state.pool, live: p.live, camp: campBefore },
+          reasons: { live: reasonLive }
+        });
       }
 
       screenFlash('bad');
@@ -2864,6 +3044,7 @@
       showPlayBanner('bad', 'KNALL! Runde endet', 1600);
 
       if (checkWin()) { updateUI(); return; }
+      recordDebugSnapshot('afterKnall');
       endRound('Knall');
     }
 
@@ -2879,7 +3060,14 @@
       setHeadline('Katastrophen-Check!', 1200);
       var card = draw(1)[0] || null;
       if (!card){
-        log('warn','Check-Karte: keine verfügbar → Safe, ' + formatOverPoolLine(12, OVERLOAD_RESET_AFTER_CHECK, state.pool, state.pool) + '.');
+        logStep('warn', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'CHECK_RESULT=Safe | reason=NoCard',
+          before: { overload: 12, pool: state.pool, live: null, camp: null },
+          after: { overload: OVERLOAD_RESET_AFTER_CHECK, pool: state.pool, live: null, camp: null },
+          reasons: { overload: 'SafeCheck=12->10' }
+        });
         state.overload = OVERLOAD_RESET_AFTER_CHECK;
         showPlayBanner('good', 'Gerade noch so!', 1200);
         updateUI();
@@ -2891,13 +3079,27 @@
       showPlayCheckCard(card);
 
       if (isPush){
-        log('bad','Check-Karte: <b>Push</b> → <b>Knall</b>. Overload 12 bleibt bis zum Knall. Pool ' + state.pool + '.');
+        logStep('bad', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'CHECK_RESULT=Push => KNALL_TRIGGER | Card=' + esc(card.name),
+          before: { overload: 12, pool: state.pool, live: null, camp: null },
+          after: { overload: 12, pool: state.pool, live: null, camp: null },
+          reasons: { extra: 'CheckPush=Knall' }
+        });
         showPlayBanner('bad', 'KNALL!', 1200);
         doKnall('Katastrophen-Check hat Push aufgedeckt');
         return;
       }
 
-      log('good','Check-Karte: <b>' + esc(labelType(card.type).txt) + '</b> → Safe, ' + formatOverPoolLine(12, OVERLOAD_RESET_AFTER_CHECK, state.pool, state.pool) + '.');
+      logStep('good', {
+        action: 'CHECK',
+        actor: 'System',
+        msgHtml: 'CHECK_RESULT=Safe | Card=' + esc(card.name) + ' (' + esc(labelType(card.type).txt) + ')',
+        before: { overload: 12, pool: state.pool, live: null, camp: null },
+        after: { overload: OVERLOAD_RESET_AFTER_CHECK, pool: state.pool, live: null, camp: null },
+        reasons: { overload: 'SafeCheck=12->10' }
+      });
       state.overload = OVERLOAD_RESET_AFTER_CHECK;
       showPlayBanner('good', 'Gerade noch so!', 1200);
       updateUI();
@@ -2906,7 +3108,14 @@
     function onOverloadMayHit12(r, why){
       if (state.gameOver) return;
       if (r.reached12){
-        log('warn','Overload erreicht <b>12</b> (' + esc(why) + ') → <b>Katastrophen-Check</b>. ' + formatOverPoolLine(r.before, r.after, state.pool, state.pool) + '.');
+        logStep('warn', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'CHECK_TRIGGER | reason=' + esc(why),
+          before: { overload: r.before, pool: state.pool, live: null, camp: null },
+          after: { overload: r.after, pool: state.pool, live: null, camp: null },
+          reasons: { overload: esc(why) }
+        });
         catastropheCheck();
       }
     }
@@ -2924,7 +3133,7 @@
         [
           { cls:'good', sym:'✅', text:'Bleib: Live bleibt im Risiko' },
           { cls:'warn', sym:'🏕️', text:'Camp: nur mit mindestens 1 Live' },
-          { cls:'blue', sym:'🎁', text:'Pool-Bonus: Rundenverteilung (max. +1 pro Runde, Overload 8+ = 2 Runden)' }
+          { cls:'blue', sym:'🎁', text:'Pool-Bonus: maximal +1 Pool pro Camper (cap1)' }
         ],
         'Simultan, offen'
       );
@@ -2943,7 +3152,14 @@
 
       var r = applyOverloadDelta(+add);
       var capNote = describeOverloadCap(r.before, add, r.after);
-      log('warn','<b>Countdown</b>: Nach dem Event steigt Overload automatisch um +' + add + ' → ' + r.before + ' + ' + add + ' = <b>' + r.after + '</b>' + capNote + ' · ' + formatOverPoolLine(r.before, r.after, state.pool, state.pool) + '.');
+      logStep('warn', {
+        action: 'COUNTDOWN',
+        actor: 'System',
+        msgHtml: 'COUNTDOWN_APPLY | add=' + add + capNote,
+        before: { overload: r.before, pool: state.pool, live: null, camp: null },
+        after: { overload: r.after, pool: state.pool, live: null, camp: null },
+        reasons: { overload: 'Countdown=+' + add }
+      });
 
       setSummary('Countdown',
         [
@@ -3026,7 +3242,19 @@
         'Danach: Entscheidung Bleib/Camp'
       );
 
-      log('info','<b>' + esc(p.name) + '</b> deckt ⚡ <b>' + esc(card.name) + '</b> auf → Overload ' + before + ' + (' + base + ' Karte +' + mod + ' Feedback) = <b>' + after + '</b>' + capNote + ' · ' + formatStateLine(before, after, poolBefore, state.pool, liveBefore, p.live, campBefore, p.camp) + '.');
+      logStep('info', {
+        action: 'EFFECT',
+        actor: p.name,
+        actorIdx: rev,
+        msgHtml: 'Card=' + esc(card.name) + ' | Effekt=Push (+' + base + ' Karte +' + mod + ' Feedback)' + capNote,
+        before: { overload: before, pool: poolBefore, live: liveBefore, camp: campBefore },
+        after: { overload: after, pool: state.pool, live: p.live, camp: p.camp },
+        reasons: {
+          overload: 'CardBase=+' + base + ', FeedbackBonus=+' + mod,
+          pool: '+1 from Push',
+          live: '+1 Push'
+        }
+      });
       updateUI();
       onOverloadMayHit12(r, 'Push');
     }
@@ -3043,33 +3271,79 @@
       var floorNote = describeOverloadFloor(beforeOver, valueAbs, afterOver);
       state.overload = afterOver;
 
-      log('good','<b>' + esc(p.name) + '</b> deckt 🛠️ <b>' + esc(card.name) + '</b> auf → Overload ' + beforeOver + ' −' + valueAbs + ' = <b>' + afterOver + '</b>' + floorNote + ' · ' + formatStateLine(beforeOver, afterOver, poolBefore, state.pool, liveBefore, p.live, campBefore, p.camp) + '.');
+      logStep('good', {
+        action: 'EFFECT',
+        actor: p.name,
+        actorIdx: rev,
+        msgHtml: 'Card=' + esc(card.name) + ' | Effekt=Stabilisieren (−' + valueAbs + ')' + floorNote,
+        before: { overload: beforeOver, pool: poolBefore, live: liveBefore, camp: campBefore },
+        after: { overload: afterOver, pool: state.pool, live: p.live, camp: p.camp },
+        reasons: {
+          overload: 'Stabilize=-' + valueAbs
+        }
+      });
 
-      // Patch P2: Ertrag nur wenn Overload VOR dem Senken 8+ war
-      var got = 0;
-      var nullStabiBonus = 0;
+      var reward = 'none';
       if (beforeOver === 0){
         var poolBeforeNull = state.pool;
         state.pool += 1;
-        nullStabiBonus = 1;
-        log('info','Null-Stabi: Overload war <b>0</b> → <b>+1 Pool</b>. ' + formatStateLine(state.overload, state.overload, poolBeforeNull, state.pool, liveBefore, p.live, campBefore, p.camp) + '.');
-      }
-
-      var poolSnapshot = state.pool;
-      if (beforeOver >= 8){
+        reward = 'null';
+        logStep('info', {
+          action: 'EFFECT',
+          actor: p.name,
+          actorIdx: rev,
+          msgHtml: 'Null-Stabi: Overload war 0 → +1 Pool',
+          before: { overload: state.overload, pool: poolBeforeNull, live: liveBefore, camp: campBefore },
+          after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
+          reasons: { pool: '+1 from Null-Stabi' }
+        });
+      } else if (beforeOver >= 4 && beforeOver <= 7){
+        var poolBeforeMid = state.pool;
+        state.pool += 1;
+        reward = 'pool';
+        logStep('info', {
+          action: 'EFFECT',
+          actor: p.name,
+          actorIdx: rev,
+          msgHtml: 'Stabilisieren-Ertrag: Overload vor dem Senken ' + beforeOver + ' (4–7) → +1 Pool',
+          before: { overload: state.overload, pool: poolBeforeMid, live: liveBefore, camp: campBefore },
+          after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
+          reasons: { pool: '+1 from Stabilize(4-7)' }
+        });
+      } else if (beforeOver >= 8){
+        var liveBeforeReward = p.live;
         p.live += 1;
-        got = 1;
-        log('good','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (8+) → ' + esc(p.name) + ' erhält <b>+1 Live</b> (Vorrat). ' + formatStateLine(state.overload, state.overload, poolSnapshot, poolSnapshot, liveBefore, p.live, campBefore, p.camp) + '.');
+        reward = 'live';
+        logStep('good', {
+          action: 'EFFECT',
+          actor: p.name,
+          actorIdx: rev,
+          msgHtml: 'Stabilisieren-Ertrag: Overload vor dem Senken ' + beforeOver + ' (8+) → +1 Live',
+          before: { overload: state.overload, pool: state.pool, live: liveBeforeReward, camp: campBefore },
+          after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
+          reasons: { live: '+1 from Stabilize(8+)' }
+        });
       } else {
-        log('info','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (&lt;8) → kein Ertrag. ' + formatStateLine(state.overload, state.overload, poolSnapshot, poolSnapshot, liveBefore, p.live, campBefore, p.camp) + '.');
+        logStep('info', {
+          action: 'EFFECT',
+          actor: p.name,
+          actorIdx: rev,
+          msgHtml: 'Stabilisieren-Ertrag: Overload vor dem Senken ' + beforeOver + ' (1–3) → kein Ertrag',
+          before: { overload: state.overload, pool: state.pool, live: liveBefore, camp: campBefore },
+          after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
+          reasons: { extra: 'StabilizeReward=none' }
+        });
       }
 
       var summaryChips = [
-        { cls:'good', sym:'🛠️', text:'Overload −' + valueAbs + ' → ' + afterOver },
-        (got ? { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' } : { cls:'blue', sym:'—', text:'Kein Live-Ertrag (Overload vor dem Senken <8)' })
+        { cls:'good', sym:'🛠️', text:'Overload −' + valueAbs + ' → ' + afterOver }
       ];
-      if (nullStabiBonus){
-        summaryChips.push({ cls:'warn', sym:'🎁', text:'Null-Stabi: Pool +1 (jetzt ' + state.pool + ')' });
+      if (reward === 'live'){
+        summaryChips.push({ cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' });
+      } else if (reward === 'pool' || reward === 'null'){
+        summaryChips.push({ cls:'warn', sym:'🎁', text:'Pool +1 (jetzt ' + state.pool + ')' });
+      } else {
+        summaryChips.push({ cls:'blue', sym:'—', text:'Kein Ertrag' });
       }
 
       setSummary('🛠️ Stabilisieren – ' + card.name, summaryChips, 'Danach: Entscheidung Bleib/Camp');
@@ -3097,7 +3371,15 @@
             state.stageRule = { name: 'Feedback', text: card.text, fx: card.fx, _cardRef: card };
             state.feedbackLevel = newLevel;
           }
-          log('warn','🌀∞ Bühnenregel: <b>Feedback</b> Level ' + oldLevel + '→' + newLevel + ' (Push +' + newLevel + ')' + replaceNote + '.');
+          logStep('warn', {
+            action: 'EFFECT',
+            actor: p.name,
+            actorIdx: rev,
+            msgHtml: 'STAGE_RULE | Feedback Level ' + oldLevel + '->' + newLevel + ' (Push +' + newLevel + ')' + replaceNote,
+            before: actorSnapshot(rev),
+            after: actorSnapshot(rev),
+            reasons: { extra: 'FeedbackLevel=' + oldLevel + '->' + newLevel }
+          });
           updateUI();
           doneCb();
           return;
@@ -3105,9 +3387,25 @@
 
         if (state.stageRule && state.stageRule._cardRef){
           state.discard.push(state.stageRule._cardRef);
-          log('warn','🌀∞ Bühnenregel wird ersetzt: <b>' + esc(state.stageRule.name) + '</b> → <b>' + esc(card.name) + '</b>.');
+          logStep('warn', {
+            action: 'EFFECT',
+            actor: p.name,
+            actorIdx: rev,
+            msgHtml: 'STAGE_RULE_REPLACE | from=' + esc(state.stageRule.name) + ' | to=' + esc(card.name),
+            before: actorSnapshot(rev),
+            after: actorSnapshot(rev),
+            reasons: { extra: 'StageRuleReplace' }
+          });
         } else {
-          log('warn','🌀∞ Neue Bühnenregel: <b>' + esc(card.name) + '</b>.');
+          logStep('warn', {
+            action: 'EFFECT',
+            actor: p.name,
+            actorIdx: rev,
+            msgHtml: 'STAGE_RULE_ADD | rule=' + esc(card.name),
+            before: actorSnapshot(rev),
+            after: actorSnapshot(rev),
+            reasons: { extra: 'StageRuleAdd' }
+          });
         }
         state.stageRule = { name: card.name, text: card.text, fx: card.fx, _cardRef: card };
         state.feedbackLevel = 0;
@@ -3120,7 +3418,15 @@
         state.direction *= -1;
         var nextFlip = nextActiveFrom(state.revealer, state.direction);
         var nextFlipName = (nextFlip === -1) ? '—' : state.players[nextFlip].name;
-        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Richtung dreht sich: ' + (state.direction === 1 ? '<b>↻</b>' : '<b>↺</b>') + '. Nächster Aufdecker: <b>' + esc(nextFlipName) + '</b>.');
+        logStep('warn', {
+          action: 'EFFECT',
+          actor: p.name,
+          actorIdx: rev,
+          msgHtml: 'TWIST | Effekt=Richtung drehen (' + (state.direction === 1 ? '↻' : '↺') + ') | nextRevealer=' + esc(nextFlipName),
+          before: actorSnapshot(rev),
+          after: actorSnapshot(rev),
+          reasons: { extra: 'FlipDir' }
+        });
         updateUI();
         doneCb();
         return;
@@ -3129,7 +3435,15 @@
       if (card.fx === 'pyro'){
         var r = applyOverloadDelta(+2);
         var capNote = describeOverloadCap(r.before, 2, r.after);
-        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' +2 = <b>' + r.after + '</b>' + capNote + ' · ' + formatOverPoolLine(r.before, r.after, state.pool, state.pool) + '.');
+        logStep('warn', {
+          action: 'EFFECT',
+          actor: p.name,
+          actorIdx: rev,
+          msgHtml: 'TWIST | Effekt=Pyro (+2)' + capNote,
+          before: { overload: r.before, pool: state.pool, live: p.live, camp: p.camp },
+          after: { overload: r.after, pool: state.pool, live: p.live, camp: p.camp },
+          reasons: { overload: 'Pyro=+2' }
+        });
         updateUI();
         onOverloadMayHit12(r, 'Pyro');
         doneCb();
@@ -3138,7 +3452,15 @@
 
       if (card.fx === 'setwechsel'){
         state.extraRevealSame = true;
-        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Nächstes Event deckt der gleiche Spieler auf. Nächster Aufdecker: <b>' + esc(p.name) + '</b>.');
+        logStep('warn', {
+          action: 'EFFECT',
+          actor: p.name,
+          actorIdx: rev,
+          msgHtml: 'TWIST | Effekt=Setwechsel | nextRevealer=' + esc(p.name),
+          before: actorSnapshot(rev),
+          after: actorSnapshot(rev),
+          reasons: { extra: 'Setwechsel' }
+        });
         updateUI();
         doneCb();
         return;
@@ -3149,7 +3471,15 @@
           if (isAutoAll()){
             var aiTarget = botPickStageDiveTarget(rev);
             if (aiTarget === rev){
-              log('warn','Stage Dive: Kein anderer aktiver Spieler → Effekt verpufft.');
+              logStep('warn', {
+                action: 'EFFECT',
+                actor: p.name,
+                actorIdx: rev,
+                msgHtml: 'STAGE_DIVE | Kein anderes aktives Ziel → Effekt verpufft',
+                before: actorSnapshot(rev),
+                after: actorSnapshot(rev),
+                reasons: { extra: 'StageDiveNoTarget' }
+              });
               doneCb();
               return;
             }
@@ -3164,7 +3494,15 @@
             opts.push({ label: state.players[i].name + ' (Live ' + state.players[i].live + ')', value: i });
           }
           if (!opts.length){
-            log('warn','Stage Dive: Kein anderer aktiver Spieler → Effekt verpufft.');
+            logStep('warn', {
+              action: 'EFFECT',
+              actor: p.name,
+              actorIdx: rev,
+              msgHtml: 'STAGE_DIVE | Kein anderes aktives Ziel → Effekt verpufft',
+              before: actorSnapshot(rev),
+              after: actorSnapshot(rev),
+              reasons: { extra: 'StageDiveNoTarget' }
+            });
             doneCb();
             return;
           }
@@ -3175,7 +3513,15 @@
             opts,
             function(val){
               if (val === null || typeof val !== 'number'){
-                log('warn','Stage Dive: Keine Auswahl → Effekt verpufft.');
+                logStep('warn', {
+                  action: 'EFFECT',
+                  actor: p.name,
+                  actorIdx: rev,
+                  msgHtml: 'STAGE_DIVE | Keine Auswahl → Effekt verpufft',
+                  before: actorSnapshot(rev),
+                  after: actorSnapshot(rev),
+                  reasons: { extra: 'StageDiveNoSelection' }
+                });
                 doneCb();
                 return;
               }
@@ -3193,7 +3539,15 @@
             optsBot.push({ label: state.players[j].name + ' (Live ' + state.players[j].live + ')', value: j });
           }
           if (!optsBot.length){
-            log('warn','Stage Dive: Kein anderer aktiver Spieler → Effekt verpufft.');
+            logStep('warn', {
+              action: 'EFFECT',
+              actor: p.name,
+              actorIdx: rev,
+              msgHtml: 'STAGE_DIVE | Kein anderes aktives Ziel → Effekt verpufft',
+              before: actorSnapshot(rev),
+              after: actorSnapshot(rev),
+              reasons: { extra: 'StageDiveNoTarget' }
+            });
             doneCb();
             return;
           }
@@ -3203,7 +3557,15 @@
             optsBot,
             function(val){
               if (val === null || typeof val !== 'number'){
-                log('warn','Stage Dive: Keine Auswahl → Effekt verpufft.');
+                logStep('warn', {
+                  action: 'EFFECT',
+                  actor: p.name,
+                  actorIdx: rev,
+                  msgHtml: 'STAGE_DIVE | Keine Auswahl → Effekt verpufft',
+                  before: actorSnapshot(rev),
+                  after: actorSnapshot(rev),
+                  reasons: { extra: 'StageDiveNoSelection' }
+                });
                 doneCb();
                 return;
               }
@@ -3218,7 +3580,15 @@
         return;
       }
 
-      log('info','Twist ohne Effekt: <b>' + esc(card.name) + '</b>.');
+      logStep('info', {
+        action: 'EFFECT',
+        actor: p.name,
+        actorIdx: rev,
+        msgHtml: 'TWIST | Kein Effekt | Card=' + esc(card.name),
+        before: actorSnapshot(rev),
+        after: actorSnapshot(rev),
+        reasons: { extra: 'TwistNoEffect' }
+      });
       doneCb();
     }
 
@@ -3228,18 +3598,42 @@
 
       // Stage Dive darf nie den Aufdecker selbst treffen.
       if (targetIdx === rev){
-        log('warn','Stage Dive: Kein anderes aktives Ziel → Effekt verpufft.');
+        logStep('warn', {
+          action: 'EFFECT',
+          actor: revP.name,
+          actorIdx: rev,
+          msgHtml: 'STAGE_DIVE | Kein anderes aktives Ziel → Effekt verpufft',
+          before: actorSnapshot(rev),
+          after: actorSnapshot(rev),
+          reasons: { extra: 'StageDiveNoTarget' }
+        });
         doneCb();
         return;
       }
 
       if (!tP || tP.roundState !== 'active'){
-        log('warn','Stage Dive: Ziel ist nicht aktiv → Effekt verpufft.');
+        logStep('warn', {
+          action: 'EFFECT',
+          actor: revP.name,
+          actorIdx: rev,
+          msgHtml: 'STAGE_DIVE | Ziel nicht aktiv → Effekt verpufft',
+          before: actorSnapshot(rev),
+          after: actorSnapshot(rev),
+          reasons: { extra: 'StageDiveTargetInactive' }
+        });
         doneCb();
         return;
       }
 
-      log('warn','<b>' + esc(revP.name) + '</b> löst 🌀 <b>Stage Dive</b> aus auf <b>' + esc(tP.name) + '</b>.');
+      logStep('warn', {
+        action: 'EFFECT',
+        actor: revP.name,
+        actorIdx: rev,
+        msgHtml: 'STAGE_DIVE | target=' + esc(tP.name),
+        before: actorSnapshot(rev),
+        after: actorSnapshot(rev),
+        reasons: { extra: 'StageDiveTrigger' }
+      });
       updateUI();
 
       if (tP.forcedStay){
@@ -3247,12 +3641,28 @@
           var before = state.overload;
           var r = applyOverloadDelta(1);
           var capNote = describeOverloadCap(before, 1, r.after);
-          log('warn','Stage Dive auf <b>' + esc(tP.name) + '</b>: bereits aktiv → Ersatz-Effekt Overload ' + before + ' +1 = <b>' + r.after + '</b>' + capNote + ' · ' + formatOverPoolLine(before, r.after, state.pool, state.pool) + '.');
+          logStep('warn', {
+            action: 'EFFECT',
+            actor: tP.name,
+            actorIdx: targetIdx,
+            msgHtml: 'STAGE_DIVE | Ersatz=Overload +1' + capNote,
+            before: { overload: before, pool: state.pool, live: tP.live, camp: tP.camp },
+            after: { overload: r.after, pool: state.pool, live: tP.live, camp: tP.camp },
+            reasons: { overload: 'StageDiveReplacement=+1' }
+          });
           onOverloadMayHit12(r, 'Stage Dive Ersatz');
         } else {
           var poolBefore = state.pool;
           state.pool += 1;
-          log('warn','Stage Dive auf <b>' + esc(tP.name) + '</b>: bereits aktiv → Ersatz-Effekt Pool +1. ' + formatOverPoolLine(state.overload, state.overload, poolBefore, state.pool) + '.');
+          logStep('warn', {
+            action: 'EFFECT',
+            actor: tP.name,
+            actorIdx: targetIdx,
+            msgHtml: 'STAGE_DIVE | Ersatz=Pool +1',
+            before: { overload: state.overload, pool: poolBefore, live: tP.live, camp: tP.camp },
+            after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
+            reasons: { pool: '+1 from StageDiveReplacement' }
+          });
         }
         updateUI();
         doneCb();
@@ -3262,20 +3672,45 @@
       if (targetIdx === state.humanIndex){
         if (isAutoAll()){
           if (tP.live > 0 && botStageDivePay(targetIdx)){
+            var liveBeforeAuto = tP.live;
             tP.live = Math.max(0, tP.live - 1);
-            log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live + 1, tP.live, tP.camp, tP.camp) + '.');
+            logStep('good', {
+              action: 'EFFECT',
+              actor: tP.name,
+              actorIdx: targetIdx,
+              msgHtml: 'STAGE_DIVE | Zahlung=1 Live | Effekt ignoriert',
+              before: { overload: state.overload, pool: state.pool, live: liveBeforeAuto, camp: tP.camp },
+              after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
+              reasons: { live: '-1 pay StageDive' }
+            });
             doneCb();
             return;
           }
           tP.forcedStay = true;
-          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live, tP.live, tP.camp, tP.camp) + '.');
+          logStep('bad', {
+            action: 'EFFECT',
+            actor: tP.name,
+            actorIdx: targetIdx,
+            msgHtml: 'STAGE_DIVE | forcedStay=true',
+            before: actorSnapshot(targetIdx),
+            after: actorSnapshot(targetIdx),
+            reasons: { extra: 'StageDiveForcedStay' }
+          });
           doneCb();
           return;
         }
 
         if (tP.live <= 0){
           tP.forcedStay = true;
-          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live, tP.live, tP.camp, tP.camp) + '.');
+          logStep('bad', {
+            action: 'EFFECT',
+            actor: tP.name,
+            actorIdx: targetIdx,
+            msgHtml: 'STAGE_DIVE | forcedStay=true | reason=Live0',
+            before: actorSnapshot(targetIdx),
+            after: actorSnapshot(targetIdx),
+            reasons: { extra: 'StageDiveForcedStay' }
+          });
           toast('Stage Dive', 'Du musst drin bleiben (kein Live zum Zahlen).');
           doneCb();
           return;
@@ -3288,12 +3723,29 @@
           'Nicht zahlen',
           function(use){
             if (use){
+              var liveBeforeHuman = tP.live;
               tP.live = Math.max(0, tP.live - 1);
-              log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live + 1, tP.live, tP.camp, tP.camp) + '.');
+              logStep('good', {
+                action: 'EFFECT',
+                actor: tP.name,
+                actorIdx: targetIdx,
+                msgHtml: 'STAGE_DIVE | Zahlung=1 Live | Effekt ignoriert',
+                before: { overload: state.overload, pool: state.pool, live: liveBeforeHuman, camp: tP.camp },
+                after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
+                reasons: { live: '-1 pay StageDive' }
+              });
               toast('Bezahlt', 'Stage Dive ignoriert.');
             } else {
               tP.forcedStay = true;
-              log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live, tP.live, tP.camp, tP.camp) + '.');
+              logStep('bad', {
+                action: 'EFFECT',
+                actor: tP.name,
+                actorIdx: targetIdx,
+                msgHtml: 'STAGE_DIVE | forcedStay=true',
+                before: actorSnapshot(targetIdx),
+                after: actorSnapshot(targetIdx),
+                reasons: { extra: 'StageDiveForcedStay' }
+              });
               toast('Stage Dive', 'Du musst drin bleiben.');
             }
             doneCb();
@@ -3305,7 +3757,15 @@
       if (areBotsManual()){
         if (tP.live <= 0){
           tP.forcedStay = true;
-          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live, tP.live, tP.camp, tP.camp) + '.');
+          logStep('bad', {
+            action: 'EFFECT',
+            actor: tP.name,
+            actorIdx: targetIdx,
+            msgHtml: 'STAGE_DIVE | forcedStay=true | reason=Live0',
+            before: actorSnapshot(targetIdx),
+            after: actorSnapshot(targetIdx),
+            reasons: { extra: 'StageDiveForcedStay' }
+          });
           doneCb();
           return;
         }
@@ -3316,11 +3776,28 @@
           'Nicht zahlen',
           function(use){
             if (use){
+              var liveBeforeBot = tP.live;
               tP.live = Math.max(0, tP.live - 1);
-              log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live + 1, tP.live, tP.camp, tP.camp) + '.');
+              logStep('good', {
+                action: 'EFFECT',
+                actor: tP.name,
+                actorIdx: targetIdx,
+                msgHtml: 'STAGE_DIVE | Zahlung=1 Live | Effekt ignoriert',
+                before: { overload: state.overload, pool: state.pool, live: liveBeforeBot, camp: tP.camp },
+                after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
+                reasons: { live: '-1 pay StageDive' }
+              });
             } else {
               tP.forcedStay = true;
-              log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live, tP.live, tP.camp, tP.camp) + '.');
+              logStep('bad', {
+                action: 'EFFECT',
+                actor: tP.name,
+                actorIdx: targetIdx,
+                msgHtml: 'STAGE_DIVE | forcedStay=true',
+                before: actorSnapshot(targetIdx),
+                after: actorSnapshot(targetIdx),
+                reasons: { extra: 'StageDiveForcedStay' }
+              });
             }
             doneCb();
           }
@@ -3329,14 +3806,31 @@
       }
 
       if (tP.live > 0 && botStageDivePay(targetIdx)){
+        var liveBeforeAutoBot = tP.live;
         tP.live = Math.max(0, tP.live - 1);
-        log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live + 1, tP.live, tP.camp, tP.camp) + '.');
+        logStep('good', {
+          action: 'EFFECT',
+          actor: tP.name,
+          actorIdx: targetIdx,
+          msgHtml: 'STAGE_DIVE | Zahlung=1 Live | Effekt ignoriert',
+          before: { overload: state.overload, pool: state.pool, live: liveBeforeAutoBot, camp: tP.camp },
+          after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
+          reasons: { live: '-1 pay StageDive' }
+        });
         doneCb();
         return;
       }
 
       tP.forcedStay = true;
-      log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, tP.live, tP.live, tP.camp, tP.camp) + '.');
+      logStep('bad', {
+        action: 'EFFECT',
+        actor: tP.name,
+        actorIdx: targetIdx,
+        msgHtml: 'STAGE_DIVE | forcedStay=true',
+        before: actorSnapshot(targetIdx),
+        after: actorSnapshot(targetIdx),
+        reasons: { extra: 'StageDiveForcedStay' }
+      });
       doneCb();
     }
 
@@ -3346,24 +3840,57 @@
 
       function proceed(stop){
         if (stop){
+          var liveBeforeStop = p.live;
           p.live = Math.max(0, p.live - 1);
-          log('good','<b>' + esc(p.name) + '</b> stoppt 🎤 <b>Encore!</b> durch Zahlung von 1 Live. (Live jetzt ' + p.live + ')');
+          logStep('good', {
+            action: 'EFFECT',
+            actor: p.name,
+            actorIdx: rev,
+            msgHtml: 'ENCORE_STOP | Zahlung=1 Live',
+            before: { overload: state.overload, pool: state.pool, live: liveBeforeStop, camp: p.camp },
+            after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
+            reasons: { live: '-1 pay Encore stop' }
+          });
           toast('Encore gestoppt', p.name + ' zahlt 1 Live.');
           state.encoreChain = 0;
           cb(false);
           return;
         }
-        log('warn','🎤 <b>Encore!</b> läuft → sofort noch ein Event (keine Camp-Entscheidung dazwischen).');
+        logStep('warn', {
+          action: 'EFFECT',
+          actor: p.name,
+          actorIdx: rev,
+          msgHtml: 'ENCORE_CHAIN | Weiterlaufen',
+          before: actorSnapshot(rev),
+          after: actorSnapshot(rev),
+          reasons: { extra: 'EncoreChain' }
+        });
         state.encoreChain = (state.encoreChain || 0) + 1;
         cb(true);
       }
 
-      log('warn','<b>' + esc(p.name) + '</b> deckt 🎤 <b>Encore!</b> auf.');
+      logStep('warn', {
+        action: 'DRAW',
+        actor: p.name,
+        actorIdx: rev,
+        msgHtml: 'DRAW | Card=Encore!',
+        before: actorSnapshot(rev),
+        after: actorSnapshot(rev),
+        reasons: { extra: 'EncoreDraw' }
+      });
 
       if (rev === state.humanIndex){
         if (isAutoAll()){
           if (!canPay){
-            log('bad','Du hast <b>0 Live</b> → du kannst Encore nicht stoppen.');
+            logStep('bad', {
+              action: 'DECISION',
+              actor: p.name,
+              actorIdx: rev,
+              msgHtml: 'ENCORE_STOP | forced=false | reason=Live0',
+              before: actorSnapshot(rev),
+              after: actorSnapshot(rev),
+              reasons: { extra: 'EncoreStopDenied' }
+            });
             proceed(false);
             return;
           }
@@ -3372,7 +3899,15 @@
         }
 
         if (!canPay){
-          log('bad','Du hast <b>0 Live</b> → du kannst Encore nicht stoppen.');
+          logStep('bad', {
+            action: 'DECISION',
+            actor: p.name,
+            actorIdx: rev,
+            msgHtml: 'ENCORE_STOP | forced=false | reason=Live0',
+            before: actorSnapshot(rev),
+            after: actorSnapshot(rev),
+            reasons: { extra: 'EncoreStopDenied' }
+          });
           proceed(false);
           return;
         }
@@ -3388,7 +3923,15 @@
 
       if (areBotsManual()){
         if (!canPay){
-          log('bad', esc(p.name) + ' hat <b>0 Live</b> → Encore kann nicht gestoppt werden.');
+          logStep('bad', {
+            action: 'DECISION',
+            actor: p.name,
+            actorIdx: rev,
+            msgHtml: 'ENCORE_STOP | forced=false | reason=Live0',
+            before: actorSnapshot(rev),
+            after: actorSnapshot(rev),
+            reasons: { extra: 'EncoreStopDenied' }
+          });
           proceed(false);
           return;
         }
@@ -3411,7 +3954,14 @@
       if (state.gameOver) return;
       if (state.awaitingDecision) return;
       if (!state.players.length){
-        log('bad','Keine Spieler gefunden → Neustart nötig.');
+        logStep('bad', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'CHECK_FAIL | reason=NoPlayers',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'NoPlayers' }
+        });
         restart();
         return;
       }
@@ -3429,11 +3979,19 @@
       }
 
       state.turnId += 1;
+      resetLogSubStep();
       setPhase('event');
 
       var card = draw(1)[0] || null;
       if (!card){
-        log('bad','Keine Karte verfügbar → Runde endet.');
+        logStep('bad', {
+          action: 'DRAW',
+          actor: 'System',
+          msgHtml: 'DRAW_FAIL | reason=NoCard',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'DeckEmpty' }
+        });
         endRound('Deck leer');
         return;
       }
@@ -3442,7 +4000,15 @@
       setEventCard(card);
       updateUI();
 
-      log('info','<b>' + esc(revP.name) + '</b> deckt auf: <b>' + esc(card.name) + '</b>.');
+      logStep('info', {
+        action: 'DRAW',
+        actor: revP.name,
+        actorIdx: rev,
+        msgHtml: 'DRAW | Card=' + esc(card.name),
+        before: actorSnapshot(rev),
+        after: actorSnapshot(rev),
+        reasons: { extra: 'EventDraw' }
+      });
 
       var roundResetId = state.roundResetId;
       resolveEventCard(rev, card, function(){
@@ -3489,7 +4055,15 @@
 
           var next = draw(1)[0] || null;
           if (!next){
-            log('bad','Encore wollte ketten, aber keine Karte verfügbar.');
+            logStep('bad', {
+              action: 'DRAW',
+              actor: state.players[rev].name,
+              actorIdx: rev,
+              msgHtml: 'ENCORE_CHAIN_FAIL | reason=NoCard',
+              before: actorSnapshot(rev),
+              after: actorSnapshot(rev),
+              reasons: { extra: 'EncoreNoCard' }
+            });
             done();
             return;
           }
@@ -3497,7 +4071,15 @@
           state.lastEvent = next;
           setEventCard(next, 'Encore-Kette');
           updateUI();
-          log('warn','Encore-Kette: <b>' + esc(state.players[rev].name) + '</b> deckt sofort noch auf: <b>' + esc(next.name) + '</b>.');
+          logStep('warn', {
+            action: 'DRAW',
+            actor: state.players[rev].name,
+            actorIdx: rev,
+            msgHtml: 'ENCORE_CHAIN_DRAW | Card=' + esc(next.name),
+            before: actorSnapshot(rev),
+            after: actorSnapshot(rev),
+            reasons: { extra: 'EncoreChainDraw' }
+          });
 
           resolveEventCard(rev, next, done);
         });
@@ -3508,11 +4090,12 @@
       done();
     }
 
-    function applyCampTransfer(p, overloadAtDecision, extraCamp, poolTakeOverride){
+    function applyCampTransfer(p, extraCamp, poolTakeOverride){
       var liveBefore = p.live;
       var campBefore = p.camp;
       var poolBefore = state.pool;
-      var poolTake = (typeof poolTakeOverride === 'number') ? poolTakeOverride : poolTakeFor(overloadAtDecision, state.pool);
+      var poolTake = (typeof poolTakeOverride === 'number') ? poolTakeOverride : poolTakeFor(state.pool);
+      poolTake = Math.min(1, poolTake);
       p.camp += liveBefore + poolTake + extraCamp;
       p.live = 0;
       state.pool = Math.max(0, state.pool - poolTake);
@@ -3526,21 +4109,25 @@
       };
     }
 
-    function forceCampLastActive(reason){
+    function triggerFinalPush(reason){
       var idx = getLastActiveIndex();
-      if (idx === -1) return;
-
+      if (idx === -1) return false;
       var p = state.players[idx];
-      log('warn','<b>Anti-Solo</b>: Nur noch <b>1</b> Spieler aktiv → Runde endet sofort.');
-      setHeadline('Anti-Solo: letzter Spieler campt', 1600);
-      showPlayBanner('warn', 'Anti-Solo: letzter Spieler campt', 1600);
-      var pity = (p.live === 0) ? 1 : 0;
-      var transfer = applyCampTransfer(p, state.overload, pity);
-      log('warn','Anti-Solo: letzter aktiver Spieler <b>' + esc(p.name) + '</b> campt sofort: Live→Camp +' + transfer.liveBefore + ', Pool→Camp +' + transfer.poolTake + ', Trost +' + transfer.extraCamp + '. ' + formatStateLine(state.overload, state.overload, transfer.poolBefore, state.pool, transfer.liveBefore, 0, transfer.campBefore, p.camp) + '.');
-      toast('Runde endet', p.name + ' campt sofort (Anti-Solo).');
-
-      if (checkWin()) { updateUI(); return; }
-      endRound(reason || 'Anti-Solo');
+      state.finalPushUsed = true;
+      logStep('warn', {
+        action: 'CHECK',
+        actor: 'System',
+        msgHtml: 'FINAL_PUSH_TRIGGER | lastActive=' + esc(p.name) + (reason ? ' | reason=' + esc(reason) : ''),
+        before: actorSnapshot(idx),
+        after: actorSnapshot(idx),
+        reasons: { extra: 'FinalPush' }
+      });
+      setHeadline('Final Push: letzter Spieler bleibt für 1 Event', 1600);
+      showPlayBanner('warn', 'Final Push: 1 Extra-Event', 1600);
+      toast('Final Push', p.name + ' erhält 1 Extra-Event.');
+      updateUI();
+      revealEvent();
+      return true;
     }
 
     function resolveDecisions(){
@@ -3548,7 +4135,14 @@
       if (state.gameOver) return;
       if (!state.awaitingDecision) return;
       if (!state.players.length){
-        log('bad','Keine Spieler gefunden → Neustart.');
+        logStep('bad', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'CHECK_FAIL | reason=NoPlayers',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'NoPlayers' }
+        });
         restart();
         return;
       }
@@ -3584,13 +4178,43 @@
         choices.push({ idx:i, choice:choice, forced:(p.forcedStay && p.roundState === 'active') });
       }
 
-      var parts = [];
+      var eligibleNames = [];
       for (var j=0;j<choices.length;j++){
-        var label = (choices[j].choice === 'camp') ? 'Camp' : 'Bleib';
-        if (choices[j].forced && choices[j].choice === 'stay') label = 'Bleib (Zwang)';
-        parts.push(state.players[choices[j].idx].name + ': ' + label);
+        eligibleNames.push(state.players[choices[j].idx].name);
       }
-      log('info','<b>Entscheidung</b>: ' + esc(parts.join(' · ')) + '.');
+      logStep('info', {
+        action: 'DECISION',
+        actor: 'System',
+        msgHtml: 'DECISION_WINDOW_OPEN | eligible=' + esc(eligibleNames.join(', ')),
+        before: actorSnapshot(null),
+        after: actorSnapshot(null),
+        reasons: { extra: 'DecisionWindowOpen' }
+      });
+
+      for (var j2=0;j2<choices.length;j2++){
+        var c = choices[j2];
+        var label = (c.choice === 'camp') ? 'Camp' : 'Bleib';
+        var forcedText = c.forced ? 'true' : 'false';
+        var forcedReason = c.forced ? 'StageDive' : '';
+        logStep('info', {
+          action: 'DECISION',
+          actor: state.players[c.idx].name,
+          actorIdx: c.idx,
+          msgHtml: 'Decision=' + label + ' | forced=' + forcedText + (forcedReason ? ' | reason=' + forcedReason : ''),
+          before: actorSnapshot(c.idx),
+          after: actorSnapshot(c.idx),
+          reasons: { extra: (c.forced ? 'ForcedStay' : 'Choice') }
+        });
+      }
+
+      logStep('info', {
+        action: 'DECISION',
+        actor: 'System',
+        msgHtml: 'DECISION_WINDOW_CLOSE',
+        before: actorSnapshot(null),
+        after: actorSnapshot(null),
+        reasons: { extra: 'DecisionWindowClose' }
+      });
 
       for (var x=0;x<choices.length;x++){
         var pl = state.players[choices[x].idx];
@@ -3610,7 +4234,15 @@
         if (p2.roundState !== 'active') continue;
 
         if (p2.live <= 0){
-          log('warn','<b>' + esc(p2.name) + '</b> wollte campen, hat aber 0 Live → bleibt drin. ' + formatStateLine(state.overload, state.overload, state.pool, state.pool, p2.live, p2.live, p2.camp, p2.camp) + '.');
+          logStep('warn', {
+            action: 'RESOLVE_CAMP',
+            actor: p2.name,
+            actorIdx: idx,
+            msgHtml: 'CAMP_DENIED | reason=Live0',
+            before: actorSnapshot(idx),
+            after: actorSnapshot(idx),
+            reasons: { extra: 'CampDeniedLive0' }
+          });
           continue;
         }
 
@@ -3619,11 +4251,17 @@
 
       var poolPlan = null;
       if (eligibleCampers.length){
-        poolPlan = planCampPoolDistribution(eligibleCampers, state.overload, state.pool);
+        poolPlan = planCampPoolDistribution(eligibleCampers, state.pool);
         var camperNames = [];
         for (var n=0;n<eligibleCampers.length;n++) camperNames.push(esc(state.players[eligibleCampers[n]].name));
-        var roundLabel = (poolPlan.maxPerCamper > 1) ? (poolPlan.maxPerCamper + ' Runden') : '1 Runde';
-        log('info','Camp-Auflösung: Pool-Rundenverteilung (' + roundLabel + ', je Runde max. +1) in Zugreihenfolge: ' + camperNames.join(', ') + '.');
+        logStep('info', {
+          action: 'RESOLVE_CAMP',
+          actor: 'System',
+          msgHtml: 'RESOLVE_CAMP_ORDER | TurnOrder=' + camperNames.join(', ') + ' | PoolCap=1',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'CampOrder' }
+        });
         if (poolPlan.rounds.length){
           var roundParts = [];
           for (var r=0;r<poolPlan.rounds.length;r++){
@@ -3634,9 +4272,23 @@
             }
             roundParts.push('Runde ' + (r + 1) + ': ' + entries.join(', '));
           }
-          log('info','Pool-Rundenverteilung: ' + roundParts.join(' · ') + '.');
+          logStep('info', {
+            action: 'RESOLVE_CAMP',
+            actor: 'System',
+            msgHtml: 'POOL_DISTRIBUTION | ' + roundParts.join(' · '),
+            before: actorSnapshot(null),
+            after: actorSnapshot(null),
+            reasons: { pool: 'PoolToCamp(cap1)' }
+          });
         } else if (state.pool <= 0){
-          log('info','Pool-Rundenverteilung: Pool leer → kein Bonus.');
+          logStep('info', {
+            action: 'RESOLVE_CAMP',
+            actor: 'System',
+            msgHtml: 'POOL_DISTRIBUTION | Pool leer',
+            before: actorSnapshot(null),
+            after: actorSnapshot(null),
+            reasons: { pool: 'PoolEmpty' }
+          });
         }
       }
 
@@ -3647,10 +4299,27 @@
         if (p3.roundState !== 'active') continue;
         if (p3.live <= 0) continue;
 
-        var poolTake = poolPlan ? (poolPlan.takes[String(idx2)] || 0) : 0;
-        var transfer = applyCampTransfer(p3, state.overload, 0, poolTake);
+        var poolBeforeCamper = state.pool;
+        var dangerBonus = (state.overload >= 8) ? 1 : 0;
+        var poolRequested = Math.min(poolBeforeCamper, 1 + dangerBonus);
+        var poolGranted = poolPlan ? (poolPlan.takes[String(idx2)] || 0) : 0;
+        poolGranted = Math.min(1, poolGranted);
+        var transfer = applyCampTransfer(p3, 0, poolGranted);
         anySuccessfulCamp = true;
-        log('warn','<b>' + esc(p3.name) + '</b> campt: Live→Camp +' + transfer.liveBefore + ', Pool→Camp +' + transfer.poolTake + '. ' + formatStateLine(state.overload, state.overload, transfer.poolBefore, state.pool, transfer.liveBefore, 0, transfer.campBefore, p3.camp) + '.');
+        logStep('warn', {
+          action: 'RESOLVE_CAMP',
+          actor: p3.name,
+          actorIdx: idx2,
+          msgHtml: 'RESOLVE_CAMP | LiveToCamp=' + transfer.liveBefore +
+            ' | PoolToCampRequested=' + poolRequested +
+            ' | PoolToCampGranted=' + poolGranted + '(cap1)',
+          before: { overload: state.overload, pool: transfer.poolBefore, live: transfer.liveBefore, camp: transfer.campBefore },
+          after: { overload: state.overload, pool: state.pool, live: 0, camp: p3.camp },
+          reasons: {
+            camp: 'LiveToCamp=' + transfer.liveBefore + ', PoolToCamp=' + poolGranted,
+            pool: '-'+poolGranted+' PoolToCamp(cap1)'
+          }
+        });
       }
       if (anySuccessfulCamp){
         showPlayBanner('good', 'Camp-Auflösung abgeschlossen', 1200);
@@ -3658,7 +4327,14 @@
 
       if (!state.countdownActive && anySuccessfulCamp){
         state.countdownActive = true;
-        log('warn','<b>Countdown aktiv</b>: Ab jetzt steigt Overload nach jedem Event automatisch um +1.' + (isAggCountdown() ? ' (Aggressiv möglich bei Pool ≥3)' : ''));
+        logStep('warn', {
+          action: 'COUNTDOWN',
+          actor: 'System',
+          msgHtml: 'COUNTDOWN_ACTIVE | base=+1' + (isAggCountdown() ? ' | Aggressiv=aktiv' : ''),
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'CountdownStart' }
+        });
       }
 
       state.awaitingDecision = false;
@@ -3669,19 +4345,46 @@
       // Anti-Solo
       if (activeCount() === 1){
         updateUI();
-        forceCampLastActive('Anti-Solo');
+        if (!state.finalPushUsed){
+          recordDebugSnapshot('beforeFinalPush');
+          if (triggerFinalPush('Anti-Solo nach Camp-Phase')) return;
+        }
+        logStep('warn', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'ANTI_SOLO_END | reason=FinalPushUsed',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'AntiSoloAfterFinalPush' }
+        });
+        endRound('Anti-Solo nach Final Push');
         return;
       }
 
       if (activeCount() === 0){
-        log('good','Alle Spieler sind gecampt → Runde endet.');
+        logStep('good', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'ROUND_END | reason=Alle gecampt',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'AllCamped' }
+        });
+        recordDebugSnapshot('allCamped');
         endRound('Alle gecampt');
         return;
       }
 
       if (state.extraRevealSame){
         state.extraRevealSame = false;
-        log('info','Setwechsel: <b>' + esc(state.players[state.revealer].name) + '</b> deckt noch einmal auf.');
+        logStep('info', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'SETWECHSEL | nextRevealer=' + esc(state.players[state.revealer].name),
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'Setwechsel' }
+        });
       } else {
         var nxt = nextActiveFrom(state.revealer, state.direction);
         if (nxt === -1){
@@ -3692,6 +4395,7 @@
       }
 
       updateUI();
+      recordDebugSnapshot('afterDecision');
       pumpBots();
     }
 
@@ -3881,49 +4585,115 @@
         state.gameOver = oldGO;
       })();
 
-      // Stabilisieren-Ertrag nur bei 8+ vorher
+      // Pool->Camp-Cap (max. +1 Pool)
       (function(){
-        var oldOver = state.overload;
         var oldPlayers = state.players.slice();
+        var oldPool = state.pool;
+
         state.players = [
-          { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false },
-          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStay:false }
+          { name:'Du', camp:0, live:2, roundState:'active', forcedStay:false }
         ];
+        state.pool = 5;
+        var transfer = applyCampTransfer(state.players[0], 0);
+        ok('PoolToCamp cap: Camp +3 (Live 2 + Pool 1)', state.players[0].camp === 3);
+        ok('PoolToCamp cap: Pool -1', state.pool === 4);
 
-        state.overload = 7;
-        applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
-        ok('Stabilisieren: bei Overload 7 vorher kein Live-Ertrag', state.players[0].live === 0);
-
-        state.overload = 8;
-        applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
-        ok('Stabilisieren: bei Overload 8 vorher +1 Live-Ertrag', state.players[0].live === 1);
-
-        state.overload = oldOver;
         state.players = oldPlayers;
+        state.pool = oldPool;
       })();
 
-      // Anti-Solo: letzter Spieler camped inkl. Pool-Bonus und Trostpunkt
+      // Knall: Halbierung + Pflaster
       (function(){
         var oldPlayers = state.players.slice();
         var oldPool = state.pool;
         var oldOver = state.overload;
         var oldGO = state.gameOver;
+        var oldEndRound = endRound;
+        var optPfl = document.getElementById('optPflaster');
+        var oldPfl = optPfl ? optPfl.checked : false;
 
         state.players = [
           { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false },
-          { name:'Bot A', camp:0, live:0, roundState:'camped', forcedStay:false }
+          { name:'Bot A', camp:0, live:1, roundState:'active', forcedStay:false },
+          { name:'Bot B', camp:0, live:3, roundState:'active', forcedStay:false }
         ];
-        state.pool = 3;
-        state.overload = 8;
+        state.pool = 0;
+        state.overload = 12;
         state.gameOver = false;
-        forceCampLastActive('Test');
-        ok('Anti-Solo: Pool-Take wird genommen', state.pool === 1);
-        ok('Anti-Solo: Trostpunkt greift', state.players[0].camp === 3);
+        if (optPfl) optPfl.checked = true;
+        endRound = function(){};
+        doKnall('Selftest');
+        ok('Knall: live 0 bleibt 0', state.players[0].live === 0);
+        ok('Knall: live 1 -> 1 (Halve 0 + Pflaster)', state.players[1].live === 1);
+        ok('Knall: live 3 -> 2 (Halve 1 + Pflaster)', state.players[2].live === 2);
 
+        endRound = oldEndRound;
+        if (optPfl) optPfl.checked = oldPfl;
         state.players = oldPlayers;
         state.pool = oldPool;
         state.overload = oldOver;
         state.gameOver = oldGO;
+      })();
+
+      // Stabilisieren-Ertrag nach Overload-Bereich
+      (function(){
+        var oldOver = state.overload;
+        var oldPlayers = state.players.slice();
+        var oldPool = state.pool;
+        state.players = [
+          { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStay:false }
+        ];
+
+        state.pool = 0;
+        state.overload = 0;
+        applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
+        ok('Stabilisieren: Overload 0 -> +1 Pool', state.pool === 1);
+
+        state.pool = 0;
+        state.overload = 5;
+        applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
+        ok('Stabilisieren: Overload 5 -> +1 Pool', state.pool === 1);
+
+        state.pool = 0;
+        state.overload = 8;
+        applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
+        ok('Stabilisieren: Overload 8 -> +1 Live', state.players[0].live === 1);
+
+        state.overload = oldOver;
+        state.players = oldPlayers;
+        state.pool = oldPool;
+      })();
+      
+      // Anti-Solo: Final Push triggert Extra-Event
+      (function(){
+        var oldPlayers = state.players.slice();
+        var oldAwait = state.awaitingDecision;
+        var oldReveal = revealEvent;
+        var oldFinalPush = state.finalPushUsed;
+        var triggered = false;
+
+        state.players = [
+          { name:'Du', camp:0, live:1, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:0, roundState:'camped', forcedStay:false }
+        ];
+        state.awaitingDecision = true;
+        state.humanIndex = 0;
+        state.humanChoice = 'stay';
+        state.humanLockedIn = true;
+        state.botChoices = {};
+        state.revealer = 0;
+        state.direction = 1;
+        state.finalPushUsed = false;
+        revealEvent = function(){ triggered = true; };
+        resolveDecisions();
+        ok('Final Push: Extra-Event wird ausgelöst', triggered);
+        ok('Final Push: Flag gesetzt', state.finalPushUsed === true);
+
+        revealEvent = oldReveal;
+        state.players = oldPlayers;
+        state.awaitingDecision = oldAwait;
+        state.finalPushUsed = oldFinalPush;
       })();
 
       // Mini-Testlauf (Seeded RNG): Nach RoundReset keine Entscheidung ohne Event.
@@ -4061,7 +4831,14 @@
           { name:'Bot B', camp:0, live:1, roundState:'active', forcedStay:false }
         ];
 
-        log('info','Test-Seed: <b>' + s + '</b>.');
+        logStep('info', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'DebugSeed=' + s,
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'DebugSeed' }
+        });
         resolveDecisions();
         updateUI();
         Math.random = oldRand;
@@ -4104,6 +4881,9 @@
       state.botChoices = {};
       state.askOpen = false;
       state.roundResetId = 0;
+      state.finalPushUsed = false;
+      state.logSubStep = 0;
+      state.debugSnapshots = [];
       var askBack = document.getElementById('askBack');
       if (askBack){
         askBack.style.display = 'none';
@@ -4122,11 +4902,18 @@
         [
           { cls:'blue', sym:'▶', text:'Klicke auf „Event aufdecken“, um zu starten' },
           { cls:'warn', sym:'🏁', text:'Ziel: ' + WIN_CAMP + ' Camp' },
-          { cls:'good', sym:'🛠️', text:'Stabilisieren gibt Ertrag nur bei Overload 8+ (vor dem Senken)' }
+          { cls:'good', sym:'🛠️', text:'Stabilisieren: Pool +1 bei 4–7, Live +1 bei 8+, Null-Stabi +1 Pool' }
         ],
         'Runde 1 beginnt'
       );
-      log('info','Prototyp gestartet. Ziel: <b>' + WIN_CAMP + '</b> Camp. Runde 1 – Startspieler: <b>' + esc(state.players[state.startPlayer].name) + '</b>.');
+      logStep('info', {
+        action: 'ROUND_START',
+        actor: 'System',
+        msgHtml: 'Prototyp gestartet | Ziel=' + WIN_CAMP + ' Camp | Startspieler=' + esc(state.players[state.startPlayer].name),
+        before: { overload: state.overload, pool: state.pool, live: null, camp: null },
+        after: { overload: state.overload, pool: state.pool, live: null, camp: null },
+        reasons: { extra: 'Init' }
+      });
       setPhase('reveal');
       updateUI();
       pumpBots();
@@ -4177,6 +4964,8 @@
     }
     var btnCopyLog = document.getElementById('btnCopyLog');
     if (btnCopyLog) btnCopyLog.onclick = copyLog;
+    var btnExportDebug = document.getElementById('btnExportDebug');
+    if (btnExportDebug) btnExportDebug.onclick = exportDebug;
     var btnPlayLog = document.getElementById('btnPlayLog');
     if (btnPlayLog) btnPlayLog.onclick = function(){ togglePlayLog(); };
     var btnPlayLogClose = document.getElementById('btnPlayLogClose');
@@ -4233,6 +5022,7 @@
     if (shouldRunSelfTests()){
       runSelfTests();
     }
+    window.exportDebug = exportDebug;
     restart();
     setUiMode('play');
   })();

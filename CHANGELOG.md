@@ -1,45 +1,10 @@
 # Changelog
 
 ## Unreleased
-- Camp-Pool bei simultanen Camps wird rundenbasiert verteilt (max. +1 pro Runde je Camper) und Log zeigt Priorität/Runden.
-- Null-Stabi-Regel: Stabilisieren bei Overload 0 gibt +1 Pool und wird klar geloggt.
-- Entscheidungs-Logging trennt Choice-Zeile von Camp/Anti-Solo/Reset-Abwicklung.
-- Feedback-Bühnenregel stapelt Level (0–3), Push-Modifikator folgt dem Level und Logs zeigen Levelwechsel.
-- State-Logs nutzen keine „Live/Camp unverändert“-Füller mehr und halten die Reihenfolge Overload → Pool → Live → Camp.
-- Camp- und Anti-Solo-Logs vermeiden doppelte Delta-Wiederholungen in einer Zeile.
-- RoundReset räumt Entscheidungszustände konsequent auf und blockt Entscheidungen nach Knall/Rundenende.
-- KNALL-Pflaster ist als feste Regel umgesetzt und pro Spieler vollständig geloggt.
-- Stage Dive setzt „Muss bleiben“ nur einmal, loggt Zwang in der Entscheidung und nutzt den Ersatz-Effekt bei erneuter Anwendung.
-- Rundenende loggt Pool-Verfall, Richtungswechsel/Setwechsel zeigen den nächsten Aufdecker.
-- Logs folgen überall der Reihenfolge Overload, Pool, Live, Camp; Selftest prüft RoundReset.
-- Logs zeigen jetzt konsistent Overload/Live/Camp/Pool bei Push/Stabilisieren/Countdown/Camp-Auflösung.
-- Stage-Dive-Logs vereinheitlicht (Ersatz-Effekt + „Bleib wählen“-Hinweis).
-- Pool-Bonus wird deterministisch pro Camper verteilt (Reihenfolge ab Aufdecker, aktuelle Richtung) und sauber geloggt.
-- Camp-Logs zeigen Live→Camp und Pool→Camp pro Spieler inklusive Camp/Pool-Delta.
-- Stabilisieren- und Push-Logs nutzen feste Kartenwerte, korrigieren Vorzeichen und markieren min 0/Cap 12.
-- Katastrophen-Check loggt Check-Karte klar und setzt Overload bei Safe auf 10.
-- Anti-Solo camped den letzten Spieler inkl. Pool-Bonus und Trostpunkt bei 0 Live.
-- Stage Dive stapelt keinen „Muss bleiben“-Zwang mehr; Ersatz-Effekt greift stattdessen.
-- Overload-Delta in Log/Overlay nutzt den tatsächlich angewendeten (gecappten) Wert.
-- Stage Dive kann den Aufdecker nicht mehr als Ziel wählen.
-- Bot-Anzahl wird gegen ungültige Eingaben abgesichert.
-- Bot-Anzahl wird auf ganze Zahlen gerundet, um inkonsistente Zustände zu vermeiden.
-- Selbsttests laufen nur noch bei `?selftest=1`, um den normalen Spielstart nicht zu beeinflussen.
-- Revealer-Index wird vor dem Event normalisiert; fehlende Spielerliste führt zu einem sicheren Neustart.
-- Leere Spielerliste wird bei Rundenende/Entscheidung abgefangen, Bot-Autopump ignoriert sie.
-- Revealer-Index wird auch vor der Entscheidungsreihenfolge und im Bot-Autopump normalisiert.
-- Event-Handler in den Einstellungen werden nur gebunden, wenn die Elemente existieren.
-- Status-Chips werden nur aktualisiert, wenn die UI-Elemente vorhanden sind.
-- Zentrale UI-Labels werden nur aktualisiert, wenn die Elemente vorhanden sind.
-- Bot-Anzahl vor Spielstart per UI anpassbar (Hinzufügen/Entfernen).
-- Steuerungsmodi für Bots ergänzt (Bots automatisch, Bots manuell, alles automatisch inkl. Spieler).
-- Modulares Bot-Profil-System vorbereitet und Auswahl im UI ergänzt.
-- Bot-Entscheidungen im Overlay steuerbar, wenn Bots manuell geführt werden.
-- Spielmodus (minimal) mit Phasen-Statussatz, großem Overload-Track, Kartenfokus und vereinfachten Spielerleisten ergänzt.
-- Dev-Modus beibehalten, inkl. Modus-Toggle und „Spielmodus Vorschau“-Button.
-- Bleib/Camp-Overlay mit Camp-Vorschau und optionalem 20s-Timer erweitert, Log/Regeln im Spielmodus als Drawer/Modal ergänzt.
-- Scorett-UI mit Top-Bar, 3-Spalten-Layout und klaren Status-Chips für Overload, Pool, Deck und Ablage umgesetzt.
-- Overload-Track als 0–12 Pills inklusive Gefahrenschwellen und Countdown-Hinweis ergänzt.
-- Spielerleisten in großformatige Cards mit Live/Camp-Chips, Status-Badges und Wahl-Markern überführt.
-- Simultane Entscheidung als Vollbild-Overlay mit Vorschauwerten und Spielerstatus hinzugefügt.
-- Log als Drawer steuerbar, Settings in die rechte Spalte verschoben und README-Highlights aktualisiert.
+- KNALL halbiert Live der aktiven Spieler, Pflaster rettet +1 Live nach der Halbierung (nur wenn Live vorher ≥1).
+- Final-Push-Regel ersetzt Anti-Solo: letzter aktiver Spieler erhält 1 Extra-Event, danach normale Camp-Entscheidung.
+- Stabilisieren belohnt Overload 4–7 mit +1 Pool, Overload 8+ mit +1 Live; Null-Stabi (0) bleibt exklusiv.
+- Pool→Camp ist auf +1 pro Camper begrenzt (cap1), Verteilung folgt der Zugreihenfolge.
+- Logging wurde auf Step-IDs, ActionTypes, Delta-Reasons und strukturierte Camp/Knall-Blöcke umgestellt.
+- Debug-Export liefert JSON-Snapshots pro Turn und ist über UI/`window.exportDebug()` abrufbar.
+- Selbsttests decken Pool-Cap, Knall-Halbierung, Stabilize-Rewards und Final-Push ab.
