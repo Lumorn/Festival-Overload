@@ -998,6 +998,7 @@
               <span class="tag">nur vor Spielstart</span>
             </div>
             <label class="mini"><input id="optDecisionTimer" type="checkbox" checked> Timer aktiv (20s, Auto-Bleib)</label>
+            <label class="mini"><input id="optDebugAssertFail" type="checkbox"> Debug: ASSERT_FAIL erzwingen</label>
             <label class="mini">Tempo:
               <select id="optSpeed">
                 <option value="250">schnell</option>
@@ -1116,7 +1117,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.35';
+    var VERSION = 'v0.36';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
     var STABILIZE_CARDS = [
@@ -1130,6 +1131,17 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.36',
+        date: '2026-01-21',
+        items: [
+          'Neu: Log-Schema vollständig auf key=value umgestellt, inkl. Step-ID, Reason und globaler Flags.',
+          'Neu: Debug-Snapshots pro Step + Export mit Logzeilen (window.exportDebug).',
+          'Neu: Validator für Log-Format und State-Invarianten, ASSERT_FAIL per Debug-Schalter erzwingbar.',
+          'Fix: Encore-Logging nur einmal DRAW für Encore!, danach Chain-Start und Chain-Draw.',
+          'Fix: Countdown-Start loggt CountdownActive false->true, POOL_DISTRIBUTION nur als Plan ohne Delta.'
+        ]
+      },
       {
         ver: 'v0.35',
         date: '2026-01-20',
@@ -1395,22 +1407,22 @@
           if (p.camp + p.live >= WIN_CAMP) return 'camp';
           if (ctx.overload >= 10 && p.live >= 2) return 'camp';
           if (p.live >= 3) return 'camp';
-          if (p.live >= 1 && ctx.pool >= 2 && ctx.overload >= 8) return (Math.random() < 0.65) ? 'camp' : 'stay';
-          return (Math.random() < 0.20) ? 'camp' : 'stay';
+          if (p.live >= 1 && ctx.pool >= 2 && ctx.overload >= 8) return (rand() < 0.65) ? 'camp' : 'stay';
+          return (rand() < 0.20) ? 'camp' : 'stay';
         },
         stopEncore: function(ctx){
           var p = ctx.player;
           if (p.live <= 0) return false;
           if (ctx.overload >= 10) return true;
-          if (p.live >= 2 && Math.random() < 0.7) return true;
-          return (Math.random() < 0.25);
+          if (p.live >= 2 && rand() < 0.7) return true;
+          return (rand() < 0.25);
         },
         stageDivePay: function(ctx){
           var p = ctx.player;
           if (p.live <= 0) return false;
           if (ctx.overload >= 8) return true;
           if (p.camp + p.live >= WIN_CAMP - 1) return true;
-          return (Math.random() < 0.45);
+          return (rand() < 0.45);
         },
         pickStageDiveTarget: function(ctx){
           var best = -1;
@@ -1465,6 +1477,13 @@
       finalPushUsed: false,
       logSubStep: 0,
       debugSnapshots: [],
+      debugLogEntries: [],
+      rngSeed: 'Math.random',
+      rngStep: 0,
+      lastGlobalSnapshot: null,
+      decisionWindowId: 0,
+      debugAssertFail: false,
+      debugAssertTriggered: false,
 
       autoTimer: null,
       decisionTimer: { enabled:true, seconds:20, remaining:20, timerId:null },
@@ -1533,22 +1552,127 @@
       return String(val);
     }
 
-    function formatCoreValues(actorName, before, after){
-      return 'Overload ' + before.overload + '->' + after.overload +
-        ' | Pool ' + before.pool + '->' + after.pool +
-        ' | Live(' + esc(actorName) + ') ' + formatValue(before.live) + '->' + formatValue(after.live) +
-        ' | Camp(' + esc(actorName) + ') ' + formatValue(before.camp) + '->' + formatValue(after.camp);
-    }
-
-    function formatReasonBlock(reasons){
+    function formatReasonBlock(reasons, before, after){
       if (!reasons) return '';
       var parts = [];
-      if (reasons.overload) parts.push('OverloadChangeReason="' + esc(reasons.overload) + '"');
-      if (reasons.pool) parts.push('PoolChangeReason="' + esc(reasons.pool) + '"');
-      if (reasons.live) parts.push('LiveChangeReason="' + esc(reasons.live) + '"');
-      if (reasons.camp) parts.push('CampChangeReason="' + esc(reasons.camp) + '"');
-      if (reasons.extra) parts.push('Reason="' + esc(reasons.extra) + '"');
+      if (reasons.overload && before.overload !== after.overload) parts.push('OverloadChangeReason="' + esc(reasons.overload) + '"');
+      if (reasons.pool && before.pool !== after.pool) parts.push('PoolChangeReason="' + esc(reasons.pool) + '"');
+      if (reasons.live && before.live !== null && after.live !== null && before.live !== after.live) parts.push('LiveChangeReason="' + esc(reasons.live) + '"');
+      if (reasons.camp && before.camp !== null && after.camp !== null && before.camp !== after.camp) parts.push('CampChangeReason="' + esc(reasons.camp) + '"');
       return parts.join(' | ');
+    }
+
+    function normalizeDetail(msgHtml){
+      if (!msgHtml) return null;
+      var text = String(msgHtml)
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!text) return null;
+      return text.replace(/\|/g, '/');
+    }
+
+    function isPlayerActor(actorIdx){
+      return (typeof actorIdx === 'number' && state.players[actorIdx]);
+    }
+
+    function getGlobalSnapshot(){
+      return {
+        feedbackLevel: feedbackLevel(),
+        countdownActive: !!state.countdownActive,
+        direction: state.direction,
+        activePlayers: getActivePlayerNames()
+      };
+    }
+
+    function getActivePlayerNames(){
+      var names = [];
+      for (var i=0;i<state.players.length;i++){
+        if (state.players[i].roundState === 'active') names.push(state.players[i].name);
+      }
+      return names;
+    }
+
+    function formatDirection(val){
+      return (val === -1) ? 'ccw' : 'cw';
+    }
+
+    function formatActivePlayers(list){
+      return '[' + list.join(', ') + ']';
+    }
+
+    function deriveEffectId(msg){
+      var text = String(msg || '').toLowerCase();
+      if (text.indexOf('stage_dive') !== -1 || text.indexOf('stage dive') !== -1) return 'STAGE_DIVE';
+      if (text.indexOf('push') !== -1) return 'PUSH';
+      if (text.indexOf('stabilisieren') !== -1 || text.indexOf('stabilize') !== -1) return 'STABILIZE';
+      if (text.indexOf('feedback') !== -1) return 'FEEDBACK_LEVEL';
+      if (text.indexOf('encore_chain') !== -1 || text.indexOf('encore chain') !== -1) return 'ENCORE_CHAIN_START';
+      if (text.indexOf('encore_stop') !== -1 || text.indexOf('encore stop') !== -1) return 'ENCORE_STOP';
+      return 'UNKNOWN_EFFECT';
+    }
+
+    function buildLogLine(data){
+      var parts = [];
+      parts.push('ActionType=' + data.ActionType);
+      parts.push('Actor=' + data.Actor);
+      parts.push('Overload=' + data.Overload.before + '->' + data.Overload.after);
+      parts.push('Pool=' + data.Pool.before + '->' + data.Pool.after);
+      if (data.Live){
+        parts.push('Live=' + data.Live.before + '->' + data.Live.after);
+      }
+      if (data.Camp){
+        parts.push('Camp=' + data.Camp.before + '->' + data.Camp.after);
+      }
+      parts.push('Reason=' + data.Reason);
+      if (data.Flags && data.Flags.length){
+        parts = parts.concat(data.Flags);
+      }
+      if (data.Fields && data.Fields.length){
+        parts = parts.concat(data.Fields);
+      }
+      if (data.ChangeReasons && data.ChangeReasons.length){
+        parts = parts.concat(data.ChangeReasons);
+      }
+      return parts.join(' | ');
+    }
+
+    function validateLogLine(data){
+      var issues = [];
+      if (!data.ActionType) issues.push('ActionType fehlt');
+      if (!data.Actor) issues.push('Actor fehlt');
+      if (!data.Reason) issues.push('Reason fehlt');
+      if (!data.Overload || typeof data.Overload.before === 'undefined' || typeof data.Overload.after === 'undefined'){
+        issues.push('Overload fehlt');
+      }
+      if (!data.Pool || typeof data.Pool.before === 'undefined' || typeof data.Pool.after === 'undefined'){
+        issues.push('Pool fehlt');
+      }
+      if (data.Actor === 'System' && (data.Live || data.Camp)){
+        issues.push('System darf keine Live/Camp-Werte loggen');
+      }
+      return issues;
+    }
+
+    function validateStateInvariants(){
+      var issues = [];
+      if (state.overload < 0 || state.overload > MAX_OVERLOAD) issues.push('Overload außerhalb 0..12');
+      if (state.pool < 0) issues.push('Pool unter 0');
+      for (var i=0;i<state.players.length;i++){
+        var p = state.players[i];
+        if (p.live < 0) issues.push('Live unter 0 bei ' + p.name);
+        if (p.camp < 0) issues.push('Camp unter 0 bei ' + p.name);
+      }
+      if (state.activePlayers && state.activePlayers.length){
+        var actual = getActivePlayerNames();
+        if (state.activePlayers.join('|') !== actual.join('|')) issues.push('ActivePlayers passt nicht zu roundState');
+      }
+      if (state.debugAssertFail && !state.debugAssertTriggered){
+        state.debugAssertTriggered = true;
+        issues.push('DebugAssertFail aktiviert');
+      }
+      return issues;
     }
 
     function logStep(kind, opts){
@@ -1561,27 +1685,93 @@
       var stepId = nextLogStepId();
       var actor = opts.actor || 'System';
       var action = opts.action || 'CHECK';
-      var before = opts.before || actorSnapshot(opts.actorIdx);
-      var after = opts.after || actorSnapshot(opts.actorIdx);
-      var core = formatCoreValues(actor, before, after);
-      var reasonBlock = formatReasonBlock(opts.reasons);
-      var extra = opts.msgHtml ? (' | ' + opts.msgHtml) : '';
-      var reasonChunk = reasonBlock ? (' | ' + reasonBlock) : '';
-      var entry = '<div class="evt ' + cls + '"><span class="t">['+hh+':'+mm+']</span> <span class="t">(' + stepId + ')</span> ActionType=' + esc(action) + ' | Actor=' + esc(actor) + extra + ' | ' + core + reasonChunk + '</div>';
+      var actorIdx = (typeof opts.actorIdx === 'number') ? opts.actorIdx : null;
+      var before = opts.before || actorSnapshot(actorIdx);
+      var after = opts.after || actorSnapshot(actorIdx);
+      if (actor === 'System'){
+        before = { overload: before.overload, pool: before.pool, live: null, camp: null };
+        after = { overload: after.overload, pool: after.pool, live: null, camp: null };
+      }
+      var reasonText = opts.reason || (opts.reasons && opts.reasons.extra) || action;
+      var includeActorValues = (actor !== 'System' && isPlayerActor(actorIdx));
+      var reasonBlock = formatReasonBlock(opts.reasons, before, after);
+      var detail = normalizeDetail(opts.msgHtml);
+      var fields = [];
+      var fieldMap = opts.fields || {};
+      if (action === 'EFFECT'){
+        fieldMap.EffectId = opts.effectId || fieldMap.EffectId || deriveEffectId(opts.msgHtml);
+      }
+      for (var k in fieldMap){
+        if (Object.prototype.hasOwnProperty.call(fieldMap, k) && typeof fieldMap[k] !== 'undefined' && fieldMap[k] !== null){
+          fields.push(k + '=' + fieldMap[k]);
+        }
+      }
+      if (detail) fields.push('Detail=' + esc(detail));
+      var globalBefore = opts.globalBefore || state.lastGlobalSnapshot || getGlobalSnapshot();
+      var globalAfter = opts.globalAfter || getGlobalSnapshot();
+      var flagParts = [];
+      flagParts.push('FeedbackLevel=' + globalBefore.feedbackLevel + '->' + globalAfter.feedbackLevel);
+      flagParts.push('CountdownActive=' + globalBefore.countdownActive + '->' + globalAfter.countdownActive);
+      flagParts.push('Direction=' + formatDirection(globalBefore.direction) + '->' + formatDirection(globalAfter.direction));
+      if (globalBefore.activePlayers.join('|') !== globalAfter.activePlayers.join('|')){
+        flagParts.push('ActivePlayers=' + formatActivePlayers(globalBefore.activePlayers) + '->' + formatActivePlayers(globalAfter.activePlayers));
+      }
+      var changeReasons = [];
+      if (reasonBlock) changeReasons = reasonBlock.split(' | ');
+      var data = {
+        ActionType: action,
+        Actor: actor,
+        Overload: { before: before.overload, after: after.overload },
+        Pool: { before: before.pool, after: after.pool },
+        Reason: reasonText,
+        Flags: flagParts,
+        Fields: fields,
+        ChangeReasons: changeReasons
+      };
+      if (includeActorValues){
+        data.Live = { before: before.live, after: after.live };
+        data.Camp = { before: before.camp, after: after.camp };
+      }
+      var line = buildLogLine(data);
+      var entry = '<div class="evt ' + cls + '"><span class="t">['+hh+':'+mm+']</span> <span class="t">(' + stepId + ')</span> ' + esc(line) + '</div>';
       el.innerHTML += entry;
       el.scrollTop = el.scrollHeight;
       if (play){
         play.innerHTML += entry;
         play.scrollTop = play.scrollHeight;
       }
+      state.debugLogEntries.push({
+        stepId: stepId,
+        time: '[' + hh + ':' + mm + ']',
+        line: line,
+        data: data
+      });
+      state.lastGlobalSnapshot = globalAfter;
+      recordDebugSnapshot(action);
+      if (!logStep._guard){
+        logStep._guard = true;
+        var logIssues = validateLogLine(data);
+        var stateIssues = validateStateInvariants();
+        if (logIssues.length || stateIssues.length){
+          console.warn('Log/State Validation', logIssues.concat(stateIssues));
+          logStep('bad', {
+            action: 'ASSERT_FAIL',
+            actor: 'System',
+            reason: 'AssertFail',
+            before: { overload: state.overload, pool: state.pool, live: null, camp: null },
+            after: { overload: state.overload, pool: state.pool, live: null, camp: null },
+            fields: { Issue: esc(logIssues.concat(stateIssues).join(', ')) }
+          });
+        }
+        logStep._guard = false;
+      }
     }
 
     function recordDebugSnapshot(label){
-      var activeNames = [];
+      var activeNames = getActivePlayerNames();
       var playersSnapshot = {};
       for (var i=0;i<state.players.length;i++){
         var p = state.players[i];
-        if (p.roundState === 'active') activeNames.push(p.name);
         playersSnapshot[p.name] = {
           live: p.live,
           camp: p.camp,
@@ -1592,20 +1782,29 @@
       state.debugSnapshots.push({
         round: state.round,
         turn: state.turnId,
+        substep: state.logSubStep,
         overload: state.overload,
         pool: state.pool,
         feedbackLevel: feedbackLevel(),
         countdownActive: state.countdownActive,
         direction: state.direction,
-        revealer: state.revealer,
         activePlayers: activeNames,
-        label: label || '',
-        players: playersSnapshot
+        players: playersSnapshot,
+        deck: {
+          remaining: state.deck.length,
+          discardCount: state.discard.length,
+          topIndex: state.deck.length ? (state.deck.length - 1) : -1
+        },
+        rng: { seed: state.rngSeed, step: state.rngStep },
+        label: label || ''
       });
     }
 
     function exportDebug(){
-      var payload = JSON.stringify(state.debugSnapshots, null, 2);
+      var payload = JSON.stringify({
+        snapshots: state.debugSnapshots,
+        logs: state.debugLogEntries
+      }, null, 2);
       if (!payload){ toast('Debug leer', 'Keine Snapshots vorhanden.'); return payload; }
       if (navigator.clipboard && navigator.clipboard.writeText){
         navigator.clipboard.writeText(payload)
@@ -1685,10 +1884,15 @@
       });
     }
 
+    function rand(){
+      state.rngStep = (state.rngStep || 0) + 1;
+      return Math.random();
+    }
+
     function shuffle(a){
       var arr = a.slice();
       for (var i = arr.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
+        var j = Math.floor(rand() * (i + 1));
         var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
       }
       return arr;
@@ -1722,7 +1926,16 @@
             break;
           }
         }
-        out.push(state.deck.pop());
+        var deckPos = state.deck.length - 1;
+        var card = state.deck.pop();
+        if (card){
+          card._drawMeta = {
+            deckPos: deckPos,
+            deckRemaining: state.deck.length,
+            discardCount: state.discard.length
+          };
+        }
+        out.push(card);
       }
       return out;
     }
@@ -2909,7 +3122,9 @@
             logStep('good', {
               action: 'ROUND_END',
               actor: 'System',
-              msgHtml: 'WIN | player=' + esc(state.players[i].name) + ' | camp=' + state.players[i].camp,
+              reason: 'Win',
+              fields: { Winner: esc(state.players[i].name), Camp: state.players[i].camp },
+              msgHtml: 'WIN',
               before: actorSnapshot(i),
               after: actorSnapshot(i),
               reasons: { extra: 'Win' }
@@ -2929,7 +3144,9 @@
         logStep('bad', {
           action: 'ROUND_END',
           actor: 'System',
-          msgHtml: 'ROUND_END_ABORT | reason=NoPlayers',
+          reason: 'NoPlayers',
+          fields: { RoundEndReason: 'NoPlayers' },
+          msgHtml: 'ROUND_END_ABORT',
           before: actorSnapshot(null),
           after: actorSnapshot(null),
           reasons: { extra: 'NoPlayers' }
@@ -2948,7 +3165,13 @@
       logStep('warn', {
         action: 'ROUND_END',
         actor: 'System',
-        msgHtml: 'ROUND_END | reason=' + esc(reason || 'Rundenende') + ' | PoolExpired=' + (state.pool > 0 ? 'yes' : 'no') + ' | OverloadReset=0',
+        reason: (reason || 'RoundEnd'),
+        fields: {
+          RoundEndReason: esc(reason || 'Rundenende'),
+          PoolExpired: (state.pool > 0 ? 'yes' : 'no'),
+          OverloadReset: 0
+        },
+        msgHtml: 'ROUND_END',
         before: { overload: state.overload, pool: state.pool, live: null, camp: null },
         after: { overload: 0, pool: 0, live: null, camp: null },
         reasons: {
@@ -2992,7 +3215,14 @@
       logStep('good', {
         action: 'ROUND_START',
         actor: 'System',
-        msgHtml: 'ROUND_START | round=' + state.round + (reason ? ' | prevReason=' + esc(reason) : ''),
+        reason: 'RoundStart',
+        fields: {
+          round: state.round,
+          startPlayer: esc(state.players[state.startPlayer].name),
+          seed: state.rngSeed,
+          prevReason: reason ? esc(reason) : '—'
+        },
+        msgHtml: 'ROUND_START',
         before: { overload: 0, pool: 0, live: null, camp: null },
         after: { overload: 0, pool: 0, live: null, camp: null },
         reasons: { extra: 'RoundStart' }
@@ -3155,7 +3385,9 @@
       logStep('warn', {
         action: 'COUNTDOWN',
         actor: 'System',
-        msgHtml: 'COUNTDOWN_APPLY | add=' + add + capNote,
+        reason: 'CountdownApply',
+        fields: { Add: add, Cap: capNote ? 'true' : 'false' },
+        msgHtml: 'COUNTDOWN_APPLY',
         before: { overload: r.before, pool: state.pool, live: null, camp: null },
         after: { overload: r.after, pool: state.pool, live: null, camp: null },
         reasons: { overload: 'Countdown=+' + add }
@@ -3838,6 +4070,18 @@
       var p = state.players[rev];
       var canPay = p.live >= 1;
 
+      logStep('warn', {
+        action: 'EFFECT',
+        actor: p.name,
+        actorIdx: rev,
+        reason: 'EncoreChainStart',
+        effectId: 'ENCORE_CHAIN_START',
+        msgHtml: 'ENCORE_CHAIN_START',
+        before: actorSnapshot(rev),
+        after: actorSnapshot(rev),
+        fields: { EffectId: 'ENCORE_CHAIN_START' }
+      });
+
       function proceed(stop){
         if (stop){
           var liveBeforeStop = p.live;
@@ -3846,7 +4090,10 @@
             action: 'EFFECT',
             actor: p.name,
             actorIdx: rev,
-            msgHtml: 'ENCORE_STOP | Zahlung=1 Live',
+            reason: 'EncoreStop',
+            effectId: 'ENCORE_STOP',
+            msgHtml: 'ENCORE_STOP',
+            fields: { Payment: 'Live-1', EffectId: 'ENCORE_STOP' },
             before: { overload: state.overload, pool: state.pool, live: liveBeforeStop, camp: p.camp },
             after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
             reasons: { live: '-1 pay Encore stop' }
@@ -3860,7 +4107,10 @@
           action: 'EFFECT',
           actor: p.name,
           actorIdx: rev,
-          msgHtml: 'ENCORE_CHAIN | Weiterlaufen',
+          reason: 'EncoreChainContinue',
+          effectId: 'ENCORE_CHAIN_START',
+          msgHtml: 'ENCORE_CHAIN_CONTINUE',
+          fields: { EffectId: 'ENCORE_CHAIN_START', Continue: 'true' },
           before: actorSnapshot(rev),
           after: actorSnapshot(rev),
           reasons: { extra: 'EncoreChain' }
@@ -3869,16 +4119,6 @@
         cb(true);
       }
 
-      logStep('warn', {
-        action: 'DRAW',
-        actor: p.name,
-        actorIdx: rev,
-        msgHtml: 'DRAW | Card=Encore!',
-        before: actorSnapshot(rev),
-        after: actorSnapshot(rev),
-        reasons: { extra: 'EncoreDraw' }
-      });
-
       if (rev === state.humanIndex){
         if (isAutoAll()){
           if (!canPay){
@@ -3886,7 +4126,9 @@
               action: 'DECISION',
               actor: p.name,
               actorIdx: rev,
-              msgHtml: 'ENCORE_STOP | forced=false | reason=Live0',
+              reason: 'Live0',
+              fields: { Decision: 'Weiterlaufen', forced: 'false' },
+              msgHtml: 'ENCORE_STOP_DENIED',
               before: actorSnapshot(rev),
               after: actorSnapshot(rev),
               reasons: { extra: 'EncoreStopDenied' }
@@ -3903,7 +4145,9 @@
             action: 'DECISION',
             actor: p.name,
             actorIdx: rev,
-            msgHtml: 'ENCORE_STOP | forced=false | reason=Live0',
+            reason: 'Live0',
+            fields: { Decision: 'Weiterlaufen', forced: 'false' },
+            msgHtml: 'ENCORE_STOP_DENIED',
             before: actorSnapshot(rev),
             after: actorSnapshot(rev),
             reasons: { extra: 'EncoreStopDenied' }
@@ -3927,7 +4171,9 @@
             action: 'DECISION',
             actor: p.name,
             actorIdx: rev,
-            msgHtml: 'ENCORE_STOP | forced=false | reason=Live0',
+            reason: 'Live0',
+            fields: { Decision: 'Weiterlaufen', forced: 'false' },
+            msgHtml: 'ENCORE_STOP_DENIED',
             before: actorSnapshot(rev),
             after: actorSnapshot(rev),
             reasons: { extra: 'EncoreStopDenied' }
@@ -3987,7 +4233,9 @@
         logStep('bad', {
           action: 'DRAW',
           actor: 'System',
-          msgHtml: 'DRAW_FAIL | reason=NoCard',
+          reason: 'DeckEmpty',
+          fields: { Card: '—', DeckPos: '—', DeckRemaining: 0 },
+          msgHtml: 'DRAW_FAIL',
           before: actorSnapshot(null),
           after: actorSnapshot(null),
           reasons: { extra: 'DeckEmpty' }
@@ -4004,7 +4252,13 @@
         action: 'DRAW',
         actor: revP.name,
         actorIdx: rev,
-        msgHtml: 'DRAW | Card=' + esc(card.name),
+        reason: 'EventDraw',
+        fields: {
+          Card: esc(card.name),
+          DeckPos: card._drawMeta ? card._drawMeta.deckPos : '—',
+          DeckRemaining: card._drawMeta ? card._drawMeta.deckRemaining : '—'
+        },
+        msgHtml: 'DRAW',
         before: actorSnapshot(rev),
         after: actorSnapshot(rev),
         reasons: { extra: 'EventDraw' }
@@ -4056,10 +4310,12 @@
           var next = draw(1)[0] || null;
           if (!next){
             logStep('bad', {
-              action: 'DRAW',
+              action: 'ENCORE_CHAIN_DRAW',
               actor: state.players[rev].name,
               actorIdx: rev,
-              msgHtml: 'ENCORE_CHAIN_FAIL | reason=NoCard',
+              reason: 'EncoreNoCard',
+              fields: { Card: '—', DeckPos: '—', DeckRemaining: 0 },
+              msgHtml: 'ENCORE_CHAIN_FAIL',
               before: actorSnapshot(rev),
               after: actorSnapshot(rev),
               reasons: { extra: 'EncoreNoCard' }
@@ -4072,10 +4328,16 @@
           setEventCard(next, 'Encore-Kette');
           updateUI();
           logStep('warn', {
-            action: 'DRAW',
+            action: 'ENCORE_CHAIN_DRAW',
             actor: state.players[rev].name,
             actorIdx: rev,
-            msgHtml: 'ENCORE_CHAIN_DRAW | Card=' + esc(next.name),
+            reason: 'EncoreChainDraw',
+            fields: {
+              Card: esc(next.name),
+              DeckPos: next._drawMeta ? next._drawMeta.deckPos : '—',
+              DeckRemaining: next._drawMeta ? next._drawMeta.deckRemaining : '—'
+            },
+            msgHtml: 'ENCORE_CHAIN_DRAW',
             before: actorSnapshot(rev),
             after: actorSnapshot(rev),
             reasons: { extra: 'EncoreChainDraw' }
@@ -4182,10 +4444,13 @@
       for (var j=0;j<choices.length;j++){
         eligibleNames.push(state.players[choices[j].idx].name);
       }
+      var windowId = ++state.decisionWindowId;
       logStep('info', {
         action: 'DECISION',
         actor: 'System',
-        msgHtml: 'DECISION_WINDOW_OPEN | eligible=' + esc(eligibleNames.join(', ')),
+        reason: 'DecisionWindowOpen',
+        fields: { DecisionWindow: 'OPEN', eligible: esc(eligibleNames.join(', ')), windowId: windowId },
+        msgHtml: 'DECISION_WINDOW_OPEN',
         before: actorSnapshot(null),
         after: actorSnapshot(null),
         reasons: { extra: 'DecisionWindowOpen' }
@@ -4196,11 +4461,15 @@
         var label = (c.choice === 'camp') ? 'Camp' : 'Bleib';
         var forcedText = c.forced ? 'true' : 'false';
         var forcedReason = c.forced ? 'StageDive' : '';
+        var decisionFields = { Decision: label, forced: forcedText };
+        if (forcedReason) decisionFields.forcedReason = forcedReason;
         logStep('info', {
           action: 'DECISION',
           actor: state.players[c.idx].name,
           actorIdx: c.idx,
-          msgHtml: 'Decision=' + label + ' | forced=' + forcedText + (forcedReason ? ' | reason=' + forcedReason : ''),
+          reason: 'Choice',
+          fields: decisionFields,
+          msgHtml: 'DECISION_CHOICE',
           before: actorSnapshot(c.idx),
           after: actorSnapshot(c.idx),
           reasons: { extra: (c.forced ? 'ForcedStay' : 'Choice') }
@@ -4210,6 +4479,8 @@
       logStep('info', {
         action: 'DECISION',
         actor: 'System',
+        reason: 'DecisionWindowClose',
+        fields: { DecisionWindow: 'CLOSE', windowId: windowId },
         msgHtml: 'DECISION_WINDOW_CLOSE',
         before: actorSnapshot(null),
         after: actorSnapshot(null),
@@ -4257,10 +4528,11 @@
         logStep('info', {
           action: 'RESOLVE_CAMP',
           actor: 'System',
-          msgHtml: 'RESOLVE_CAMP_ORDER | TurnOrder=' + camperNames.join(', ') + ' | PoolCap=1',
+          reason: 'CampOrder',
+          fields: { Order: camperNames.join(', '), PoolCap: 1 },
+          msgHtml: 'RESOLVE_CAMP_ORDER',
           before: actorSnapshot(null),
-          after: actorSnapshot(null),
-          reasons: { extra: 'CampOrder' }
+          after: actorSnapshot(null)
         });
         if (poolPlan.rounds.length){
           var roundParts = [];
@@ -4275,19 +4547,21 @@
           logStep('info', {
             action: 'RESOLVE_CAMP',
             actor: 'System',
-            msgHtml: 'POOL_DISTRIBUTION | ' + roundParts.join(' · '),
+            reason: 'CampPlan',
+            fields: { PoolPlan: roundParts.join(' · ') },
+            msgHtml: 'POOL_DISTRIBUTION',
             before: actorSnapshot(null),
-            after: actorSnapshot(null),
-            reasons: { pool: 'PoolToCamp(cap1)' }
+            after: actorSnapshot(null)
           });
         } else if (state.pool <= 0){
           logStep('info', {
             action: 'RESOLVE_CAMP',
             actor: 'System',
-            msgHtml: 'POOL_DISTRIBUTION | Pool leer',
+            reason: 'CampPlan',
+            fields: { PoolPlan: 'Pool leer' },
+            msgHtml: 'POOL_DISTRIBUTION',
             before: actorSnapshot(null),
-            after: actorSnapshot(null),
-            reasons: { pool: 'PoolEmpty' }
+            after: actorSnapshot(null)
           });
         }
       }
@@ -4310,9 +4584,14 @@
           action: 'RESOLVE_CAMP',
           actor: p3.name,
           actorIdx: idx2,
-          msgHtml: 'RESOLVE_CAMP | LiveToCamp=' + transfer.liveBefore +
-            ' | PoolToCampRequested=' + poolRequested +
-            ' | PoolToCampGranted=' + poolGranted + '(cap1)',
+          reason: 'CampResolve',
+          fields: {
+            LiveToCamp: transfer.liveBefore,
+            PoolToCampRequested: poolRequested,
+            PoolToCampGranted: poolGranted,
+            PoolCap: 1
+          },
+          msgHtml: 'RESOLVE_CAMP',
           before: { overload: state.overload, pool: transfer.poolBefore, live: transfer.liveBefore, camp: transfer.campBefore },
           after: { overload: state.overload, pool: state.pool, live: 0, camp: p3.camp },
           reasons: {
@@ -4326,13 +4605,18 @@
       }
 
       if (!state.countdownActive && anySuccessfulCamp){
+        var countdownBefore = getGlobalSnapshot();
         state.countdownActive = true;
         logStep('warn', {
           action: 'COUNTDOWN',
           actor: 'System',
-          msgHtml: 'COUNTDOWN_ACTIVE | base=+1' + (isAggCountdown() ? ' | Aggressiv=aktiv' : ''),
+          reason: 'CountdownStart',
+          fields: { Base: '+1', Aggressiv: (isAggCountdown() ? 'aktiv' : 'aus') },
+          msgHtml: 'COUNTDOWN_ACTIVE',
           before: actorSnapshot(null),
           after: actorSnapshot(null),
+          globalBefore: countdownBefore,
+          globalAfter: getGlobalSnapshot(),
           reasons: { extra: 'CountdownStart' }
         });
       }
@@ -4363,9 +4647,11 @@
 
       if (activeCount() === 0){
         logStep('good', {
-          action: 'CHECK',
+          action: 'ROUND_END',
           actor: 'System',
-          msgHtml: 'ROUND_END | reason=Alle gecampt',
+          reason: 'AllCamped',
+          fields: { RoundEndReason: 'Alle gecampt', PoolExpired: (state.pool > 0 ? 'yes' : 'no'), OverloadReset: 0 },
+          msgHtml: 'ROUND_END',
           before: actorSnapshot(null),
           after: actorSnapshot(null),
           reasons: { extra: 'AllCamped' }
@@ -4814,6 +5100,8 @@
         if (logEl) logEl.innerHTML = '';
         var playLog = document.getElementById('logPlay');
         if (playLog) playLog.innerHTML = '';
+        state.debugLogEntries = [];
+        state.debugSnapshots = [];
 
         state.turnId = 1;
         state.overload = 8;
@@ -4884,6 +5172,11 @@
       state.finalPushUsed = false;
       state.logSubStep = 0;
       state.debugSnapshots = [];
+      state.debugLogEntries = [];
+      state.rngStep = 0;
+      state.lastGlobalSnapshot = null;
+      state.decisionWindowId = 0;
+      state.debugAssertTriggered = false;
       var askBack = document.getElementById('askBack');
       if (askBack){
         askBack.style.display = 'none';
@@ -4909,7 +5202,14 @@
       logStep('info', {
         action: 'ROUND_START',
         actor: 'System',
-        msgHtml: 'Prototyp gestartet | Ziel=' + WIN_CAMP + ' Camp | Startspieler=' + esc(state.players[state.startPlayer].name),
+        reason: 'Init',
+        fields: {
+          round: state.round,
+          startPlayer: esc(state.players[state.startPlayer].name),
+          seed: state.rngSeed,
+          targetCamp: WIN_CAMP
+        },
+        msgHtml: 'ROUND_START_INIT',
         before: { overload: state.overload, pool: state.pool, live: null, camp: null },
         after: { overload: state.overload, pool: state.pool, live: null, camp: null },
         reasons: { extra: 'Init' }
@@ -5004,6 +5304,13 @@
       optDecisionTimer.onchange = function(){
         updateUI();
         if (state.awaitingDecision) startDecisionTimer();
+      };
+    }
+    var optDebugAssertFail = document.getElementById('optDebugAssertFail');
+    if (optDebugAssertFail){
+      optDebugAssertFail.onchange = function(){
+        state.debugAssertFail = !!optDebugAssertFail.checked;
+        state.debugAssertTriggered = false;
       };
     }
     var btnAddBot = document.getElementById('btnAddBot');
