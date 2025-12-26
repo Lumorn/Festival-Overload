@@ -19,6 +19,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.
 - Simultane Bleib/Camp-Entscheidung als Vollbild-Overlay inkl. Vorschau auf Pool-Bonus und Gesamtstand.
 - Steuerungsmodi für Bots (Bots automatisch, Bots manuell, alles automatisch) und auswählbares Bot-Profil für modular erweiterbare KI.
+- Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
 
 ## Feste Pflege-Regeln

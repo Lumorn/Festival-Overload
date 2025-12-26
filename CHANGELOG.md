@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Bot-Anzahl vor Spielstart per UI anpassbar (Hinzufügen/Entfernen).
 - Steuerungsmodi für Bots ergänzt (Bots automatisch, Bots manuell, alles automatisch inkl. Spieler).
 - Modulares Bot-Profil-System vorbereitet und Auswahl im UI ergänzt.
 - Bot-Entscheidungen im Overlay steuerbar, wenn Bots manuell geführt werden.
