@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Steuerungsmodi für Bots ergänzt (Bots automatisch, Bots manuell, alles automatisch inkl. Spieler).
+- Modulares Bot-Profil-System vorbereitet und Auswahl im UI ergänzt.
+- Bot-Entscheidungen im Overlay steuerbar, wenn Bots manuell geführt werden.
 - Spielmodus (minimal) mit Phasen-Statussatz, großem Overload-Track, Kartenfokus und vereinfachten Spielerleisten ergänzt.
 - Dev-Modus beibehalten, inkl. Modus-Toggle und „Spielmodus Vorschau“-Button.
 - Bleib/Camp-Overlay mit Camp-Vorschau und optionalem 20s-Timer erweitert, Log/Regeln im Spielmodus als Drawer/Modal ergänzt.

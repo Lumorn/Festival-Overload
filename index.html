@@ -672,6 +672,15 @@
     .decisionStat{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.2);border:1px solid rgba(148,163,184,.16);font-size:13px}
     .decisionAvatars{display:flex;gap:8px;flex-wrap:wrap}
     .decisionMain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .decisionBots{display:flex;flex-direction:column;gap:10px}
+    .decisionBots.hidden{display:none}
+    .decisionBotRow{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:14px;border:1px solid rgba(148,163,184,.18);background:rgba(11,15,23,.45)}
+    .decisionBotHead{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:800}
+    .decisionBotChoices{display:flex;gap:8px;flex-wrap:wrap}
+    .decisionBotBtn{padding:8px 12px;border-radius:12px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.6);cursor:pointer}
+    .decisionBotBtn.good{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.12)}
+    .decisionBotBtn.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
+    .decisionBotBtn.selected{box-shadow:0 0 0 2px rgba(255,255,255,.14), 0 12px 28px rgba(0,0,0,.25)}
     .decisionBtn{padding:16px;border-radius:16px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.6);display:flex;flex-direction:column;gap:6px;align-items:flex-start;cursor:pointer}
     .decisionBtn strong{font-size:20px}
     .decisionBtn small{color:var(--mutedStrong)}
@@ -970,7 +979,16 @@
           <div class="toggle">
             <label class="mini"><input id="optPflaster" type="checkbox" checked> Pflaster nach Knall: Aktiver Spieler rettet 1 Live als Camp</label>
             <label class="mini"><input id="optAggCountdown" type="checkbox"> Countdown aggressiv: +1 extra wenn Pool ≥3</label>
-            <label class="mini"><input id="optAuto" type="checkbox"> Autoplay: Bots spielen automatisch (Zuschauermodus)</label>
+            <label class="mini">Steuerung:
+              <select id="optControlMode">
+                <option value="bots-auto" selected>Nur Bots automatisch</option>
+                <option value="bots-manual">Alle Bots manuell</option>
+                <option value="all-auto">Alles automatisch (inkl. Du)</option>
+              </select>
+            </label>
+            <label class="mini">Bot-Profil:
+              <select id="optBotProfile"></select>
+            </label>
             <label class="mini"><input id="optDecisionTimer" type="checkbox" checked> Timer aktiv (20s, Auto-Bleib)</label>
             <label class="mini">Tempo:
               <select id="optSpeed">
@@ -1023,6 +1041,7 @@
           <small id="campHint">Du sicherst dein Live</small>
         </button>
       </div>
+      <div class="decisionBots hidden" id="decisionBots"></div>
 
       <div class="decisionPreview" id="decisionPreview">
         <div class="mini" id="decisionHint">Wähle Bleib oder Camp. Danach wird simultan aufgelöst.</div>
@@ -1089,10 +1108,19 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.17';
+    var VERSION = 'v0.18';
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.18',
+        date: '2026-01-03',
+        items: [
+          'Neu: Steuerungsmodi für Bots (Bots automatisch, Bots manuell, alles automatisch inkl. Du).',
+          'Neu: Modulares Bot-Profil-System, vorbereitet für weitere Bot-Strategien.',
+          'UI: Bot-Entscheidungen im Overlay wählbar, wenn Bots manuell gesteuert werden.'
+        ]
+      },
       {
         ver: 'v0.17',
         date: '2026-01-02',
@@ -1193,6 +1221,50 @@
     var WIN_CAMP = 8;
     var MAX_OVERLOAD = 12;
 
+    var BOT_MODULES = [
+      {
+        id: 'standard',
+        name: 'Standard',
+        decideCamp: function(ctx){
+          var p = ctx.player;
+          if (p.roundState !== 'active') return 'stay';
+          if (p.forcedStayNext) return 'stay';
+          if (p.live <= 0) return 'stay';
+          if (p.camp + p.live >= WIN_CAMP) return 'camp';
+          if (ctx.overload >= 10 && p.live >= 2) return 'camp';
+          if (p.live >= 3) return 'camp';
+          if (p.live >= 1 && ctx.pool >= 2 && ctx.overload >= 8) return (Math.random() < 0.65) ? 'camp' : 'stay';
+          return (Math.random() < 0.20) ? 'camp' : 'stay';
+        },
+        stopEncore: function(ctx){
+          var p = ctx.player;
+          if (p.live <= 0) return false;
+          if (ctx.overload >= 10) return true;
+          if (p.live >= 2 && Math.random() < 0.7) return true;
+          return (Math.random() < 0.25);
+        },
+        stageDivePay: function(ctx){
+          var p = ctx.player;
+          if (p.live <= 0) return false;
+          if (ctx.overload >= 8) return true;
+          if (p.camp + p.live >= WIN_CAMP - 1) return true;
+          return (Math.random() < 0.45);
+        },
+        pickStageDiveTarget: function(ctx){
+          var best = -1;
+          var bestLive = -1;
+          for (var i=0;i<ctx.players.length;i++){
+            if (i === ctx.revealer) continue;
+            var candidate = ctx.players[i];
+            if (candidate.roundState !== 'active') continue;
+            if (candidate.live > bestLive){ bestLive = candidate.live; best = i; }
+          }
+          if (best === -1) best = ctx.revealer;
+          return best;
+        }
+      }
+    ];
+
     var state = {
       round: 1,
       overload: 0,
@@ -1214,9 +1286,11 @@
 
       players: [],
       humanIndex: 0,
+      botProfileId: 'standard',
 
       awaitingDecision: false,
       humanChoice: 'stay', // 'stay' | 'camp'
+      botChoices: {},
       lastEvent: null,
       gameOver: false,
 
@@ -1300,9 +1374,22 @@
 
     function clampOverload(x){ return Math.max(0, Math.min(MAX_OVERLOAD, x)); }
 
-    function isAuto(){
-      var el = document.getElementById('optAuto');
-      return !!(el && el.checked);
+    function controlMode(){
+      var el = document.getElementById('optControlMode');
+      return (el && el.value) ? el.value : 'bots-auto';
+    }
+
+    function isAutoAll(){
+      return controlMode() === 'all-auto';
+    }
+
+    function areBotsAuto(){
+      var mode = controlMode();
+      return (mode === 'bots-auto' || mode === 'all-auto');
+    }
+
+    function areBotsManual(){
+      return controlMode() === 'bots-manual';
     }
 
     function isAggCountdown(){
@@ -1364,6 +1451,28 @@
       if (t === 'twist') return { txt:'Twist', dot:'var(--warn)', icon:'🌀' };
       if (t === 'encore') return { txt:'Encore', dot:'var(--blue)', icon:'🎤' };
       return { txt:t, dot:'rgba(148,163,184,.6)', icon:'❔' };
+    }
+
+    function getBotModule(botId){
+      for (var i=0;i<BOT_MODULES.length;i++){
+        if (BOT_MODULES[i].id === botId) return BOT_MODULES[i];
+      }
+      return BOT_MODULES[0];
+    }
+
+    function botCtx(idx){
+      return {
+        player: state.players[idx],
+        players: state.players,
+        overload: state.overload,
+        pool: state.pool,
+        revealer: state.revealer
+      };
+    }
+
+    function botProfilePick(){
+      var el = document.getElementById('optBotProfile');
+      return (el && el.value) ? el.value : state.botProfileId;
     }
 
     function screenFlash(kind){
@@ -1992,13 +2101,15 @@
       var forced = !!human.forcedStayNext;
       var campBlockedByZero = (human.live <= 0);
 
-      var auto = isAuto();
+      var auto = isAutoAll();
       document.getElementById('btnStay').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || auto;
       document.getElementById('btnCamp').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || forced || campBlockedByZero || auto;
       document.getElementById('btnResolve').disabled = !state.awaitingDecision || state.gameOver || auto;
 
       // reveal
-      var canReveal = !state.gameOver && !state.awaitingDecision && state.revealer === state.humanIndex && isHumanActive;
+      var canReveal = !state.gameOver && !state.awaitingDecision &&
+        ((state.revealer === state.humanIndex && isHumanActive) ||
+        (areBotsManual() && state.players[state.revealer] && state.players[state.revealer].roundState === 'active'));
       document.getElementById('btnReveal').disabled = !canReveal || auto;
       var playReveal = document.getElementById('btnRevealPlay');
       if (playReveal){
@@ -2018,6 +2129,7 @@
         h.innerHTML = 'Du hast <b>0 Live</b> → du darfst nicht campen.';
       } else {
         if (auto) h.textContent = 'Autoplay ist aktiv – Entscheidungen werden automatisch aufgelöst.';
+        else if (areBotsManual()) h.textContent = 'Wähle Bleib oder Camp. Danach entscheide auch die Bots.';
         else h.textContent = 'Wähle Bleib oder Camp (Camp nur mit Live). Dann wird simultan aufgelöst.';
       }
 
@@ -2026,6 +2138,14 @@
       var camp = document.getElementById('btnCamp');
       stay.classList.toggle('selected', state.humanChoice === 'stay');
       camp.classList.toggle('selected', state.humanChoice === 'camp');
+    }
+
+    function applyBotProfileToBots(botId){
+      state.botProfileId = botId;
+      for (var i=0;i<state.players.length;i++){
+        if (i === state.humanIndex) continue;
+        state.players[i].botId = botId;
+      }
     }
 
     function renderOverloadTrack(){
@@ -2103,11 +2223,77 @@
         for (var i=0;i<state.players.length;i++){
           var p = state.players[i];
           var done = (p.roundState !== 'active') || (i === state.humanIndex && state.humanLockedIn);
+          if (areBotsManual() && i !== state.humanIndex){
+            done = done || !!state.botChoices[String(i)];
+          }
           var chip = document.createElement('div');
           chip.className = 'decisionPlayer' + (done ? ' done' : '');
           chip.textContent = p.name.substring(0,2).toUpperCase();
           playersWrap.appendChild(chip);
         }
+      }
+
+      renderBotDecisionControls();
+    }
+
+    function renderBotDecisionControls(){
+      var wrap = document.getElementById('decisionBots');
+      if (!wrap) return;
+
+      var show = state.awaitingDecision && areBotsManual();
+      wrap.classList.toggle('hidden', !show);
+      if (!show){
+        wrap.innerHTML = '';
+        return;
+      }
+
+      wrap.innerHTML = '';
+      for (var i=0;i<state.players.length;i++){
+        var p = state.players[i];
+        if (i === state.humanIndex) continue;
+        if (p.roundState !== 'active') continue;
+
+        var row = document.createElement('div');
+        row.className = 'decisionBotRow';
+
+        var head = document.createElement('div');
+        head.className = 'decisionBotHead';
+        head.innerHTML = '<span>' + esc(p.name) + '</span><span class="mini">Live ' + p.live + ' · Camp ' + p.camp + '</span>';
+
+        var choices = document.createElement('div');
+        choices.className = 'decisionBotChoices';
+
+        var stay = document.createElement('button');
+        stay.className = 'decisionBotBtn good';
+        stay.textContent = 'Bleib';
+        stay.onclick = (function(idx){
+          return function(){
+            state.botChoices[String(idx)] = 'stay';
+            updateUI();
+          };
+        })(i);
+
+        var camp = document.createElement('button');
+        camp.className = 'decisionBotBtn warn';
+        camp.textContent = 'Camp';
+        camp.disabled = p.live <= 0 || p.forcedStayNext;
+        camp.onclick = (function(idx){
+          return function(){
+            state.botChoices[String(idx)] = 'camp';
+            updateUI();
+          };
+        })(i);
+
+        var current = state.botChoices[String(i)] || 'stay';
+        stay.classList.toggle('selected', current === 'stay');
+        camp.classList.toggle('selected', current === 'camp');
+
+        choices.appendChild(stay);
+        choices.appendChild(camp);
+
+        row.appendChild(head);
+        row.appendChild(choices);
+        wrap.appendChild(row);
       }
     }
 
@@ -2382,6 +2568,7 @@
       state.awaitingDecision = true;
       state.humanChoice = 'stay';
       state.humanLockedIn = false;
+      state.botChoices = {};
       state.encoreChain = 0;
       setPhase('decision');
 
@@ -2421,50 +2608,30 @@
       onOverloadMayHit12(r, 'Countdown');
     }
 
-    // ---------- bot heuristics ----------
+    // ---------- Bot-Module (Wrapper) ----------
     function botWantsToCamp(pi){
       var p = state.players[pi];
-      if (p.roundState !== 'active') return false;
-      if (p.forcedStayNext) return false;
-      if (p.live <= 0) return false; // Camp nur mit Live
-
-      if (p.camp + p.live >= WIN_CAMP) return true;
-
-      if (state.overload >= 10 && p.live >= 2) return true;
-      if (p.live >= 3) return true;
-
-      if (p.live >= 1 && state.pool >= 2 && state.overload >= 8) return (Math.random() < 0.65);
-
-      return (Math.random() < 0.20);
+      var bot = getBotModule(p.botId || state.botProfileId);
+      var res = bot.decideCamp(botCtx(pi));
+      return res === 'camp';
     }
 
     function botEncoreStop(pi){
       var p = state.players[pi];
-      if (p.live <= 0) return false;
-      if (state.overload >= 10) return true;
-      if (p.live >= 2 && Math.random() < 0.7) return true;
-      return (Math.random() < 0.25);
+      var bot = getBotModule(p.botId || state.botProfileId);
+      return !!bot.stopEncore(botCtx(pi));
     }
 
     function botStageDivePay(pi){
       var p = state.players[pi];
-      if (p.live <= 0) return false;
-      if (state.overload >= 8) return true;
-      if (p.camp + p.live >= WIN_CAMP - 1) return true;
-      return (Math.random() < 0.45);
+      var bot = getBotModule(p.botId || state.botProfileId);
+      return !!bot.stageDivePay(botCtx(pi));
     }
 
     function botPickStageDiveTarget(revealer){
-      var best = -1;
-      var bestLive = -1;
-      for (var i=0;i<state.players.length;i++){
-        if (i === revealer) continue;
-        var p = state.players[i];
-        if (p.roundState !== 'active') continue;
-        if (p.live > bestLive){ bestLive = p.live; best = i; }
-      }
-      if (best === -1) best = revealer;
-      return best;
+      var p = state.players[revealer];
+      var bot = getBotModule(p.botId || state.botProfileId);
+      return bot.pickStageDiveTarget(botCtx(revealer));
     }
 
     // ---------- event effects ----------
@@ -2566,7 +2733,7 @@
 
       if (card.fx === 'stageDive'){
         if (rev === state.humanIndex) {
-          if (isAuto()){
+          if (isAutoAll()){
             var aiTarget = botPickStageDiveTarget(rev);
             if (aiTarget === rev){
               log('warn','Stage Dive: Kein anderer aktiver Spieler → Effekt verpufft.');
@@ -2605,6 +2772,34 @@
           return;
         }
 
+        if (areBotsManual()){
+          var optsBot = [];
+          for (var j=0;j<state.players.length;j++){
+            if (state.players[j].roundState !== 'active') continue;
+            if (j === rev) continue;
+            optsBot.push({ label: state.players[j].name + ' (Live ' + state.players[j].live + ')', value: j });
+          }
+          if (!optsBot.length){
+            log('warn','Stage Dive: Kein anderer aktiver Spieler → Effekt verpufft.');
+            doneCb();
+            return;
+          }
+          askPickOne(
+            'Stage Dive – Ziel für ' + state.players[rev].name,
+            '<b>Stage Dive</b>: Du steuerst die Bots. Wähle das Ziel.',
+            optsBot,
+            function(val){
+              if (val === null || typeof val !== 'number'){
+                log('warn','Stage Dive: Keine Auswahl → Effekt verpufft.');
+                doneCb();
+                return;
+              }
+              resolveStageDiveTarget(rev, val, doneCb);
+            }
+          );
+          return;
+        }
+
         var targetIdx = botPickStageDiveTarget(rev);
         resolveStageDiveTarget(rev, targetIdx, doneCb);
         return;
@@ -2628,7 +2823,7 @@
       updateUI();
 
       if (targetIdx === state.humanIndex){
-        if (isAuto()){
+        if (isAutoAll()){
           if (tP.live > 0 && botStageDivePay(targetIdx)){
             tP.live = Math.max(0, tP.live - 1);
             log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. (Live jetzt ' + tP.live + ')');
@@ -2670,6 +2865,32 @@
         return;
       }
 
+      if (areBotsManual()){
+        if (tP.live <= 0){
+          tP.forcedStayNext = true;
+          log('bad', esc(tP.name) + ' hat <b>0 Live</b> → muss beim nächsten Camp-Entscheid drin bleiben.');
+          doneCb();
+          return;
+        }
+        askYesNo(
+          'Stage Dive – ' + tP.name + ' zahlen?',
+          '<b>' + esc(tP.name) + '</b> ist Ziel. Soll 1 Live gezahlt werden?',
+          '1 Live zahlen',
+          'Nicht zahlen',
+          function(use){
+            if (use){
+              tP.live = Math.max(0, tP.live - 1);
+              log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. (Live jetzt ' + tP.live + ')');
+            } else {
+              tP.forcedStayNext = true;
+              log('bad', esc(tP.name) + ' zahlt nicht → muss beim nächsten Camp-Entscheid drin bleiben.');
+            }
+            doneCb();
+          }
+        );
+        return;
+      }
+
       if (tP.live > 0 && botStageDivePay(targetIdx)){
         tP.live = Math.max(0, tP.live - 1);
         log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. (Live jetzt ' + tP.live + ')');
@@ -2703,7 +2924,7 @@
       log('warn','<b>' + esc(p.name) + '</b> deckt 🎤 <b>Encore!</b> auf.');
 
       if (rev === state.humanIndex){
-        if (isAuto()){
+        if (isAutoAll()){
           if (!canPay){
             log('bad','Du hast <b>0 Live</b> → du kannst Encore nicht stoppen.');
             proceed(false);
@@ -2721,6 +2942,22 @@
         askYesNo(
           'Encore! – Stoppen?',
           'Encore! würde ein weiteres Event auslösen.<br><br>Willst du <b>1 Live</b> zahlen, um Encore zu stoppen?',
+          'Stoppen (1 Live)',
+          'Weiterlaufen lassen',
+          function(use){ proceed(!!use); }
+        );
+        return;
+      }
+
+      if (areBotsManual()){
+        if (!canPay){
+          log('bad', esc(p.name) + ' hat <b>0 Live</b> → Encore kann nicht gestoppt werden.');
+          proceed(false);
+          return;
+        }
+        askYesNo(
+          'Encore! – ' + p.name + ' stoppen?',
+          '<b>' + esc(p.name) + '</b> darf Encore stoppen. Willst du 1 Live zahlen?',
           'Stoppen (1 Live)',
           'Weiterlaufen lassen',
           function(use){ proceed(!!use); }
@@ -2899,13 +3136,20 @@
 
         var choice = 'stay';
         if (i === state.humanIndex){
-          if (p.forcedStayNext) choice = 'stay';
-          else {
+          if (isAutoAll()){
+            choice = botWantsToCamp(i) ? 'camp' : 'stay';
+          } else if (p.forcedStayNext) {
+            choice = 'stay';
+          } else {
             if (state.humanChoice === 'camp' && p.live <= 0) choice = 'stay';
             else choice = state.humanChoice;
           }
         } else {
-          choice = botWantsToCamp(i) ? 'camp' : 'stay';
+          if (areBotsManual()){
+            choice = state.botChoices[String(i)] || 'stay';
+          } else {
+            choice = botWantsToCamp(i) ? 'camp' : 'stay';
+          }
           if (p.forcedStayNext) choice = 'stay';
         }
 
@@ -3008,7 +3252,7 @@
     function pumpBots(){
       if (state.gameOver) return;
 
-      if (isAuto()){
+      if (isAutoAll()){
         if (state.askOpen) return;
 
         if (state.awaitingDecision){
@@ -3040,8 +3284,8 @@
 
       stopAutoTimer();
 
-      // Manual: Bot-Züge laufen automatisch.
-      if (!state.awaitingDecision && state.revealer !== state.humanIndex){
+      // Manuell: Bot-Züge laufen automatisch, außer Bots werden manuell gesteuert.
+      if (!state.awaitingDecision && state.revealer !== state.humanIndex && areBotsAuto()){
         var r = state.revealer;
         if (state.players[r].roundState !== 'active'){
           var nxt = nextActiveFrom(r, state.direction);
@@ -3250,15 +3494,16 @@
       state.startPlayer = 0;
       state.revealer = 0;
       state.extraRevealSame = false;
+      state.botProfileId = botProfilePick();
 
       state.deck = mkDeck();
       state.discard = [];
 
       state.players = [
         { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false },
-        { name:'Bot A', camp:0, live:0, roundState:'active', forcedStayNext:false },
-        { name:'Bot B', camp:0, live:0, roundState:'active', forcedStayNext:false },
-        { name:'Bot C', camp:0, live:0, roundState:'active', forcedStayNext:false }
+        { name:'Bot A', camp:0, live:0, roundState:'active', forcedStayNext:false, botId: state.botProfileId },
+        { name:'Bot B', camp:0, live:0, roundState:'active', forcedStayNext:false, botId: state.botProfileId },
+        { name:'Bot C', camp:0, live:0, roundState:'active', forcedStayNext:false, botId: state.botProfileId }
       ];
 
       state.awaitingDecision = false;
@@ -3332,7 +3577,23 @@
     document.getElementById('rulesClose').onclick = closeRules;
     document.getElementById('rulesBack').addEventListener('click', function(e){ if (e.target.id === 'rulesBack') closeRules(); });
 
-    document.getElementById('optAuto').onchange = function(){ updateUI(); pumpBots(); };
+    var botProfileSelect = document.getElementById('optBotProfile');
+    if (botProfileSelect){
+      botProfileSelect.innerHTML = '';
+      for (var i=0;i<BOT_MODULES.length;i++){
+        var opt = document.createElement('option');
+        opt.value = BOT_MODULES[i].id;
+        opt.textContent = BOT_MODULES[i].name;
+        botProfileSelect.appendChild(opt);
+      }
+      botProfileSelect.value = state.botProfileId;
+      botProfileSelect.onchange = function(){
+        applyBotProfileToBots(botProfilePick());
+        updateUI();
+      };
+    }
+
+    document.getElementById('optControlMode').onchange = function(){ updateUI(); pumpBots(); };
     document.getElementById('optSpeed').onchange = function(){ pumpBots(); };
     document.getElementById('optAggCountdown').onchange = function(){ updateUI(); };
     document.getElementById('optDecisionTimer').onchange = function(){
