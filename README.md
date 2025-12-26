@@ -22,10 +22,13 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
 - Overload-Änderungen im Log und in den Overlays berücksichtigen die tatsächliche Deckelung bei 0/12.
-- Pool-Bonus bei simultanem Campen ist auf +1 pro Camper begrenzt (cap1) und wird in Zugreihenfolge verteilt; Logs zeigen PoolToCampRequested/Granted.
-- Stabilisieren belohnt Overload 4–7 mit +1 Pool, Overload 8+ mit +1 Live; Null-Stabi (Overload 0) gibt exklusiv +1 Pool.
+- Pool-Bonus bei simultanem Campen ist auf +1 pro Camper begrenzt (cap1) und wird in Zugreihenfolge verteilt; Pool→Camp ist nur bei Live ≥2 erlaubt und wird entsprechend geloggt.
+- Stabilisieren belohnt Overload 4–7 mit +1 Pool, Overload 8+ mit +1 Live; Null-Stabi (Overload 0) gibt keinen Ertrag mehr.
+- DecisionWindows öffnen nur, wenn eine sinnvolle Entscheidung möglich ist oder ein Zwangseffekt greift (sonst automatisches „alle bleiben“ mit Logeintrag).
+- Final Push gewährt dem letzten aktiven Spieler 1 Gnaden-Bleib, danach folgt ein erzwungenes Camp (Last Call).
+- Encore-Stop ist auch bei Live 0 möglich und kostet dann Overload +1 (cap, geloggt).
 - Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und markieren min 0/Cap 12 inklusive Statuswerte.
-- Anti-Solo läuft jetzt als Final Push: letzter aktiver Spieler bekommt 1 Extra-Event, danach normale Camp-Entscheidung.
+- Anti-Solo läuft als Final Push: letzter aktiver Spieler bekommt 1 Extra-Event mit 1 Gnaden-Bleib, danach erzwungenes Camp.
 - KNALL halbiert Live der aktiven Spieler, Pflaster rettet +1 Live nach der Halbierung; Logs nutzen Step-IDs, ActionType und Delta-Reasons.
 - Debug-Export liefert JSON-Snapshots pro Step inklusive Logzeilen für spätere Analyse.
 - Log-Validator prüft State-Invarianten und schreibt ASSERT_FAIL-Events bei Verstößen (Debug-Schalter).

@@ -895,7 +895,7 @@
               <div class="hint">
                 <b>Camp (nur mit Live):</b> Ohne mindestens <b>1 Live</b> gibt es keinen Cashout.
                 <br>
-                <b>Pool-Bonus:</b> Beim Campen (mit Live) beträgt dein <b>Max-Bonus</b> immer <b>1</b> (cap1).
+                <b>Pool-Bonus:</b> Pool→Camp ist nur bei <b>Live ≥2</b> erlaubt, Max-Bonus bleibt <b>1</b> (cap1).
                 <br>
                 <b>Wichtig:</b> Maßgeblich ist der <b>Overload nach dem Event</b> (inkl. Countdown/Checks), direkt vor der Camp-Entscheidung.
                 <br>
@@ -912,7 +912,7 @@
                 <div class="poolCard"></div>
                 <div class="poolCard"></div>
               </div>
-              <div class="mini" id="poolHint">Camp-Bonus: max. 1 pro Camper (cap1)</div>
+              <div class="mini" id="poolHint">Camp-Bonus: max. 1 pro Camper (Live ≥2, cap1)</div>
             </div>
 
             <div class="tableau">
@@ -1106,7 +1106,7 @@
         <ul class="ruleList mini">
           <li><b>Nach jedem Event</b>: Alle aktiven Spieler entscheiden simultan Bleib oder Camp.</li>
           <li><b>Camp</b> ist nur mit mindestens 1 Live möglich.</li>
-          <li><b>Pool-Bonus</b>: Maximal +1 Pool pro Camper (cap1), Reihenfolge ab Aufdecker.</li>
+          <li><b>Pool-Bonus</b>: Nur bei Live ≥2 erlaubt, maximal +1 pro Camper (cap1), Reihenfolge ab Aufdecker.</li>
           <li><b>Overload 12</b>: Katastrophen-Check – Push bedeutet Knall.</li>
         </ul>
       </div>
@@ -1117,7 +1117,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.36';
+    var VERSION = 'v0.37';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
     var STABILIZE_CARDS = [
@@ -1131,6 +1131,17 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.37',
+        date: '2026-01-22',
+        items: [
+          'Neu: Pool→Camp nur bei Live ≥2; Camp mit Live=1 erhält keinen Pool-Bonus (klar geloggt).',
+          'Neu: DecisionWindow wird übersprungen, wenn es keine sinnvolle Entscheidung gibt (Log: DecisionWindow=SKIP).',
+          'Neu: Final Push mit 1 Gnaden-Bleib, danach erzwungenes Camp (Last Call).',
+          'Neu: Encore-Stop erlaubt bei Live 0, kostet Overload +1 (cap) und ist geloggt.',
+          'Fix: Null-Stabi (Overload 0) gibt keinen Pool-Ertrag mehr.'
+        ]
+      },
       {
         ver: 'v0.36',
         date: '2026-01-21',
@@ -1148,7 +1159,7 @@
         items: [
           'Neu: KNALL halbiert Live der aktiven Spieler (Abrunden), Pflaster rettet +1 Live nach Halbierung (nur wenn Live vorher ≥1).',
           'Neu: Final-Push-Regel ersetzt Anti-Solo – letzter aktiver Spieler bekommt 1 Extra-Event, danach normale Camp-Entscheidung.',
-          'Neu: Stabilisieren gibt +1 Pool bei Overload 4–7, +1 Live bei 8+, Null-Stabi (0) bleibt exklusiv.',
+          'Neu: Stabilisieren gibt +1 Pool bei Overload 4–7, +1 Live bei 8+, Null-Stabi (0) gibt keinen Ertrag.',
           'Neu: Pool→Camp ist auf +1 pro Camper begrenzt (cap1), Rundenverteilung bleibt nur als Reihenfolge.',
           'Neu: Schritt-Logformat mit Step-ID, Actor/ActionType, Delta-Reasons und Debug-Export (JSON-Snapshots).'
         ]
@@ -1158,7 +1169,7 @@
         date: '2026-01-19',
         items: [
           'Neu: Camp-Pool wird bei simultanen Camps rundenbasiert verteilt (max. +1 pro Runde je Camper, Reihenfolge ab Aufdecker).',
-          'Neu: Null-Stabi-Regel – bei Overload 0 gibt Stabilisieren +1 Pool (klar geloggt).',
+          'Neu: Null-Stabi-Regel – bei Overload 0 gibt Stabilisieren keinen Ertrag (klar geloggt).',
           'Fix: Camp-Auflösung loggt die Pool-Rundenverteilung samt Priorität sichtbar.'
         ]
       },
@@ -1406,13 +1417,20 @@
           if (p.live <= 0) return 'stay';
           if (p.camp + p.live >= WIN_CAMP) return 'camp';
           if (ctx.overload >= 10 && p.live >= 2) return 'camp';
+          if (ctx.overload >= 11 && p.live === 1) return (rand() < 0.4) ? 'camp' : 'stay';
           if (p.live >= 3) return 'camp';
-          if (p.live >= 1 && ctx.pool >= 2 && ctx.overload >= 8) return (rand() < 0.65) ? 'camp' : 'stay';
-          return (rand() < 0.20) ? 'camp' : 'stay';
+          if (p.live >= 2 && ctx.pool >= 1 && ctx.overload >= 8) return (rand() < 0.6) ? 'camp' : 'stay';
+          if (p.live === 2 && ctx.overload >= 9) return (rand() < 0.35) ? 'camp' : 'stay';
+          if (p.live === 1) return (rand() < 0.1) ? 'camp' : 'stay';
+          return (rand() < 0.18) ? 'camp' : 'stay';
         },
         stopEncore: function(ctx){
           var p = ctx.player;
-          if (p.live <= 0) return false;
+          if (p.live <= 0){
+            if (ctx.overload >= 10) return true;
+            if (ctx.overload >= 8) return (rand() < 0.45);
+            return (rand() < 0.2);
+          }
           if (ctx.overload >= 10) return true;
           if (p.live >= 2 && rand() < 0.7) return true;
           return (rand() < 0.25);
@@ -1484,6 +1502,9 @@
       decisionWindowId: 0,
       debugAssertFail: false,
       debugAssertTriggered: false,
+      finalPushGraceUsed: false,
+      finalPushForceNext: false,
+      finalPushActor: -1,
 
       autoTimer: null,
       decisionTimer: { enabled:true, seconds:20, remaining:20, timerId:null },
@@ -2013,6 +2034,15 @@
       return out;
     }
 
+    function darfPoolZuCamp(live){
+      // Pool→Camp ist nur erlaubt, wenn mindestens 2 Live vorhanden sind.
+      return live >= 2;
+    }
+
+    function darfJetztCampen(p){
+      return p.roundState === 'active' && p.live > 0;
+    }
+
     function poolTakeFor(pool){
       return Math.min(pool, 1);
     }
@@ -2126,7 +2156,7 @@
         parts.push('<span class="imp good">🛠️ <b>Overload ' + d + '</b></span>');
         parts.push('<span class="imp warn">🎁 <b>+1 Pool bei Overload 4–7</b></span>');
         parts.push('<span class="imp blue">🎟️ <b>+1 Live bei 8+ vorher</b></span>');
-        parts.push('<span class="imp warn">🧯 <b>Null-Stabi: +1 Pool</b></span>');
+        parts.push('<span class="imp warn">🧯 <b>Null-Stabi: kein Ertrag</b></span>');
         parts.push('<span class="imp blue">👥 <b>Danach: Entscheidung</b></span>');
       }
       else if (t === 'twist'){
@@ -2144,7 +2174,7 @@
       }
       else if (t === 'encore'){
         parts.push('<span class="imp blue">🎤 <b>Encore-Kette</b></span>');
-        parts.push('<span class="imp warn">✋ <b>Stop: 1 Live (nur Aufdecker)</b></span>');
+        parts.push('<span class="imp warn">✋ <b>Stop: 1 Live (bei Live 0: Overload +1)</b></span>');
         parts.push('<span class="imp bad">⛓️ <b>Kein Camp dazwischen</b></span>');
       }
       else {
@@ -2208,7 +2238,7 @@
         chips.push({ cls:'good', text:'Overload ' + (card.delta || -2) });
         chips.push({ cls:'warn', text:'Pool +1 bei Overload 4–7' });
         chips.push({ cls:'blue', text:'Live +1 bei 8+ vorher' });
-        chips.push({ cls:'warn', text:'Null-Stabi: Pool +1' });
+        chips.push({ cls:'warn', text:'Null-Stabi: kein Ertrag' });
       } else if (t === 'twist'){
         if (card.stage) chips.push({ cls:'warn', text:'Bühnenregel: ' + card.name });
         if (card.fx === 'pyro') chips.push({ cls:'bad', text:'Overload +2' });
@@ -2217,6 +2247,7 @@
         if (card.fx === 'stageDive') chips.push({ cls:'bad', text:'Stage Dive' });
       } else if (t === 'encore'){
         chips.push({ cls:'blue', text:'Encore-Kette' });
+        chips.push({ cls:'warn', text:'Stop: 1 Live / Live 0 → Overload +1' });
         chips.push({ cls:'warn', text:'Kein Camp dazwischen' });
       }
 
@@ -2586,7 +2617,7 @@
       var poolHint = document.getElementById('poolHint');
       if (poolHint){
         var poolTake = poolTakeFor(state.pool);
-        poolHint.textContent = 'Camp-Bonus (max): +' + poolTake + ' (Pool ' + state.pool + ', cap1)';
+        poolHint.textContent = 'Camp-Bonus (max): +' + poolTake + ' (Live ≥2, Pool ' + state.pool + ', cap1)';
       }
 
       var pill = document.getElementById('stateChip');
@@ -2705,7 +2736,7 @@
         var hp = state.players[state.humanIndex];
         if (hp && hp.roundState === 'active'){
           var extra = (isAggCountdown() && state.countdownActive && state.pool >= 3) ? ' (Achtung: Countdown ist aggressiv, Pool ≥3)' : '';
-          showBanner('warn','Entscheidung: Bleib oder Camp','Camp ist nur mit mindestens 1 Live möglich.' + extra);
+          showBanner('warn','Entscheidung: Bleib oder Camp','Camp ist nur mit mindestens 1 Live möglich. Pool-Bonus nur bei Live ≥2.' + extra);
         } else {
           showBanner('good','Du bist gecampt','Du beobachtest diese Runde.');
         }
@@ -2733,12 +2764,14 @@
 
       var human = state.players[state.humanIndex];
       var isHumanActive = human.roundState === 'active';
-      var forced = !!human.forcedStay;
+      var forcedFinalPush = (state.finalPushForceNext && state.finalPushActor === state.humanIndex);
+      var forcedStay = !!human.forcedStay;
+      var forced = forcedStay || forcedFinalPush;
       var campBlockedByZero = (human.live <= 0);
 
       var auto = isAutoAll();
-      document.getElementById('btnStay').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || auto;
-      document.getElementById('btnCamp').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || forced || campBlockedByZero || auto;
+      document.getElementById('btnStay').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || auto || forcedFinalPush;
+      document.getElementById('btnCamp').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || forcedStay || campBlockedByZero || auto;
       document.getElementById('btnResolve').disabled = !state.awaitingDecision || state.gameOver || auto;
 
       // reveal
@@ -2758,6 +2791,8 @@
         h.textContent = '—';
       } else if (!isHumanActive) {
         h.textContent = 'Du bist in dieser Runde gecampt.';
+      } else if (forcedFinalPush) {
+        h.innerHTML = 'Final Push: <b>Letzte Chance</b> – du musst jetzt campen.';
       } else if (forced) {
         h.innerHTML = 'Du bist durch <b>Stage Dive</b> gezwungen, diese Phase <b>drin zu bleiben</b>.';
       } else if (campBlockedByZero) {
@@ -2765,7 +2800,7 @@
       } else {
         if (auto) h.textContent = 'Autoplay ist aktiv – Entscheidungen werden automatisch aufgelöst.';
         else if (areBotsManual()) h.textContent = 'Wähle Bleib oder Camp. Danach entscheide auch die Bots.';
-        else h.textContent = 'Wähle Bleib oder Camp (Camp nur mit Live). Dann wird simultan aufgelöst.';
+        else h.textContent = 'Wähle Bleib oder Camp (Camp nur mit Live, Pool-Bonus ab Live ≥2). Dann wird simultan aufgelöst.';
       }
 
       // highlight choice
@@ -2856,7 +2891,8 @@
       var campHint = document.getElementById('campHint');
       if (human.live <= 0) campHint.textContent = 'Camp erst ab 1 Live';
       else if (human.forcedStay) campHint.textContent = 'Zwang: Bleib';
-      else campHint.textContent = 'Du sicherst dein Live';
+      else if (human.live === 1) campHint.textContent = 'Camp ohne Pool-Bonus (Live <2)';
+      else campHint.textContent = 'Pool-Bonus möglich (Live ≥2)';
 
       var preview = document.getElementById('decisionPreview');
       var gainLine = document.getElementById('decisionGain');
@@ -2867,7 +2903,7 @@
         totalLine.textContent = '—';
       } else {
         preview.style.opacity = '1';
-        var poolBonus = poolTakeFor(state.pool);
+        var poolBonus = (human.live >= 2) ? poolTakeFor(state.pool) : 0;
         if (human.roundState !== 'active'){
           gainLine.textContent = 'Du beobachtest diese Runde.';
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
@@ -3087,7 +3123,7 @@
       for (i=0;i<10;i++) deck.push({ type:'push', name:'Crowd Surf', delta:2, text:'Overload +2. Aufdecker +1 Live. +1 in Pool.' });
       for (i=0;i<6;i++) deck.push({ type:'push', name:'Bassdrop', delta:3, text:'Overload +3. Aufdecker +1 Live. +1 in Pool.' });
 
-      // Stabilisieren (14) – Ertrag: 4–7 → +1 Pool, 8+ → +1 Live, 0 → Null-Stabi +1 Pool
+      // Stabilisieren (14) – Ertrag: 4–7 → +1 Pool, 8+ → +1 Live, 0 → Null-Stabi kein Ertrag
       for (i=0;i<STABILIZE_CARDS.length;i++){
         var sc = STABILIZE_CARDS[i];
         for (var j=0;j<sc.count;j++){
@@ -3095,7 +3131,7 @@
             type:'stabilize',
             name: sc.name,
             delta: -sc.value,
-            text:'Overload −' + sc.value + '. Overload 4–7 vorher: +1 Pool. Overload 8+ vorher: +1 Live. Null-Stabi (0): +1 Pool.'
+            text:'Overload −' + sc.value + '. Overload 4–7 vorher: +1 Pool. Overload 8+ vorher: +1 Live. Null-Stabi (0): kein Ertrag.'
           });
         }
       }
@@ -3108,7 +3144,7 @@
       for (i=0;i<2;i++) deck.push({ type:'twist', name:'Setwechsel', fx:'setwechsel', text:'Der nächste Event wird vom gleichen Spieler aufgedeckt (noch einmal).' });
 
       // Encore (6)
-      for (i=0;i<6;i++) deck.push({ type:'encore', name:'Encore!', fx:'encore', text:'Ketten-Event: Aufdecker kann 1 Live zahlen, um zu stoppen. Sonst sofort nächstes Event.' });
+      for (i=0;i<6;i++) deck.push({ type:'encore', name:'Encore!', fx:'encore', text:'Ketten-Event: Aufdecker kann 1 Live zahlen (bei Live 0: Overload +1), um zu stoppen. Sonst sofort nächstes Event.' });
 
       return shuffle(deck);
     }
@@ -3189,6 +3225,9 @@
       state.overload = 0;
       state.encoreChain = 0;
       state.finalPushUsed = false;
+      state.finalPushGraceUsed = false;
+      state.finalPushForceNext = false;
+      state.finalPushActor = -1;
 
       for (var i=0;i<state.players.length;i++){
         state.players[i].live = 0;
@@ -3350,6 +3389,25 @@
       }
     }
 
+    function hatErzwungeneEntscheidung(){
+      for (var i=0;i<state.players.length;i++){
+        var p = state.players[i];
+        if (p.roundState !== 'active') continue;
+        if (p.forcedStay) return true;
+        if (state.finalPushForceNext && i === state.finalPushActor) return true;
+      }
+      return false;
+    }
+
+    function sollDecisionWindowOeffnen(){
+      if (state.gameOver) return false;
+      if (hatErzwungeneEntscheidung()) return true;
+      for (var i=0;i<state.players.length;i++){
+        if (darfJetztCampen(state.players[i])) return true;
+      }
+      return false;
+    }
+
     function ensureDecisionPhase(){
       if (state.gameOver) return;
       state.awaitingDecision = true;
@@ -3363,13 +3421,33 @@
         [
           { cls:'good', sym:'✅', text:'Bleib: Live bleibt im Risiko' },
           { cls:'warn', sym:'🏕️', text:'Camp: nur mit mindestens 1 Live' },
-          { cls:'blue', sym:'🎁', text:'Pool-Bonus: maximal +1 Pool pro Camper (cap1)' }
+          { cls:'blue', sym:'🎁', text:'Pool-Bonus: +1 nur bei Live ≥2 (cap1)' }
         ],
         'Simultan, offen'
       );
 
       updateUI();
       startDecisionTimer();
+    }
+
+    function skipDecisionWindow(reason){
+      stopDecisionTimer();
+      state.awaitingDecision = false;
+      state.humanChoice = 'stay';
+      state.humanLockedIn = false;
+      state.botChoices = {};
+      state.encoreChain = 0;
+      logStep('info', {
+        action: 'DECISION',
+        actor: 'System',
+        reason: reason || 'NoMeaningfulChoice',
+        fields: { DecisionWindow: 'SKIP', Reason: (reason || 'NoMeaningfulChoice') },
+        msgHtml: 'DECISION_WINDOW_SKIP',
+        before: actorSnapshot(null),
+        after: actorSnapshot(null),
+        reasons: { extra: 'DecisionWindowSkip' }
+      });
+      advanceAfterDecision();
     }
 
     function resolveCountdownTick(){
@@ -3517,17 +3595,14 @@
 
       var reward = 'none';
       if (beforeOver === 0){
-        var poolBeforeNull = state.pool;
-        state.pool += 1;
-        reward = 'null';
         logStep('info', {
           action: 'EFFECT',
           actor: p.name,
           actorIdx: rev,
-          msgHtml: 'Null-Stabi: Overload war 0 → +1 Pool',
-          before: { overload: state.overload, pool: poolBeforeNull, live: liveBefore, camp: campBefore },
+          msgHtml: 'Null-Stabi: Overload war 0 → kein Ertrag',
+          before: { overload: state.overload, pool: state.pool, live: liveBefore, camp: campBefore },
           after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
-          reasons: { pool: '+1 from Null-Stabi' }
+          reasons: { extra: 'NullStabiNoReward' }
         });
       } else if (beforeOver >= 4 && beforeOver <= 7){
         var poolBeforeMid = state.pool;
@@ -3572,10 +3647,10 @@
       ];
       if (reward === 'live'){
         summaryChips.push({ cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' });
-      } else if (reward === 'pool' || reward === 'null'){
+      } else if (reward === 'pool'){
         summaryChips.push({ cls:'warn', sym:'🎁', text:'Pool +1 (jetzt ' + state.pool + ')' });
       } else {
-        summaryChips.push({ cls:'blue', sym:'—', text:'Kein Ertrag' });
+        summaryChips.push({ cls:'blue', sym:'—', text:'Kein Ertrag (Null-Stabi möglich)' });
       }
 
       setSummary('🛠️ Stabilisieren – ' + card.name, summaryChips, 'Danach: Entscheidung Bleib/Camp');
@@ -4068,7 +4143,6 @@
 
     function applyEncore(rev, card, cb){
       var p = state.players[rev];
-      var canPay = p.live >= 1;
 
       logStep('warn', {
         action: 'EFFECT',
@@ -4084,21 +4158,41 @@
 
       function proceed(stop){
         if (stop){
-          var liveBeforeStop = p.live;
-          p.live = Math.max(0, p.live - 1);
-          logStep('good', {
-            action: 'EFFECT',
-            actor: p.name,
-            actorIdx: rev,
-            reason: 'EncoreStop',
-            effectId: 'ENCORE_STOP',
-            msgHtml: 'ENCORE_STOP',
-            fields: { Payment: 'Live-1', EffectId: 'ENCORE_STOP' },
-            before: { overload: state.overload, pool: state.pool, live: liveBeforeStop, camp: p.camp },
-            after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
-            reasons: { live: '-1 pay Encore stop' }
-          });
-          toast('Encore gestoppt', p.name + ' zahlt 1 Live.');
+          if (p.live >= 1){
+            var liveBeforeStop = p.live;
+            p.live = Math.max(0, p.live - 1);
+            logStep('good', {
+              action: 'EFFECT',
+              actor: p.name,
+              actorIdx: rev,
+              reason: 'EncoreStop',
+              effectId: 'ENCORE_STOP',
+              msgHtml: 'ENCORE_STOP',
+              fields: { Payment: 'Live-1', EffectId: 'ENCORE_STOP' },
+              before: { overload: state.overload, pool: state.pool, live: liveBeforeStop, camp: p.camp },
+              after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
+              reasons: { live: '-1 pay Encore stop' }
+            });
+            toast('Encore gestoppt', p.name + ' zahlt 1 Live.');
+          } else {
+            var overBeforeStop = state.overload;
+            var rStop = applyOverloadDelta(1);
+            var capNoteStop = describeOverloadCap(overBeforeStop, 1, rStop.after);
+            logStep('good', {
+              action: 'EFFECT',
+              actor: p.name,
+              actorIdx: rev,
+              reason: 'EncoreStop',
+              effectId: 'ENCORE_STOP',
+              msgHtml: 'ENCORE_STOP | cost=Overload+1' + capNoteStop,
+              fields: { Payment: 'Overload+1', EffectId: 'ENCORE_STOP' },
+              before: { overload: rStop.before, pool: state.pool, live: p.live, camp: p.camp },
+              after: { overload: rStop.after, pool: state.pool, live: p.live, camp: p.camp },
+              reasons: { overload: 'EncoreStopCost=+1' }
+            });
+            toast('Encore gestoppt', p.name + ' zahlt Overload +1.');
+            onOverloadMayHit12(rStop, 'EncoreStopCost');
+          }
           state.encoreChain = 0;
           cb(false);
           return;
@@ -4121,44 +4215,18 @@
 
       if (rev === state.humanIndex){
         if (isAutoAll()){
-          if (!canPay){
-            logStep('bad', {
-              action: 'DECISION',
-              actor: p.name,
-              actorIdx: rev,
-              reason: 'Live0',
-              fields: { Decision: 'Weiterlaufen', forced: 'false' },
-              msgHtml: 'ENCORE_STOP_DENIED',
-              before: actorSnapshot(rev),
-              after: actorSnapshot(rev),
-              reasons: { extra: 'EncoreStopDenied' }
-            });
-            proceed(false);
-            return;
-          }
           proceed(!!botEncoreStop(rev));
           return;
         }
 
-        if (!canPay){
-          logStep('bad', {
-            action: 'DECISION',
-            actor: p.name,
-            actorIdx: rev,
-            reason: 'Live0',
-            fields: { Decision: 'Weiterlaufen', forced: 'false' },
-            msgHtml: 'ENCORE_STOP_DENIED',
-            before: actorSnapshot(rev),
-            after: actorSnapshot(rev),
-            reasons: { extra: 'EncoreStopDenied' }
-          });
-          proceed(false);
-          return;
-        }
+        var stopLabel = (p.live >= 1) ? 'Stoppen (1 Live)' : 'Stoppen (Overload +1)';
+        var stopText = (p.live >= 1)
+          ? 'Encore! würde ein weiteres Event auslösen.<br><br>Willst du <b>1 Live</b> zahlen, um Encore zu stoppen?'
+          : 'Encore! würde ein weiteres Event auslösen.<br><br>Du hast <b>0 Live</b> – Stoppen kostet <b>Overload +1</b>.';
         askYesNo(
           'Encore! – Stoppen?',
-          'Encore! würde ein weiteres Event auslösen.<br><br>Willst du <b>1 Live</b> zahlen, um Encore zu stoppen?',
-          'Stoppen (1 Live)',
+          stopText,
+          stopLabel,
           'Weiterlaufen lassen',
           function(use){ proceed(!!use); }
         );
@@ -4166,32 +4234,21 @@
       }
 
       if (areBotsManual()){
-        if (!canPay){
-          logStep('bad', {
-            action: 'DECISION',
-            actor: p.name,
-            actorIdx: rev,
-            reason: 'Live0',
-            fields: { Decision: 'Weiterlaufen', forced: 'false' },
-            msgHtml: 'ENCORE_STOP_DENIED',
-            before: actorSnapshot(rev),
-            after: actorSnapshot(rev),
-            reasons: { extra: 'EncoreStopDenied' }
-          });
-          proceed(false);
-          return;
-        }
+        var botStopLabel = (p.live >= 1) ? 'Stoppen (1 Live)' : 'Stoppen (Overload +1)';
+        var botStopText = (p.live >= 1)
+          ? '<b>' + esc(p.name) + '</b> darf Encore stoppen. Willst du 1 Live zahlen?'
+          : '<b>' + esc(p.name) + '</b> darf Encore stoppen. Live=0 → Stoppen kostet Overload +1.';
         askYesNo(
           'Encore! – ' + p.name + ' stoppen?',
-          '<b>' + esc(p.name) + '</b> darf Encore stoppen. Willst du 1 Live zahlen?',
-          'Stoppen (1 Live)',
+          botStopText,
+          botStopLabel,
           'Weiterlaufen lassen',
           function(use){ proceed(!!use); }
         );
         return;
       }
 
-      if (canPay && botEncoreStop(rev)) proceed(true);
+      if (botEncoreStop(rev)) proceed(true);
       else proceed(false);
     }
 
@@ -4271,8 +4328,12 @@
         resolveCountdownTick();
         if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
 
-        ensureDecisionPhase();
-        pumpBots();
+        if (sollDecisionWindowOeffnen()){
+          ensureDecisionPhase();
+          pumpBots();
+        } else {
+          skipDecisionWindow('NoMeaningfulChoice');
+        }
       });
     }
 
@@ -4358,6 +4419,7 @@
       var poolBefore = state.pool;
       var poolTake = (typeof poolTakeOverride === 'number') ? poolTakeOverride : poolTakeFor(state.pool);
       poolTake = Math.min(1, poolTake);
+      if (!darfPoolZuCamp(liveBefore)) poolTake = 0;
       p.camp += liveBefore + poolTake + extraCamp;
       p.live = 0;
       state.pool = Math.max(0, state.pool - poolTake);
@@ -4376,10 +4438,14 @@
       if (idx === -1) return false;
       var p = state.players[idx];
       state.finalPushUsed = true;
+      state.finalPushGraceUsed = false;
+      state.finalPushForceNext = false;
+      state.finalPushActor = idx;
       logStep('warn', {
         action: 'CHECK',
         actor: 'System',
         msgHtml: 'FINAL_PUSH_TRIGGER | lastActive=' + esc(p.name) + (reason ? ' | reason=' + esc(reason) : ''),
+        fields: { FinalPushActive: 'true', GraceUsed: 'false', LastCallForced: 'false' },
         before: actorSnapshot(idx),
         after: actorSnapshot(idx),
         reasons: { extra: 'FinalPush' }
@@ -4390,6 +4456,57 @@
       updateUI();
       revealEvent();
       return true;
+    }
+
+    function advanceAfterDecision(){
+      if (checkWin()) { updateUI(); return; }
+
+      if (activeCount() === 1){
+        updateUI();
+        if (!state.finalPushUsed){
+          recordDebugSnapshot('beforeFinalPush');
+          if (triggerFinalPush('Anti-Solo nach Camp-Phase')) return;
+        }
+      }
+
+      if (activeCount() === 0){
+        logStep('good', {
+          action: 'ROUND_END',
+          actor: 'System',
+          reason: 'AllCamped',
+          fields: { RoundEndReason: 'Alle gecampt', PoolExpired: (state.pool > 0 ? 'yes' : 'no'), OverloadReset: 0 },
+          msgHtml: 'ROUND_END',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'AllCamped' }
+        });
+        recordDebugSnapshot('allCamped');
+        endRound('Alle gecampt');
+        return;
+      }
+
+      if (state.extraRevealSame){
+        state.extraRevealSame = false;
+        logStep('info', {
+          action: 'CHECK',
+          actor: 'System',
+          msgHtml: 'SETWECHSEL | nextRevealer=' + esc(state.players[state.revealer].name),
+          before: actorSnapshot(null),
+          after: actorSnapshot(null),
+          reasons: { extra: 'Setwechsel' }
+        });
+      } else {
+        var nxt = nextActiveFrom(state.revealer, state.direction);
+        if (nxt === -1){
+          endRound('Alle gecampt');
+          return;
+        }
+        state.revealer = nxt;
+      }
+
+      updateUI();
+      recordDebugSnapshot('afterDecision');
+      pumpBots();
     }
 
     function resolveDecisions(){
@@ -4418,26 +4535,44 @@
         if (p.roundState !== 'active') continue;
 
         var choice = 'stay';
+        var forced = false;
+        var forcedReason = '';
+        var isFinalPushActor = (state.finalPushUsed && i === state.finalPushActor);
+        var isFinalPushLastCall = (state.finalPushForceNext && isFinalPushActor);
+        if (isFinalPushLastCall){
+          choice = 'camp';
+          forced = true;
+          forcedReason = 'FinalPushLastCall';
+        }
         if (i === state.humanIndex){
-          if (isAutoAll()){
-            choice = botWantsToCamp(i) ? 'camp' : 'stay';
-          } else if (p.forcedStay) {
-            choice = 'stay';
-          } else {
-            if (state.humanChoice === 'camp' && p.live <= 0) choice = 'stay';
-            else choice = state.humanChoice;
+          if (!isFinalPushLastCall){
+            if (isAutoAll()){
+              choice = botWantsToCamp(i) ? 'camp' : 'stay';
+            } else if (p.forcedStay) {
+              choice = 'stay';
+            } else {
+              if (state.humanChoice === 'camp' && p.live <= 0) choice = 'stay';
+              else choice = state.humanChoice;
+            }
           }
         } else {
-          if (areBotsManual()){
-            choice = state.botChoices[String(i)] || 'stay';
-          } else {
-            choice = botWantsToCamp(i) ? 'camp' : 'stay';
+          if (!isFinalPushLastCall){
+            if (areBotsManual()){
+              choice = state.botChoices[String(i)] || 'stay';
+            } else {
+              choice = botWantsToCamp(i) ? 'camp' : 'stay';
+            }
+            if (p.forcedStay) choice = 'stay';
           }
-          if (p.forcedStay) choice = 'stay';
         }
 
-        if (choice === 'camp' && p.live <= 0) choice = 'stay';
-        choices.push({ idx:i, choice:choice, forced:(p.forcedStay && p.roundState === 'active') });
+        if (p.forcedStay && !isFinalPushLastCall){
+          forced = true;
+          forcedReason = 'StageDive';
+        }
+
+        if (choice === 'camp' && p.live <= 0 && !isFinalPushLastCall) choice = 'stay';
+        choices.push({ idx:i, choice:choice, forced:forced, forcedReason:forcedReason });
       }
 
       var eligibleNames = [];
@@ -4449,7 +4584,13 @@
         action: 'DECISION',
         actor: 'System',
         reason: 'DecisionWindowOpen',
-        fields: { DecisionWindow: 'OPEN', eligible: esc(eligibleNames.join(', ')), windowId: windowId },
+        fields: {
+          DecisionWindow: 'OPEN',
+          eligible: esc(eligibleNames.join(', ')),
+          windowId: windowId,
+          FinalPushActive: (state.finalPushUsed ? 'true' : 'false'),
+          FinalPushGraceUsed: (state.finalPushGraceUsed ? 'true' : 'false')
+        },
         msgHtml: 'DECISION_WINDOW_OPEN',
         before: actorSnapshot(null),
         after: actorSnapshot(null),
@@ -4460,7 +4601,7 @@
         var c = choices[j2];
         var label = (c.choice === 'camp') ? 'Camp' : 'Bleib';
         var forcedText = c.forced ? 'true' : 'false';
-        var forcedReason = c.forced ? 'StageDive' : '';
+        var forcedReason = c.forced ? (c.forcedReason || 'Forced') : '';
         var decisionFields = { Decision: label, forced: forcedText };
         if (forcedReason) decisionFields.forcedReason = forcedReason;
         logStep('info', {
@@ -4487,6 +4628,29 @@
         reasons: { extra: 'DecisionWindowClose' }
       });
 
+      if (state.finalPushUsed && !state.finalPushGraceUsed){
+        for (var g=0;g<choices.length;g++){
+          var gc = choices[g];
+          if (gc.idx !== state.finalPushActor) continue;
+          if (gc.choice === 'stay'){
+            state.finalPushGraceUsed = true;
+            state.finalPushForceNext = true;
+            logStep('warn', {
+              action: 'DECISION',
+              actor: state.players[gc.idx].name,
+              actorIdx: gc.idx,
+              reason: 'FinalPushGraceStay',
+              fields: { FinalPushActive: 'true', GraceUsed: 'true', LastCallForced: 'true' },
+              msgHtml: 'FINAL_PUSH_GRACE_USED',
+              before: actorSnapshot(gc.idx),
+              after: actorSnapshot(gc.idx),
+              reasons: { extra: 'FinalPushGraceUsed' }
+            });
+          }
+          break;
+        }
+      }
+
       for (var x=0;x<choices.length;x++){
         var pl = state.players[choices[x].idx];
         if (pl.forcedStay) pl.forcedStay = false;
@@ -4498,6 +4662,7 @@
 
       var anySuccessfulCamp = false;
       var eligibleCampers = [];
+      var poolEligibleCampers = [];
       for (var o=0;o<order.length;o++){
         var idx = order[o];
         if (!campersSet[String(idx)]) continue;
@@ -4518,13 +4683,14 @@
         }
 
         eligibleCampers.push(idx);
+        if (darfPoolZuCamp(p2.live)) poolEligibleCampers.push(idx);
       }
 
       var poolPlan = null;
-      if (eligibleCampers.length){
-        poolPlan = planCampPoolDistribution(eligibleCampers, state.pool);
+      if (poolEligibleCampers.length){
+        poolPlan = planCampPoolDistribution(poolEligibleCampers, state.pool);
         var camperNames = [];
-        for (var n=0;n<eligibleCampers.length;n++) camperNames.push(esc(state.players[eligibleCampers[n]].name));
+        for (var n=0;n<poolEligibleCampers.length;n++) camperNames.push(esc(state.players[poolEligibleCampers[n]].name));
         logStep('info', {
           action: 'RESOLVE_CAMP',
           actor: 'System',
@@ -4575,11 +4741,13 @@
 
         var poolBeforeCamper = state.pool;
         var dangerBonus = (state.overload >= 8) ? 1 : 0;
-        var poolRequested = Math.min(poolBeforeCamper, 1 + dangerBonus);
-        var poolGranted = poolPlan ? (poolPlan.takes[String(idx2)] || 0) : 0;
+        var poolAllowed = darfPoolZuCamp(p3.live);
+        var poolRequested = poolAllowed ? Math.min(poolBeforeCamper, 1 + dangerBonus) : 0;
+        var poolGranted = (poolAllowed && poolPlan) ? (poolPlan.takes[String(idx2)] || 0) : 0;
         poolGranted = Math.min(1, poolGranted);
         var transfer = applyCampTransfer(p3, 0, poolGranted);
         anySuccessfulCamp = true;
+        if (idx2 === state.finalPushActor) state.finalPushForceNext = false;
         logStep('warn', {
           action: 'RESOLVE_CAMP',
           actor: p3.name,
@@ -4589,7 +4757,8 @@
             LiveToCamp: transfer.liveBefore,
             PoolToCampRequested: poolRequested,
             PoolToCampGranted: poolGranted,
-            PoolCap: 1
+            PoolCap: 1,
+            PoolToCampBlocked: (poolAllowed ? null : 'LiveTooLow')
           },
           msgHtml: 'RESOLVE_CAMP',
           before: { overload: state.overload, pool: transfer.poolBefore, live: transfer.liveBefore, camp: transfer.campBefore },
@@ -4624,65 +4793,7 @@
       state.awaitingDecision = false;
       state.humanChoice = 'stay';
 
-      if (checkWin()) { updateUI(); return; }
-
-      // Anti-Solo
-      if (activeCount() === 1){
-        updateUI();
-        if (!state.finalPushUsed){
-          recordDebugSnapshot('beforeFinalPush');
-          if (triggerFinalPush('Anti-Solo nach Camp-Phase')) return;
-        }
-        logStep('warn', {
-          action: 'CHECK',
-          actor: 'System',
-          msgHtml: 'ANTI_SOLO_END | reason=FinalPushUsed',
-          before: actorSnapshot(null),
-          after: actorSnapshot(null),
-          reasons: { extra: 'AntiSoloAfterFinalPush' }
-        });
-        endRound('Anti-Solo nach Final Push');
-        return;
-      }
-
-      if (activeCount() === 0){
-        logStep('good', {
-          action: 'ROUND_END',
-          actor: 'System',
-          reason: 'AllCamped',
-          fields: { RoundEndReason: 'Alle gecampt', PoolExpired: (state.pool > 0 ? 'yes' : 'no'), OverloadReset: 0 },
-          msgHtml: 'ROUND_END',
-          before: actorSnapshot(null),
-          after: actorSnapshot(null),
-          reasons: { extra: 'AllCamped' }
-        });
-        recordDebugSnapshot('allCamped');
-        endRound('Alle gecampt');
-        return;
-      }
-
-      if (state.extraRevealSame){
-        state.extraRevealSame = false;
-        logStep('info', {
-          action: 'CHECK',
-          actor: 'System',
-          msgHtml: 'SETWECHSEL | nextRevealer=' + esc(state.players[state.revealer].name),
-          before: actorSnapshot(null),
-          after: actorSnapshot(null),
-          reasons: { extra: 'Setwechsel' }
-        });
-      } else {
-        var nxt = nextActiveFrom(state.revealer, state.direction);
-        if (nxt === -1){
-          endRound('Alle gecampt');
-          return;
-        }
-        state.revealer = nxt;
-      }
-
-      updateUI();
-      recordDebugSnapshot('afterDecision');
-      pumpBots();
+      advanceAfterDecision();
     }
 
     // ---------- bots automation ----------
@@ -4934,7 +5045,7 @@
         state.pool = 0;
         state.overload = 0;
         applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
-        ok('Stabilisieren: Overload 0 -> +1 Pool', state.pool === 1);
+        ok('Stabilisieren: Overload 0 -> kein Pool', state.pool === 0);
 
         state.pool = 0;
         state.overload = 5;
@@ -4950,7 +5061,38 @@
         state.players = oldPlayers;
         state.pool = oldPool;
       })();
-      
+
+      // Camp mit Live=1 bekommt keinen Pool-Bonus
+      (function(){
+        var oldPlayers = state.players.slice();
+        var oldPool = state.pool;
+        var oldAwait = state.awaitingDecision;
+        var oldAdvance = advanceAfterDecision;
+
+        state.players = [
+          { name:'Du', camp:0, live:1, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:2, roundState:'active', forcedStay:false }
+        ];
+        state.pool = 3;
+        state.awaitingDecision = true;
+        state.humanIndex = 0;
+        state.humanChoice = 'camp';
+        state.humanLockedIn = true;
+        state.botChoices = { '1':'stay' };
+        state.revealer = 0;
+        state.direction = 1;
+        advanceAfterDecision = function(){};
+
+        resolveDecisions();
+        ok('Camp Live=1: Pool bleibt gleich', state.pool === 3);
+        ok('Camp Live=1: Camp +1', state.players[0].camp === 1);
+
+        advanceAfterDecision = oldAdvance;
+        state.players = oldPlayers;
+        state.pool = oldPool;
+        state.awaitingDecision = oldAwait;
+      })();
+
       // Anti-Solo: Final Push triggert Extra-Event
       (function(){
         var oldPlayers = state.players.slice();
@@ -4980,6 +5122,62 @@
         state.players = oldPlayers;
         state.awaitingDecision = oldAwait;
         state.finalPushUsed = oldFinalPush;
+      })();
+
+      // DecisionWindow-Skip ohne sinnvolle Wahl
+      (function(){
+        var oldPlayers = state.players.slice();
+        var oldFinalForce = state.finalPushForceNext;
+        var oldFinalActor = state.finalPushActor;
+        state.players = [
+          { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStay:false }
+        ];
+        state.finalPushForceNext = false;
+        state.finalPushActor = -1;
+        ok('DecisionWindow: Skip bei Live=0 ohne Zwang', sollDecisionWindowOeffnen() === false);
+
+        state.players = oldPlayers;
+        state.finalPushForceNext = oldFinalForce;
+        state.finalPushActor = oldFinalActor;
+      })();
+
+      // Final Push: 1 Gnaden-Bleib, danach Last Call
+      (function(){
+        var oldPlayers = state.players.slice();
+        var oldAwait = state.awaitingDecision;
+        var oldAdvance = advanceAfterDecision;
+        var oldFinalUsed = state.finalPushUsed;
+        var oldFinalGrace = state.finalPushGraceUsed;
+        var oldFinalForce = state.finalPushForceNext;
+        var oldFinalActor = state.finalPushActor;
+
+        state.players = [
+          { name:'Du', camp:0, live:1, roundState:'active', forcedStay:false }
+        ];
+        state.awaitingDecision = true;
+        state.humanIndex = 0;
+        state.humanChoice = 'stay';
+        state.humanLockedIn = true;
+        state.botChoices = {};
+        state.revealer = 0;
+        state.direction = 1;
+        state.finalPushUsed = true;
+        state.finalPushGraceUsed = false;
+        state.finalPushForceNext = false;
+        state.finalPushActor = 0;
+        advanceAfterDecision = function(){};
+
+        resolveDecisions();
+        ok('Final Push: Gnaden-Bleib setzt Last Call', state.finalPushGraceUsed === true && state.finalPushForceNext === true);
+
+        advanceAfterDecision = oldAdvance;
+        state.players = oldPlayers;
+        state.awaitingDecision = oldAwait;
+        state.finalPushUsed = oldFinalUsed;
+        state.finalPushGraceUsed = oldFinalGrace;
+        state.finalPushForceNext = oldFinalForce;
+        state.finalPushActor = oldFinalActor;
       })();
 
       // Mini-Testlauf (Seeded RNG): Nach RoundReset keine Entscheidung ohne Event.
@@ -5014,7 +5212,11 @@
           feedbackLevel: state.feedbackLevel,
           countdownActive: state.countdownActive,
           encoreChain: state.encoreChain,
-          botChoices: state.botChoices
+          botChoices: state.botChoices,
+          finalPushUsed: state.finalPushUsed,
+          finalPushGraceUsed: state.finalPushGraceUsed,
+          finalPushForceNext: state.finalPushForceNext,
+          finalPushActor: state.finalPushActor
         };
 
         state.players = [
@@ -5075,6 +5277,10 @@
         state.countdownActive = oldState.countdownActive;
         state.encoreChain = oldState.encoreChain;
         state.botChoices = oldState.botChoices;
+        state.finalPushUsed = oldState.finalPushUsed;
+        state.finalPushGraceUsed = oldState.finalPushGraceUsed;
+        state.finalPushForceNext = oldState.finalPushForceNext;
+        state.finalPushActor = oldState.finalPushActor;
         Math.random = oldRand;
       })();
 
@@ -5170,6 +5376,9 @@
       state.askOpen = false;
       state.roundResetId = 0;
       state.finalPushUsed = false;
+      state.finalPushGraceUsed = false;
+      state.finalPushForceNext = false;
+      state.finalPushActor = -1;
       state.logSubStep = 0;
       state.debugSnapshots = [];
       state.debugLogEntries = [];
@@ -5195,7 +5404,7 @@
         [
           { cls:'blue', sym:'▶', text:'Klicke auf „Event aufdecken“, um zu starten' },
           { cls:'warn', sym:'🏁', text:'Ziel: ' + WIN_CAMP + ' Camp' },
-          { cls:'good', sym:'🛠️', text:'Stabilisieren: Pool +1 bei 4–7, Live +1 bei 8+, Null-Stabi +1 Pool' }
+          { cls:'good', sym:'🛠️', text:'Stabilisieren: Pool +1 bei 4–7, Live +1 bei 8+, Null-Stabi ohne Ertrag' }
         ],
         'Runde 1 beginnt'
       );
