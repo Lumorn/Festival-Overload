@@ -12,6 +12,7 @@
       --stroke:rgba(148,163,184,.16);
       --stroke2:rgba(148,163,184,.22);
       --muted:#9aa8c1;
+      --mutedStrong:#b4c0d8;
       --text:#e8edf7;
       --good:#22c55e;
       --warn:#f59e0b;
@@ -36,7 +37,7 @@
     .topLeft{display:flex;flex-direction:column;gap:6px}
     .titleRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     h1{margin:0;font-size:20px;letter-spacing:.2px}
-    .sub{color:var(--muted);font-size:13px;max-width:920px;line-height:1.35}
+    .sub{color:var(--mutedStrong);font-size:14px;max-width:920px;line-height:1.45}
 
     .ver{
       display:inline-flex;align-items:center;gap:8px;
@@ -129,8 +130,8 @@
     .rType{font-size:11px;color:#d6dbea}
     .rText{font-size:11px;color:#d6dbea;line-height:1.28}
 
-    .hint{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.35}
-    .mini{font-size:11px;color:var(--muted);line-height:1.35}
+    .hint{color:var(--mutedStrong);font-size:12px;margin-top:10px;line-height:1.45}
+    .mini{font-size:12px;color:var(--mutedStrong);line-height:1.45}
     .sep{height:1px;background:rgba(148,163,184,.14);margin:10px 0}
 
     .players{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -220,9 +221,9 @@
     .logWrap{display:flex;flex-direction:column;gap:8px;min-height:0}
     .logHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
     .logActions{display:flex;gap:8px;align-items:center}
-    .log{flex:1;min-height:240px;overflow:auto;background:var(--panel2);border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:10px;font-size:12px;line-height:1.35}
+    .log{flex:1;min-height:240px;overflow:auto;background:rgba(16,22,35,.65);border:1px solid rgba(148,163,184,.18);border-radius:14px;padding:12px;font-size:13px;line-height:1.5}
     .log .t{color:var(--muted)}
-    .log .evt{padding:6px 8px;border-radius:10px;border:1px solid rgba(148,163,184,.10);background:rgba(0,0,0,.12);margin-bottom:6px}
+    .log .evt{padding:8px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.16);background:rgba(0,0,0,.18);margin-bottom:8px;box-shadow:0 10px 22px rgba(0,0,0,.18)}
     .log .evt.good{border-color:rgba(34,197,94,.22);background:rgba(34,197,94,.06)}
     .log .evt.warn{border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.06)}
     .log .evt.bad{border-color:rgba(239,68,68,.22);background:rgba(239,68,68,.06)}
@@ -274,8 +275,8 @@
     .steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .step{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(31,42,68,.45);border:1px solid rgba(148,163,184,.14);font-size:12px;color:var(--muted);user-select:none}
     .step .n{width:18px;height:18px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:rgba(148,163,184,.16);border:1px solid rgba(148,163,184,.18);color:var(--text);font-weight:900;font-size:11px}
-    .step.active{color:var(--text);border-color:rgba(226,232,240,.28);background:rgba(31,42,68,.75)}
-    .step.active .n{background:rgba(99,102,241,.24);border-color:rgba(99,102,241,.36)}
+    .step.active{color:var(--text);border-color:rgba(226,232,240,.35);background:rgba(31,42,68,.85);box-shadow:0 8px 20px rgba(0,0,0,.25)}
+    .step.active .n{background:rgba(99,102,241,.32);border-color:rgba(99,102,241,.45)}
 
     .banner{display:none;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(148,163,184,.14);background:rgba(31,42,68,.35);box-shadow:0 10px 28px rgba(0,0,0,.25)}
     .banner.show{display:block}
@@ -402,7 +403,23 @@
 
     .mainColumns{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px;align-items:start;min-height:0}
     .sideCard{min-height:0}
-    .sideScroll{overflow:auto;min-height:0}
+    .sideScroll{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:12px}
+
+    .sideSection{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(148,163,184,.16);
+      background:rgba(31,42,68,.28);
+    }
+    .sideTitle{
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.2px;
+      margin-bottom:6px;
+    }
+    .ruleList{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:8px}
+    .ruleList li{padding:8px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.12);background:rgba(0,0,0,.12);line-height:1.45}
+    .ruleList li b{font-weight:800}
 
     .actionDock{
       display:grid;
@@ -416,6 +433,14 @@
     }
     .actionDock .decision{padding:0;border:0;background:transparent}
     .actionDock .decisionRow{justify-content:flex-start}
+    .actionDock .controls{gap:12px}
+
+    .btn.primary{
+      background:linear-gradient(135deg, rgba(34,197,94,.25), rgba(34,197,94,.08));
+      border-color:rgba(34,197,94,.4);
+      box-shadow:0 12px 28px rgba(0,0,0,.25);
+      font-weight:700;
+    }
 
     details.fold{border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:8px 10px;background:rgba(31,42,68,.28)}
     details.fold summary{cursor:pointer;list-style:none;font-size:12px;color:var(--muted);font-weight:700}
@@ -557,7 +582,7 @@
                 </div>
 
                 <div class="controls">
-                  <button class="btn good" id="btnReveal">Event aufdecken</button>
+                  <button class="btn good primary" id="btnReveal">Event aufdecken</button>
                   <button class="btn bad" id="btnRestart">Neustart</button>
                 </div>
               </div>
@@ -592,38 +617,28 @@
 
       <div class="card sideCard">
         <div class="sideScroll">
-          <b style="font-size:14px">Mini-Regelübersicht (Kurz)</b>
-          <div class="sep"></div>
-          <div class="mini">
-            <b>Ziel</b>: 8 Camp → sofortiger Sieg.
-            <br><br>
-            <b>Event</b>: aktueller aktiver Spieler deckt 1 Karte auf und führt sie aus. Danach entscheiden alle aktiven Spieler gleichzeitig <b>Bleib/Camp</b>.
-            <br><br>
-            <b>⚡ Push</b>: Overload +X (max 12), Aufdecker +1 Live, Pool +1.
-            <br>
-            <b>🛠️ Stabilisieren</b>: Overload −X (min 0). <b>Ertrag nur wenn es brenzlig ist</b>: Wenn Overload <b>vor</b> dem Senken 8+ war → Aufdecker +1 Live (aus dem Vorrat).
-            <br>
-            <b>🌀 Twist</b>: Chaos. <b>🌀∞ Bühnenregel</b> bleibt offen, es kann nur 1 gleichzeitig geben.
-            <br>
-            <b>🎤 Encore</b>: sofort noch ein Event, bevor jemand campen darf. Aufdecker kann 1 Live zahlen, um Encore zu stoppen.
-            <br><br>
-            <b>Camp</b>: nur mit <b>mindestens 1 Live</b>. Live wird zu Camp, dann Pool-Bonus.
-            <br>
-            <b>Overload-Check</b> bei 12: Katastrophen-Check. Push = <b>Knall</b>. Sonst Overload auf 10.
-            <br>
-            <b>Knall</b>: Runde endet sofort. Alle aktiven Spieler verlieren Live (Camp ist sicher).
-            <br>
-            <b>Countdown</b>: startet erst, wenn in der Runde zum ersten Mal jemand <b>erfolgreich</b> campt (mit Live). Danach Overload +1 nach jedem Event.
-            <br>
-            <b>Anti-Solo</b>: sobald nur noch 1 Spieler aktiv ist, endet die Runde sofort. Letzter Spieler campt Live→Camp, bekommt <b>keinen Pool-Bonus</b>, Pool wird verworfen.
+          <div class="sideSection">
+            <div class="sideTitle">Mini-Regelübersicht (Kurz)</div>
+            <div class="mini">Kurzfassung für die wichtigsten Regeln im schnellen Überblick.</div>
+            <ul class="ruleList mini">
+              <li><b>Ziel</b>: 8 Camp → sofortiger Sieg.</li>
+              <li><b>Event</b>: Aktiver Spieler deckt 1 Karte auf und führt sie aus. Danach entscheiden alle aktiven Spieler gleichzeitig <b>Bleib/Camp</b>.</li>
+              <li><b>⚡ Push</b>: Overload +X (max 12), Aufdecker +1 Live, Pool +1.</li>
+              <li><b>🛠️ Stabilisieren</b>: Overload −X (min 0). <b>Ertrag nur wenn es brenzlig ist</b>: Wenn Overload <b>vor</b> dem Senken 8+ war → Aufdecker +1 Live (aus dem Vorrat).</li>
+              <li><b>🌀 Twist</b>: Chaos. <b>🌀∞ Bühnenregel</b> bleibt offen, es kann nur 1 gleichzeitig geben.</li>
+              <li><b>🎤 Encore</b>: sofort noch ein Event, bevor jemand campen darf. Aufdecker kann 1 Live zahlen, um Encore zu stoppen.</li>
+              <li><b>Camp</b>: nur mit <b>mindestens 1 Live</b>. Live wird zu Camp, dann Pool-Bonus.</li>
+              <li><b>Overload-Check</b> bei 12: Katastrophen-Check. Push = <b>Knall</b>. Sonst Overload auf 10.</li>
+              <li><b>Knall</b>: Runde endet sofort. Alle aktiven Spieler verlieren Live (Camp ist sicher).</li>
+              <li><b>Countdown</b>: startet erst, wenn in der Runde zum ersten Mal jemand <b>erfolgreich</b> campt (mit Live). Danach Overload +1 nach jedem Event.</li>
+              <li><b>Anti-Solo</b>: Sobald nur noch 1 Spieler aktiv ist, endet die Runde sofort. Letzter Spieler campt Live→Camp, bekommt <b>keinen Pool-Bonus</b>, Pool wird verworfen.</li>
+            </ul>
           </div>
-          <div class="sep"></div>
-          <b style="font-size:14px">Test-Deck (60 Karten)</b>
-          <div class="mini">
-            ⚡ Push 26 · 🛠️ Stabilisieren 14 · 🌀 Twist 14 · 🎤 Encore 6
+          <div class="sideSection">
+            <div class="sideTitle">Test-Deck (60 Karten)</div>
+            <div class="mini">⚡ Push 26 · 🛠️ Stabilisieren 14 · 🌀 Twist 14 · 🎤 Encore 6</div>
           </div>
-          <div class="sep"></div>
-          <div class="mini">
+          <div class="sideSection mini">
             <b>Dev:</b> Browser-Konsole: <code>FestivalOverloadTests</code>
           </div>
         </div>
@@ -666,10 +681,19 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.14';
+    var VERSION = 'v0.15';
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.15',
+        date: '2025-12-29',
+        items: [
+          'UI: Lesbarkeit erhöht (stärkerer Kontrast, größere Schrift für Hinweise/Log).',
+          'UI: Aktiver Phasen-Schritt deutlicher hervorgehoben und primärer Aktionsbutton stärker gewichtet.',
+          'UI: Mini-Regelübersicht in strukturierte Abschnitte mit Listen aufgeteilt.'
+        ]
+      },
       {
         ver: 'v0.14',
         date: '2025-12-28',
