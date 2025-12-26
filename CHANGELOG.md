@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Camp-Pool bei simultanen Camps wird rundenbasiert verteilt (max. +1 pro Runde je Camper) und Log zeigt Priorität/Runden.
+- Null-Stabi-Regel: Stabilisieren bei Overload 0 gibt +1 Pool und wird klar geloggt.
 - Entscheidungs-Logging trennt Choice-Zeile von Camp/Anti-Solo/Reset-Abwicklung.
 - Feedback-Bühnenregel stapelt Level (0–3), Push-Modifikator folgt dem Level und Logs zeigen Levelwechsel.
 - State-Logs nutzen keine „Live/Camp unverändert“-Füller mehr und halten die Reihenfolge Overload → Pool → Live → Camp.

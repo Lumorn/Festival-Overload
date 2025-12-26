@@ -895,11 +895,11 @@
               <div class="hint">
                 <b>Camp (nur mit Live):</b> Ohne mindestens <b>1 Live</b> gibt es keinen Cashout.
                 <br>
-                <b>Pool-Bonus:</b> Beim Campen (mit Live) nimmst du sofort <b>poolTake = min(Pool, 1 + Gefahr)</b>, wobei Gefahr bei Overload <b>8+</b> aktiv ist.
+                <b>Pool-Bonus:</b> Beim Campen (mit Live) beträgt dein <b>Max-Bonus</b> <b>1</b> (Overload &lt;8) oder <b>2</b> (Overload <b>8+</b>).
                 <br>
                 <b>Wichtig:</b> Maßgeblich ist der <b>Overload nach dem Event</b> (inkl. Countdown/Checks), direkt vor der Camp-Entscheidung.
                 <br>
-                <b>Verteilung (gleichzeitig campen):</b> Feste Reihenfolge: beginnend beim Aufdecker, dann in aktueller Richtung. Jeder Camper nimmt seinen Pool-Bonus sofort.
+                <b>Verteilung (gleichzeitig campen):</b> Runde 1: jeder Camper erhält max. <b>+1 Pool</b> in Zugreihenfolge (ab Aufdecker). Runde 2 (nur bei Overload 8+): wieder je <b>+1</b>, solange Pool übrig ist.
               </div>
             </details>
           </div>
@@ -912,7 +912,7 @@
                 <div class="poolCard"></div>
                 <div class="poolCard"></div>
               </div>
-              <div class="mini" id="poolHint">Camp-Bonus: min(Pool, 1 + Gefahr)</div>
+              <div class="mini" id="poolHint">Camp-Bonus: max. 1 pro Runde (Overload 8+ = 2 Runden)</div>
             </div>
 
             <div class="tableau">
@@ -1104,7 +1104,7 @@
         <ul class="ruleList mini">
           <li><b>Nach jedem Event</b>: Alle aktiven Spieler entscheiden simultan Bleib oder Camp.</li>
           <li><b>Camp</b> ist nur mit mindestens 1 Live möglich.</li>
-          <li><b>Pool-Bonus</b>: poolTake = min(Pool, 1 + Gefahr), Gefahr aktiv bei Overload 8+.</li>
+          <li><b>Pool-Bonus</b>: Rundenverteilung (max. +1 pro Runde je Camper), Overload 8+ aktiviert Runde 2.</li>
           <li><b>Overload 12</b>: Katastrophen-Check – Push bedeutet Knall.</li>
         </ul>
       </div>
@@ -1115,7 +1115,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.33';
+    var VERSION = 'v0.34';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
     var STABILIZE_CARDS = [
@@ -1129,6 +1129,15 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.34',
+        date: '2026-01-19',
+        items: [
+          'Neu: Camp-Pool wird bei simultanen Camps rundenbasiert verteilt (max. +1 pro Runde je Camper, Reihenfolge ab Aufdecker).',
+          'Neu: Null-Stabi-Regel – bei Overload 0 gibt Stabilisieren +1 Pool (klar geloggt).',
+          'Fix: Camp-Auflösung loggt die Pool-Rundenverteilung samt Priorität sichtbar.'
+        ]
+      },
       {
         ver: 'v0.33',
         date: '2026-01-18',
@@ -1656,6 +1665,28 @@
     function poolTakeFor(overload, pool){
       var dangerBonus = (overload >= 8) ? 1 : 0;
       return Math.min(pool, 1 + dangerBonus);
+    }
+
+    function planCampPoolDistribution(order, overloadAtDecision, poolAvailable){
+      var dangerBonus = (overloadAtDecision >= 8) ? 1 : 0;
+      var maxPerCamper = 1 + dangerBonus;
+      var takes = {};
+      for (var i=0;i<order.length;i++) takes[String(order[i])] = 0;
+      var rounds = [];
+      var remaining = poolAvailable;
+      for (var r=1;r<=maxPerCamper;r++){
+        if (remaining <= 0) break;
+        var round = [];
+        for (var j=0;j<order.length;j++){
+          if (remaining <= 0) break;
+          var idx = order[j];
+          takes[String(idx)] += 1;
+          remaining -= 1;
+          round.push(idx);
+        }
+        if (round.length) rounds.push(round);
+      }
+      return { takes: takes, rounds: rounds, maxPerCamper: maxPerCamper };
     }
 
     function describeOverloadCap(before, add, after){
@@ -2204,7 +2235,7 @@
       if (poolHint){
         var dangerBonus = (state.overload >= 8) ? 1 : 0;
         var poolTake = poolTakeFor(state.overload, state.pool);
-        poolHint.textContent = 'Camp-Bonus: +' + poolTake + ' (Pool ' + state.pool + ', Gefahr +' + dangerBonus + ')';
+        poolHint.textContent = 'Camp-Bonus (max): +' + poolTake + ' (Pool ' + state.pool + ', Gefahr +' + dangerBonus + ')';
       }
 
       var pill = document.getElementById('stateChip');
@@ -2497,7 +2528,7 @@
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
         } else {
           gainLine.textContent = 'Du sicherst: +' + human.live + ' Camp';
-          totalLine.textContent = 'Pool-Bonus: +' + poolBonus + ' · Gesamt danach: ' + (human.camp + human.live + poolBonus);
+          totalLine.textContent = 'Pool-Bonus (max): +' + poolBonus + ' · Gesamt danach: ' + (human.camp + human.live + poolBonus);
         }
       }
 
@@ -2893,7 +2924,7 @@
         [
           { cls:'good', sym:'✅', text:'Bleib: Live bleibt im Risiko' },
           { cls:'warn', sym:'🏕️', text:'Camp: nur mit mindestens 1 Live' },
-          { cls:'blue', sym:'🎁', text:'Pool-Bonus: poolTake = min(Pool, 1 + Gefahr)' }
+          { cls:'blue', sym:'🎁', text:'Pool-Bonus: Rundenverteilung (max. +1 pro Runde, Overload 8+ = 2 Runden)' }
         ],
         'Simultan, offen'
       );
@@ -3016,21 +3047,32 @@
 
       // Patch P2: Ertrag nur wenn Overload VOR dem Senken 8+ war
       var got = 0;
+      var nullStabiBonus = 0;
+      if (beforeOver === 0){
+        var poolBeforeNull = state.pool;
+        state.pool += 1;
+        nullStabiBonus = 1;
+        log('info','Null-Stabi: Overload war <b>0</b> → <b>+1 Pool</b>. ' + formatStateLine(state.overload, state.overload, poolBeforeNull, state.pool, liveBefore, p.live, campBefore, p.camp) + '.');
+      }
+
+      var poolSnapshot = state.pool;
       if (beforeOver >= 8){
         p.live += 1;
         got = 1;
-        log('good','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (8+) → ' + esc(p.name) + ' erhält <b>+1 Live</b> (Vorrat). ' + formatStateLine(state.overload, state.overload, poolBefore, state.pool, liveBefore, p.live, campBefore, p.camp) + '.');
+        log('good','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (8+) → ' + esc(p.name) + ' erhält <b>+1 Live</b> (Vorrat). ' + formatStateLine(state.overload, state.overload, poolSnapshot, poolSnapshot, liveBefore, p.live, campBefore, p.camp) + '.');
       } else {
-        log('info','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (&lt;8) → kein Ertrag. ' + formatStateLine(state.overload, state.overload, poolBefore, state.pool, liveBefore, p.live, campBefore, p.camp) + '.');
+        log('info','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (&lt;8) → kein Ertrag. ' + formatStateLine(state.overload, state.overload, poolSnapshot, poolSnapshot, liveBefore, p.live, campBefore, p.camp) + '.');
       }
 
-      setSummary('🛠️ Stabilisieren – ' + card.name,
-        [
-          { cls:'good', sym:'🛠️', text:'Overload −' + valueAbs + ' → ' + afterOver },
-          (got ? { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' } : { cls:'blue', sym:'—', text:'Kein Live-Ertrag (Overload vor dem Senken <8)' })
-        ],
-        'Danach: Entscheidung Bleib/Camp'
-      );
+      var summaryChips = [
+        { cls:'good', sym:'🛠️', text:'Overload −' + valueAbs + ' → ' + afterOver },
+        (got ? { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' } : { cls:'blue', sym:'—', text:'Kein Live-Ertrag (Overload vor dem Senken <8)' })
+      ];
+      if (nullStabiBonus){
+        summaryChips.push({ cls:'warn', sym:'🎁', text:'Null-Stabi: Pool +1 (jetzt ' + state.pool + ')' });
+      }
+
+      setSummary('🛠️ Stabilisieren – ' + card.name, summaryChips, 'Danach: Entscheidung Bleib/Camp');
 
       updateUI();
     }
@@ -3466,11 +3508,11 @@
       done();
     }
 
-    function applyCampTransfer(p, overloadAtDecision, extraCamp){
+    function applyCampTransfer(p, overloadAtDecision, extraCamp, poolTakeOverride){
       var liveBefore = p.live;
       var campBefore = p.camp;
       var poolBefore = state.pool;
-      var poolTake = poolTakeFor(overloadAtDecision, state.pool);
+      var poolTake = (typeof poolTakeOverride === 'number') ? poolTakeOverride : poolTakeFor(overloadAtDecision, state.pool);
       p.camp += liveBefore + poolTake + extraCamp;
       p.live = 0;
       state.pool = Math.max(0, state.pool - poolTake);
@@ -3560,7 +3602,7 @@
       for (var k=0;k<choices.length;k++) if (choices[k].choice === 'camp') campersSet[String(choices[k].idx)] = true;
 
       var anySuccessfulCamp = false;
-
+      var eligibleCampers = [];
       for (var o=0;o<order.length;o++){
         var idx = order[o];
         if (!campersSet[String(idx)]) continue;
@@ -3572,9 +3614,43 @@
           continue;
         }
 
-        var transfer = applyCampTransfer(p2, state.overload, 0);
+        eligibleCampers.push(idx);
+      }
+
+      var poolPlan = null;
+      if (eligibleCampers.length){
+        poolPlan = planCampPoolDistribution(eligibleCampers, state.overload, state.pool);
+        var camperNames = [];
+        for (var n=0;n<eligibleCampers.length;n++) camperNames.push(esc(state.players[eligibleCampers[n]].name));
+        var roundLabel = (poolPlan.maxPerCamper > 1) ? (poolPlan.maxPerCamper + ' Runden') : '1 Runde';
+        log('info','Camp-Auflösung: Pool-Rundenverteilung (' + roundLabel + ', je Runde max. +1) in Zugreihenfolge: ' + camperNames.join(', ') + '.');
+        if (poolPlan.rounds.length){
+          var roundParts = [];
+          for (var r=0;r<poolPlan.rounds.length;r++){
+            var round = poolPlan.rounds[r];
+            var entries = [];
+            for (var q=0;q<round.length;q++){
+              entries.push(esc(state.players[round[q]].name) + ' +1');
+            }
+            roundParts.push('Runde ' + (r + 1) + ': ' + entries.join(', '));
+          }
+          log('info','Pool-Rundenverteilung: ' + roundParts.join(' · ') + '.');
+        } else if (state.pool <= 0){
+          log('info','Pool-Rundenverteilung: Pool leer → kein Bonus.');
+        }
+      }
+
+      for (var o2=0;o2<order.length;o2++){
+        var idx2 = order[o2];
+        if (!campersSet[String(idx2)]) continue;
+        var p3 = state.players[idx2];
+        if (p3.roundState !== 'active') continue;
+        if (p3.live <= 0) continue;
+
+        var poolTake = poolPlan ? (poolPlan.takes[String(idx2)] || 0) : 0;
+        var transfer = applyCampTransfer(p3, state.overload, 0, poolTake);
         anySuccessfulCamp = true;
-        log('warn','<b>' + esc(p2.name) + '</b> campt: Live→Camp +' + transfer.liveBefore + ', Pool→Camp +' + transfer.poolTake + '. ' + formatStateLine(state.overload, state.overload, transfer.poolBefore, state.pool, transfer.liveBefore, 0, transfer.campBefore, p2.camp) + '.');
+        log('warn','<b>' + esc(p3.name) + '</b> campt: Live→Camp +' + transfer.liveBefore + ', Pool→Camp +' + transfer.poolTake + '. ' + formatStateLine(state.overload, state.overload, transfer.poolBefore, state.pool, transfer.liveBefore, 0, transfer.campBefore, p3.camp) + '.');
       }
       if (anySuccessfulCamp){
         showPlayBanner('good', 'Camp-Auflösung abgeschlossen', 1200);
@@ -3954,6 +4030,43 @@
         else console.log('FestivalOverloadTests: OK', results);
       } catch(e){}
     }
+
+    window.FestivalOverloadDebug = {
+      runCampPoolDemo: function(seed){
+        var oldRand = Math.random;
+        var s = (typeof seed === 'number') ? seed : 4242;
+        Math.random = function(){
+          s = (s * 1664525 + 1013904223) % 4294967296;
+          return s / 4294967296;
+        };
+
+        var logEl = document.getElementById('log');
+        if (logEl) logEl.innerHTML = '';
+        var playLog = document.getElementById('logPlay');
+        if (playLog) playLog.innerHTML = '';
+
+        state.turnId = 1;
+        state.overload = 8;
+        state.pool = 4;
+        state.revealer = 1;
+        state.direction = 1;
+        state.awaitingDecision = true;
+        state.humanIndex = 0;
+        state.humanChoice = 'camp';
+        state.humanLockedIn = true;
+        state.botChoices = { '1': 'camp', '2': 'camp' };
+        state.players = [
+          { name:'Du', camp:0, live:2, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:1, roundState:'active', forcedStay:false },
+          { name:'Bot B', camp:0, live:1, roundState:'active', forcedStay:false }
+        ];
+
+        log('info','Test-Seed: <b>' + s + '</b>.');
+        resolveDecisions();
+        updateUI();
+        Math.random = oldRand;
+      }
+    };
 
     // ---------- init / restart ----------
     function restart(){
