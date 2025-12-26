@@ -27,10 +27,11 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und markieren min 0/Cap 12 inklusive Statuswerte.
 - Anti-Solo läuft jetzt als Final Push: letzter aktiver Spieler bekommt 1 Extra-Event, danach normale Camp-Entscheidung.
 - KNALL halbiert Live der aktiven Spieler, Pflaster rettet +1 Live nach der Halbierung; Logs nutzen Step-IDs, ActionType und Delta-Reasons.
-- Debug-Export liefert JSON-Snapshots pro Turn für spätere Analyse.
+- Debug-Export liefert JSON-Snapshots pro Step inklusive Logzeilen für spätere Analyse.
+- Log-Validator prüft State-Invarianten und schreibt ASSERT_FAIL-Events bei Verstößen (Debug-Schalter).
 - Entscheidungs-Logs sind getrennt (Choices vs. Camp/Anti-Solo/Reset-Abwicklung).
 - Feedback-Bühnenregel stapelt Level (max. 3) und erhöht Push entsprechend; Log/Chips zeigen den Level.
-- Katastrophen-Checks und Countdown-Logs enthalten konsistente Overload/Pool-Hinweise.
+- Katastrophen-Checks und Countdown-Logs enthalten konsistente Overload/Pool-Hinweise samt Flag-Deltas.
 - Stage Dive wählt nie den Aufdecker selbst als Ziel; ungültige Bot-Anzahlen werden abgefangen.
 - Bot-Anzahl wird auf eine ganze Zahl gerundet, um inkonsistente Zustände zu vermeiden.
 - Selbsttests laufen nur noch bei `?selftest=1`, damit der normale Spielstart keine Test-Logs erzeugt.
