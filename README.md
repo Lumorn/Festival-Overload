@@ -14,3 +14,11 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 ## UI-Highlights
 
 - Visualisierte Kartenbereiche für Deck, Ablage und die zuletzt aufgedeckte Karte, damit der Spielablauf schneller erfassbar ist.
+
+## Feste Pflege-Regeln
+
+Diese Regeln sind verbindlich und müssen bei jedem Start und jeder Bearbeitung eines Vorgangs eingehalten werden:
+
+- Patchnotes **im Spiel** müssen immer aktualisiert werden.
+- Wenn sich Spielregeln ändern, müssen sie **zusätzlich** in der Spielregeldatei `festival_overload_regelwerk_arbeitsversion_v_0.md` aktualisiert werden.
+- Das README muss bei jeder Änderung immer mitgepflegt werden.
