@@ -306,7 +306,7 @@ Sobald ein Spieler **8 Camp-Punkte** erreicht:
 **Twist (🌀) – 14**
 
 * Richtungswechsel ×2 – 🌀 Drehe die Aufdeck-Reihenfolge um
-* Feedback ×4 – 🌀∞ Bis Rundenende: Jeder ⚡ gibt zusätzlich +1 Overload
+* Feedback ×4 – 🌀∞ Bis Rundenende: Jeder ⚡ gibt zusätzlich +1 Overload pro Feedback-Level (max. 3)
 * Pyro ×3 – 🌀 Overload +2
 * Stage Dive ×3 – 🌀 Wähle einen aktiven Spieler: Er zahlt 1 Live oder bleibt beim **nächsten Camp-Entscheid** automatisch drin (Bleib-Zwang für genau 1 Entscheidung). Ist er bereits betroffen, greift ein **Ersatz-Effekt** (Overload +1, cap 12).
 * Setwechsel ×2 – 🌀 Der nächste Event wird vom gleichen Spieler aufgedeckt

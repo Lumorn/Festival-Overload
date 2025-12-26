@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- Entscheidungs-Logging trennt Choice-Zeile von Camp/Anti-Solo/Reset-Abwicklung.
+- Feedback-Bühnenregel stapelt Level (0–3), Push-Modifikator folgt dem Level und Logs zeigen Levelwechsel.
+- State-Logs nutzen keine „Live/Camp unverändert“-Füller mehr und halten die Reihenfolge Overload → Pool → Live → Camp.
+- Camp- und Anti-Solo-Logs vermeiden doppelte Delta-Wiederholungen in einer Zeile.
 - RoundReset räumt Entscheidungszustände konsequent auf und blockt Entscheidungen nach Knall/Rundenende.
 - KNALL-Pflaster ist als feste Regel umgesetzt und pro Spieler vollständig geloggt.
 - Stage Dive setzt „Muss bleiben“ nur einmal, loggt Zwang in der Entscheidung und nutzt den Ersatz-Effekt bei erneuter Anwendung.
