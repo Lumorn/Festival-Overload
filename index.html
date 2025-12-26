@@ -1115,7 +1115,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.31';
+    var VERSION = 'v0.32';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
     var STABILIZE_CARDS = [
@@ -1129,6 +1129,38 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.32',
+        date: '2026-01-15',
+        items: [
+          'Fix: RoundReset räumt Entscheidung-Flags/Queues und blockt Entscheidungs-Phase nach Knall/Rundenende.',
+          'Fix: KNALL-Pflaster eindeutig umgesetzt und pro Spieler vollständig geloggt.',
+          'Fix: Stage Dive setzt „Muss bleiben“ nur einmal, loggt Zwang im Entscheidungs-Log und nutzt Ersatz-Effekt.',
+          'Fix: Rundenende loggt Pool-Verfall explizit; Richtungswechsel/Setwechsel zeigen den nächsten Aufdecker.',
+          'Fix: Logs nutzen konsistente Werte-Reihenfolge (Overload, Pool, Live, Camp) und Selftest prüft RoundReset.'
+        ]
+      },
+      {
+        ver: 'v0.31',
+        date: '2026-01-11',
+        items: [
+          'Fix: Log-Ausgaben enthalten konsistent Overload/Live/Camp/Pool-Änderungen.',
+          'Fix: Stabilisieren/Push/Countdown-Logs zeigen Vorzeichen, Cap/Min-0 und Basis/Modifier exakt.',
+          'Fix: Katastrophen-Check/Anti-Solo/Stage-Dive-Logs folgen einheitlichem Format.'
+        ]
+      },
+      {
+        ver: 'v0.30',
+        date: '2026-01-10',
+        items: [
+          'Fix: Pool-Bonus wird deterministisch pro Camper verteilt (Reihenfolge ab Aufdecker, aktuelle Richtung).',
+          'Fix: Camp-Logs zeigen Live→Camp und Pool→Camp pro Spieler inkl. Camp/Pool-Delta.',
+          'Fix: Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und beachten min 0/Cap 12.',
+          'Fix: Katastrophen-Check loggt Check-Karte klar und setzt Overload bei Safe auf 10.',
+          'Fix: Anti-Solo camped den letzten Spieler inkl. Pool-Bonus und Trostpunkt bei 0 Live.',
+          'Fix: Stage Dive stapelt kein „Muss bleiben“ mehr; Ersatz-Effekt greift stattdessen.'
+        ]
+      },
       {
         ver: 'v0.29',
         date: '2026-01-14',
@@ -1163,27 +1195,6 @@
         items: [
           'Fix: Fehlende Spieler werden in EndRound/Entscheidung sicher per Neustart abgefangen.',
           'Fix: Bot-Autopump ignoriert leere Spielerlisten.'
-        ]
-      },
-      {
-        ver: 'v0.31',
-        date: '2026-01-11',
-        items: [
-          'Fix: Log-Ausgaben enthalten konsistent Overload/Live/Camp/Pool-Änderungen.',
-          'Fix: Stabilisieren/Push/Countdown-Logs zeigen Vorzeichen, Cap/Min-0 und Basis/Modifier exakt.',
-          'Fix: Katastrophen-Check/Anti-Solo/Stage-Dive-Logs folgen einheitlichem Format.'
-        ]
-      },
-      {
-        ver: 'v0.30',
-        date: '2026-01-10',
-        items: [
-          'Fix: Pool-Bonus wird deterministisch pro Camper verteilt (Reihenfolge ab Aufdecker, aktuelle Richtung).',
-          'Fix: Camp-Logs zeigen Live→Camp und Pool→Camp pro Spieler inkl. Camp/Pool-Delta.',
-          'Fix: Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und beachten min 0/Cap 12.',
-          'Fix: Katastrophen-Check loggt Check-Karte klar und setzt Overload bei Safe auf 10.',
-          'Fix: Anti-Solo camped den letzten Spieler inkl. Pool-Bonus und Trostpunkt bei 0 Live.',
-          'Fix: Stage Dive stapelt kein „Muss bleiben“ mehr; Ersatz-Effekt greift stattdessen.'
         ]
       },
       {
@@ -1425,7 +1436,8 @@
 
       phase: 'reveal',
       banner: null,
-      lastSummary: null
+      lastSummary: null,
+      roundResetId: 0
     };
 
     // ---------- helpers ----------
@@ -2721,13 +2733,16 @@
         return;
       }
       stopDecisionTimer();
+      state.roundResetId += 1;
 
       // stage rule to discard
       if (state.stageRule && state.stageRule._cardRef){
         state.discard.push(state.stageRule._cardRef);
       }
 
-      // pool resets
+      if (state.pool > 0){
+        log('warn','Rundenende: Pool ' + state.pool + ' verfällt. Overload ' + state.overload + ' · Pool ' + state.pool + '→0 · Live/Camp unverändert.');
+      }
       state.pool = 0;
       state.stageRule = null;
       state.countdownActive = false;
@@ -2748,7 +2763,14 @@
       state.awaitingDecision = false;
       state.humanChoice = 'stay';
       state.humanLockedIn = false;
+      state.botChoices = {};
       state.lastEvent = null;
+      state.askOpen = false;
+      var askBack = document.getElementById('askBack');
+      if (askBack){
+        askBack.style.display = 'none';
+        askBack.setAttribute('aria-hidden','true');
+      }
 
       log('good','<b>Neue Runde ' + state.round + '</b> – Overload=0, Pool leer, Bühnenregel entfernt. ' + (reason ? '('+esc(reason)+')' : ''));
       setEventCard(null);
@@ -2760,20 +2782,27 @@
     function doKnall(reason){
       // all active players lose live, camped safe
       var pfl = !!document.getElementById('optPflaster').checked;
-      var affected = [];
+      log('bad','<b>KNALL</b>: ' + esc(reason) + '. Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live/Camp folgt pro Spieler.');
 
       for (var i=0;i<state.players.length;i++){
         var p = state.players[i];
-        if (p.roundState === 'active'){
-          if (pfl && p.live > 0){
-            p.camp += 1;
-            affected.push(p.name + ' rettet 1');
-          }
-          p.live = 0;
+        if (p.roundState !== 'active') continue;
+        var liveBefore = p.live;
+        var campBefore = p.camp;
+        var campAfter = campBefore;
+        if (pfl && liveBefore > 0){
+          campAfter = campBefore + 1;
+        }
+        p.camp = campAfter;
+        p.live = 0;
+
+        if (pfl){
+          log('bad','KNALL: <b>' + esc(p.name) + '</b> Live ' + liveBefore + '→0, Pflaster: +1 Camp (wenn möglich) => Camp ' + campBefore + '→' + campAfter + '. Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + liveBefore + '→0 · Camp ' + campBefore + '→' + campAfter + '.');
+        } else {
+          log('bad','KNALL: <b>' + esc(p.name) + '</b> Live ' + liveBefore + '→0, Pflaster: aus => Camp ' + campBefore + '→' + campAfter + '. Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + liveBefore + '→0 · Camp ' + campBefore + '→' + campAfter + '.');
         }
       }
 
-      log('bad','<b>KNALL</b>: ' + esc(reason) + '. Alle aktiven Spieler verlieren ihr Live (Live → 0).' + (pfl ? ' <span class="t">(Pflaster aktiv: ' + (affected.length ? esc(affected.join(', ')) : 'niemand') + ')</span>' : '') + ' Overload ' + state.overload + ' · Pool ' + state.pool + '.');
       screenFlash('bad');
       toast('KNALL!', 'Runde endet sofort.');
       setHeadline('KNALL! Runde endet', 1600);
@@ -2930,7 +2959,7 @@
         'Danach: Entscheidung Bleib/Camp'
       );
 
-      log('info','<b>' + esc(p.name) + '</b> deckt ⚡ <b>' + esc(card.name) + '</b> auf → Overload ' + before + ' + (' + base + ' Karte +' + mod + ' Feedback) = <b>' + after + '</b>' + capNote + ' · Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + ' · Pool ' + poolBefore + '→' + state.pool + '.');
+      log('info','<b>' + esc(p.name) + '</b> deckt ⚡ <b>' + esc(card.name) + '</b> auf → Overload ' + before + ' + (' + base + ' Karte +' + mod + ' Feedback) = <b>' + after + '</b>' + capNote + ' · Pool ' + poolBefore + '→' + state.pool + ' · Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + '.');
       updateUI();
       onOverloadMayHit12(r, 'Push');
     }
@@ -2947,16 +2976,16 @@
       var floorNote = describeOverloadFloor(beforeOver, valueAbs, afterOver);
       state.overload = afterOver;
 
-      log('good','<b>' + esc(p.name) + '</b> deckt 🛠️ <b>' + esc(card.name) + '</b> auf → Overload ' + beforeOver + ' −' + valueAbs + ' = <b>' + afterOver + '</b>' + floorNote + ' · Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + ' · Pool ' + poolBefore + '→' + state.pool + '.');
+      log('good','<b>' + esc(p.name) + '</b> deckt 🛠️ <b>' + esc(card.name) + '</b> auf → Overload ' + beforeOver + ' −' + valueAbs + ' = <b>' + afterOver + '</b>' + floorNote + ' · Pool ' + poolBefore + '→' + state.pool + ' · Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + '.');
 
       // Patch P2: Ertrag nur wenn Overload VOR dem Senken 8+ war
       var got = 0;
       if (beforeOver >= 8){
         p.live += 1;
         got = 1;
-        log('good','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (8+) → ' + esc(p.name) + ' erhält <b>+1 Live</b> (Vorrat). Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + ' · Pool ' + poolBefore + '→' + state.pool + ' · Overload ' + state.overload + '.');
+        log('good','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (8+) → ' + esc(p.name) + ' erhält <b>+1 Live</b> (Vorrat). Overload ' + state.overload + ' · Pool ' + poolBefore + '→' + state.pool + ' · Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + '.');
       } else {
-        log('info','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (&lt;8) → kein Ertrag. Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + ' · Pool ' + poolBefore + '→' + state.pool + ' · Overload ' + state.overload + '.');
+        log('info','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (&lt;8) → kein Ertrag. Overload ' + state.overload + ' · Pool ' + poolBefore + '→' + state.pool + ' · Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + '.');
       }
 
       setSummary('🛠️ Stabilisieren – ' + card.name,
@@ -2988,7 +3017,9 @@
 
       if (card.fx === 'flipDir'){
         state.direction *= -1;
-        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Richtung dreht sich: ' + (state.direction === 1 ? '<b>↻</b>' : '<b>↺</b>') + '.');
+        var nextFlip = nextActiveFrom(state.revealer, state.direction);
+        var nextFlipName = (nextFlip === -1) ? '—' : state.players[nextFlip].name;
+        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Richtung dreht sich: ' + (state.direction === 1 ? '<b>↻</b>' : '<b>↺</b>') + '. Nächster Aufdecker: <b>' + esc(nextFlipName) + '</b>.');
         updateUI();
         doneCb();
         return;
@@ -3006,7 +3037,7 @@
 
       if (card.fx === 'setwechsel'){
         state.extraRevealSame = true;
-        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Nächstes Event deckt der gleiche Spieler auf.');
+        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Nächstes Event deckt der gleiche Spieler auf. Nächster Aufdecker: <b>' + esc(p.name) + '</b>.');
         updateUI();
         doneCb();
         return;
@@ -3118,8 +3149,9 @@
           log('warn','Stage Dive auf <b>' + esc(tP.name) + '</b>: bereits aktiv → Ersatz-Effekt Overload ' + before + ' +1 = <b>' + r.after + '</b>' + capNote + ' · Pool ' + state.pool + ' · Live/Camp unverändert.');
           onOverloadMayHit12(r, 'Stage Dive Ersatz');
         } else {
+          var poolBefore = state.pool;
           state.pool += 1;
-          log('warn','Stage Dive auf <b>' + esc(tP.name) + '</b>: bereits aktiv → Ersatz-Effekt Pool +1 (Pool ' + state.pool + ') · Overload ' + state.overload + ' · Live/Camp unverändert.');
+          log('warn','Stage Dive auf <b>' + esc(tP.name) + '</b>: bereits aktiv → Ersatz-Effekt Pool +1 (Pool ' + poolBefore + '→' + state.pool + '). Overload ' + state.overload + ' · Pool ' + poolBefore + '→' + state.pool + ' · Live/Camp unverändert.');
         }
         updateUI();
         doneCb();
@@ -3130,19 +3162,19 @@
         if (isAutoAll()){
           if (tP.live > 0 && botStageDivePay(targetIdx)){
             tP.live = Math.max(0, tP.live - 1);
-            log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+            log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + '.');
             doneCb();
             return;
           }
           tP.forcedStay = true;
-          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + tP.live + ' · Camp ' + tP.camp + '.');
           doneCb();
           return;
         }
 
         if (tP.live <= 0){
           tP.forcedStay = true;
-          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + tP.live + ' · Camp ' + tP.camp + '.');
           toast('Stage Dive', 'Du musst drin bleiben (kein Live zum Zahlen).');
           doneCb();
           return;
@@ -3156,11 +3188,11 @@
           function(use){
             if (use){
               tP.live = Math.max(0, tP.live - 1);
-              log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+              log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + '.');
               toast('Bezahlt', 'Stage Dive ignoriert.');
             } else {
               tP.forcedStay = true;
-              log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+              log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + tP.live + ' · Camp ' + tP.camp + '.');
               toast('Stage Dive', 'Du musst drin bleiben.');
             }
             doneCb();
@@ -3172,7 +3204,7 @@
       if (areBotsManual()){
         if (tP.live <= 0){
           tP.forcedStay = true;
-          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + tP.live + ' · Camp ' + tP.camp + '.');
           doneCb();
           return;
         }
@@ -3184,10 +3216,10 @@
           function(use){
             if (use){
               tP.live = Math.max(0, tP.live - 1);
-              log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+              log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + '.');
             } else {
               tP.forcedStay = true;
-              log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+              log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + tP.live + ' · Camp ' + tP.camp + '.');
             }
             doneCb();
           }
@@ -3197,13 +3229,13 @@
 
       if (tP.live > 0 && botStageDivePay(targetIdx)){
         tP.live = Math.max(0, tP.live - 1);
-        log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+        log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + '.');
         doneCb();
         return;
       }
 
       tP.forcedStay = true;
-      log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+      log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + tP.live + ' · Camp ' + tP.camp + '.');
       doneCb();
     }
 
@@ -3311,11 +3343,12 @@
 
       log('info','<b>' + esc(revP.name) + '</b> deckt auf: <b>' + esc(card.name) + '</b>.');
 
+      var roundResetId = state.roundResetId;
       resolveEventCard(rev, card, function(){
-        if (state.gameOver) { updateUI(); return; }
+        if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
 
         resolveCountdownTick();
-        if (state.gameOver) { updateUI(); return; }
+        if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
 
         ensureDecisionPhase();
         pumpBots();
@@ -3402,7 +3435,7 @@
       showPlayBanner('warn', 'Anti-Solo: letzter Spieler campt', 1600);
       var pity = (p.live === 0) ? 1 : 0;
       var transfer = applyCampTransfer(p, state.overload, pity);
-      log('warn','Anti-Solo: letzter aktiver Spieler <b>' + esc(p.name) + '</b> campt sofort: +' + transfer.liveBefore + ' Live→Camp +' + transfer.poolTake + ' Pool→Camp +' + transfer.extraCamp + ' Trost => Camp ' + transfer.campBefore + '→' + p.camp + ', Pool ' + transfer.poolBefore + '→' + state.pool + ' · Overload ' + state.overload + ' · Live ' + transfer.liveBefore + '→0.');
+      log('warn','Anti-Solo: letzter aktiver Spieler <b>' + esc(p.name) + '</b> campt sofort: +' + transfer.liveBefore + ' Live→Camp +' + transfer.poolTake + ' Pool→Camp +' + transfer.extraCamp + ' Trost => Camp ' + transfer.campBefore + '→' + p.camp + '. Overload ' + state.overload + ' · Pool ' + transfer.poolBefore + '→' + state.pool + ' · Live ' + transfer.liveBefore + '→0 · Camp ' + transfer.campBefore + '→' + p.camp + '.');
       toast('Runde endet', p.name + ' campt sofort (Anti-Solo).');
 
       if (checkWin()) { updateUI(); return; }
@@ -3447,14 +3480,16 @@
         }
 
         if (choice === 'camp' && p.live <= 0) choice = 'stay';
-        choices.push({ idx:i, choice:choice });
+        choices.push({ idx:i, choice:choice, forced:(p.forcedStay && p.roundState === 'active') });
       }
 
       var parts = [];
       for (var j=0;j<choices.length;j++){
-        parts.push(state.players[choices[j].idx].name + ': ' + (choices[j].choice === 'camp' ? 'Camp' : 'Bleib'));
+        var label = (choices[j].choice === 'camp') ? 'Camp' : 'Bleib';
+        if (choices[j].forced && choices[j].choice === 'stay') label = 'Bleib (Zwang)';
+        parts.push(state.players[choices[j].idx].name + ': ' + label);
       }
-      log('info','<b>Entscheidung</b> (simultan): ' + esc(parts.join(' · ')) + ' · Overload ' + state.overload + ' · Pool ' + state.pool + '.');
+      log('info','<b>Entscheidung</b> (simultan): ' + esc(parts.join(' · ')) + ' · Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live/Camp unverändert.');
 
       for (var x=0;x<choices.length;x++){
         var pl = state.players[choices[x].idx];
@@ -3474,13 +3509,13 @@
         if (p2.roundState !== 'active') continue;
 
         if (p2.live <= 0){
-          log('warn','<b>' + esc(p2.name) + '</b> wollte campen, hat aber 0 Live → bleibt drin. Live ' + p2.live + ' · Camp ' + p2.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
+          log('warn','<b>' + esc(p2.name) + '</b> wollte campen, hat aber 0 Live → bleibt drin. Overload ' + state.overload + ' · Pool ' + state.pool + ' · Live ' + p2.live + ' · Camp ' + p2.camp + '.');
           continue;
         }
 
         var transfer = applyCampTransfer(p2, state.overload, 0);
         anySuccessfulCamp = true;
-        log('warn','<b>' + esc(p2.name) + '</b> campt: +' + transfer.liveBefore + ' (Live→Camp) +' + transfer.poolTake + ' (Pool→Camp) => Camp ' + transfer.campBefore + '→' + p2.camp + ', Pool ' + transfer.poolBefore + '→' + state.pool + ' · Overload ' + state.overload + ' · Live ' + transfer.liveBefore + '→0.');
+        log('warn','<b>' + esc(p2.name) + '</b> campt: +' + transfer.liveBefore + ' (Live→Camp) +' + transfer.poolTake + ' (Pool→Camp) => Camp ' + transfer.campBefore + '→' + p2.camp + ', Pool ' + transfer.poolBefore + '→' + state.pool + '. Overload ' + state.overload + ' · Pool ' + transfer.poolBefore + '→' + state.pool + ' · Live ' + transfer.liveBefore + '→0 · Camp ' + transfer.campBefore + '→' + p2.camp + '.');
       }
       if (anySuccessfulCamp){
         showPlayBanner('good', 'Camp-Auflösung abgeschlossen', 1200);
@@ -3756,6 +3791,99 @@
         state.gameOver = oldGO;
       })();
 
+      // Mini-Testlauf (Seeded RNG): Nach RoundReset keine Entscheidung ohne Event.
+      (function(){
+        var oldRand = Math.random;
+        var seed = 1337;
+        Math.random = function(){
+          seed = (seed * 1664525 + 1013904223) % 4294967296;
+          return seed / 4294967296;
+        };
+
+        var oldState = {
+          deck: state.deck.slice(),
+          discard: state.discard.slice(),
+          players: state.players.slice(),
+          overload: state.overload,
+          pool: state.pool,
+          round: state.round,
+          awaitingDecision: state.awaitingDecision,
+          humanChoice: state.humanChoice,
+          humanLockedIn: state.humanLockedIn,
+          lastEvent: state.lastEvent,
+          phase: state.phase,
+          roundResetId: state.roundResetId,
+          gameOver: state.gameOver,
+          turnId: state.turnId,
+          startPlayer: state.startPlayer,
+          revealer: state.revealer,
+          direction: state.direction,
+          extraRevealSame: state.extraRevealSame,
+          stageRule: state.stageRule,
+          countdownActive: state.countdownActive,
+          encoreChain: state.encoreChain,
+          botChoices: state.botChoices
+        };
+
+        state.players = [
+          { name:'Du', camp:0, live:1, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:1, roundState:'active', forcedStay:false }
+        ];
+        state.overload = 11;
+        state.pool = 0;
+        state.round = 1;
+        state.awaitingDecision = false;
+        state.humanChoice = 'stay';
+        state.humanLockedIn = false;
+        state.lastEvent = null;
+        state.phase = 'reveal';
+        state.roundResetId = 0;
+        state.gameOver = false;
+        state.turnId = 0;
+        state.startPlayer = 0;
+        state.revealer = 0;
+        state.direction = 1;
+        state.extraRevealSame = false;
+        state.stageRule = null;
+        state.countdownActive = false;
+        state.encoreChain = 0;
+        state.botChoices = {};
+        state.deck = [
+          { type:'push', name:'Check', delta:1, text:'' },
+          { type:'push', name:'Test-Push', delta:1, text:'' }
+        ];
+        state.discard = [];
+
+        revealEvent();
+
+        ok('Mini-Test: RoundReset blockt Entscheidung ohne Event',
+          !state.awaitingDecision && state.phase === 'reveal' && state.lastEvent === null);
+
+        state.deck = oldState.deck;
+        state.discard = oldState.discard;
+        state.players = oldState.players;
+        state.overload = oldState.overload;
+        state.pool = oldState.pool;
+        state.round = oldState.round;
+        state.awaitingDecision = oldState.awaitingDecision;
+        state.humanChoice = oldState.humanChoice;
+        state.humanLockedIn = oldState.humanLockedIn;
+        state.lastEvent = oldState.lastEvent;
+        state.phase = oldState.phase;
+        state.roundResetId = oldState.roundResetId;
+        state.gameOver = oldState.gameOver;
+        state.turnId = oldState.turnId;
+        state.startPlayer = oldState.startPlayer;
+        state.revealer = oldState.revealer;
+        state.direction = oldState.direction;
+        state.extraRevealSame = oldState.extraRevealSame;
+        state.stageRule = oldState.stageRule;
+        state.countdownActive = oldState.countdownActive;
+        state.encoreChain = oldState.encoreChain;
+        state.botChoices = oldState.botChoices;
+        Math.random = oldRand;
+      })();
+
       window.FestivalOverloadTests = results;
       try {
         var failed = 0;
@@ -3797,6 +3925,14 @@
       state.gameOver = false;
       state.turnId = 0;
       state.encoreChain = 0;
+      state.botChoices = {};
+      state.askOpen = false;
+      state.roundResetId = 0;
+      var askBack = document.getElementById('askBack');
+      if (askBack){
+        askBack.style.display = 'none';
+        askBack.setAttribute('aria-hidden','true');
+      }
 
       state.phase = 'reveal';
       state.lastSummary = null;
