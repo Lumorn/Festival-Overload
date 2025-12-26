@@ -1122,7 +1122,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.37';
+    var VERSION = 'v0.38';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1132,6 +1132,22 @@
       { name:'Atem holen', value:2, count:8 },
       { name:'Security greift ein', value:3, count:6 }
     ];
+    var EFFECT_IDS = {
+      PUSH: 'PUSH',
+      STABILIZE: 'STABILIZE',
+      TWIST_PYRO: 'TWIST_PYRO',
+      TWIST_AFTERPARTY: 'TWIST_AFTERPARTY',
+      TWIST_RICHTUNGSWECHSEL: 'TWIST_RICHTUNGSWECHSEL',
+      TWIST_NO_EFFECT: 'TWIST_NO_EFFECT',
+      STAGE_RULE_ADD: 'STAGE_RULE_ADD',
+      STAGE_RULE_REPLACE: 'STAGE_RULE_REPLACE',
+      FEEDBACK_LEVEL_UP: 'FEEDBACK_LEVEL_UP',
+      STAGE_DIVE: 'STAGE_DIVE',
+      END_ENCORE: 'END_ENCORE',
+      ENCORE_CHAIN_START: 'ENCORE_CHAIN_START',
+      ENCORE_STOP: 'ENCORE_STOP',
+      UNKNOWN: 'UNKNOWN_EFFECT'
+    };
 
     // Bot-Limits für die UI-Anpassung
     var MIN_BOTS = 1;
@@ -1139,6 +1155,17 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.38',
+        date: '2026-02-12',
+        items: [
+          'Fix: Catch-up greift nur noch strikt hinter dem Leader und erst ab Abstand ≥2 (max. 1× pro Spieler/Runde).',
+          'Fix: Countdown startet sofort bei Overload ≥8, tickt im selben Zug und prüft Risiko vor Camp.',
+          'Fix: Logger nutzt feste EffectIds, keine UNKNOWN_EFFECT mehr, Details ohne HTML-Escapes.',
+          'Fix: ROUND_END-Logs sind entdoppelt (Summary eigenes ActionType).',
+          'Neu: RNG mit numerischem Seed im State/Log + Debug-Helper für deterministische Engine-Checks.'
+        ]
+      },
       {
         ver: 'ruleset 0.8',
         date: '2026-02-02',
@@ -1521,7 +1548,8 @@
       logSubStep: 0,
       debugSnapshots: [],
       debugLogEntries: [],
-      rngSeed: 'Math.random',
+      rngSeed: Date.now(),
+      rngState: 0,
       rngStep: 0,
       lastGlobalSnapshot: null,
       decisionWindowId: 0,
@@ -1530,6 +1558,7 @@
       finalPushGraceUsed: false,
       finalPushForceNext: false,
       finalPushActor: -1,
+      catchUpGrantedRound: {},
 
       autoTimer: null,
       decisionTimer: { enabled:true, seconds:20, remaining:20, timerId:null },
@@ -1546,6 +1575,15 @@
         .replace(/&/g,'&amp;')
         .replace(/</g,'&lt;')
         .replace(/>/g,'&gt;');
+    }
+
+    function unescapeText(s){
+      return String(s)
+        .replace(/&quot;/g,'"')
+        .replace(/&#39;/g,"'")
+        .replace(/&lt;/g,'<')
+        .replace(/&gt;/g,'>')
+        .replace(/&amp;/g,'&');
     }
 
     function cardCountLabel(n){
@@ -1616,7 +1654,7 @@
         .replace(/\s+/g, ' ')
         .trim();
       if (!text) return null;
-      return text.replace(/\|/g, '/');
+      return unescapeText(text).replace(/\|/g, '/');
     }
 
     function isPlayerActor(actorIdx){
@@ -1650,13 +1688,13 @@
 
     function deriveEffectId(msg){
       var text = String(msg || '').toLowerCase();
-      if (text.indexOf('stage_dive') !== -1 || text.indexOf('stage dive') !== -1) return 'STAGE_DIVE';
-      if (text.indexOf('push') !== -1) return 'PUSH';
-      if (text.indexOf('stabilisieren') !== -1 || text.indexOf('stabilize') !== -1) return 'STABILIZE';
-      if (text.indexOf('feedback') !== -1) return 'FEEDBACK_LEVEL';
-      if (text.indexOf('encore_chain') !== -1 || text.indexOf('encore chain') !== -1) return 'ENCORE_CHAIN_START';
-      if (text.indexOf('encore_stop') !== -1 || text.indexOf('encore stop') !== -1) return 'ENCORE_STOP';
-      return 'UNKNOWN_EFFECT';
+      if (text.indexOf('stage_dive') !== -1 || text.indexOf('stage dive') !== -1) return EFFECT_IDS.STAGE_DIVE;
+      if (text.indexOf('push') !== -1) return EFFECT_IDS.PUSH;
+      if (text.indexOf('stabilisieren') !== -1 || text.indexOf('stabilize') !== -1) return EFFECT_IDS.STABILIZE;
+      if (text.indexOf('feedback') !== -1) return EFFECT_IDS.FEEDBACK_LEVEL_UP;
+      if (text.indexOf('encore_chain') !== -1 || text.indexOf('encore chain') !== -1) return EFFECT_IDS.ENCORE_CHAIN_START;
+      if (text.indexOf('encore_stop') !== -1 || text.indexOf('encore stop') !== -1) return EFFECT_IDS.ENCORE_STOP;
+      return EFFECT_IDS.UNKNOWN;
     }
 
     function buildLogLine(data){
@@ -1721,6 +1759,24 @@
       return issues;
     }
 
+    function appendLogEntry(targetEl, cls, hh, mm, stepId, line){
+      if (!targetEl) return;
+      var entry = document.createElement('div');
+      entry.className = 'evt ' + cls;
+      var timeSpan = document.createElement('span');
+      timeSpan.className = 't';
+      timeSpan.textContent = '[' + hh + ':' + mm + ']';
+      var stepSpan = document.createElement('span');
+      stepSpan.className = 't';
+      stepSpan.textContent = '(' + stepId + ')';
+      entry.appendChild(timeSpan);
+      entry.appendChild(document.createTextNode(' '));
+      entry.appendChild(stepSpan);
+      entry.appendChild(document.createTextNode(' ' + line));
+      targetEl.appendChild(entry);
+      targetEl.scrollTop = targetEl.scrollHeight;
+    }
+
     function logStep(kind, opts){
       var el = document.getElementById('log');
       var play = document.getElementById('logPlay');
@@ -1752,7 +1808,7 @@
           fields.push(k + '=' + fieldMap[k]);
         }
       }
-      if (detail) fields.push('Detail=' + esc(detail));
+      if (detail) fields.push('Detail=' + detail);
       var globalBefore = opts.globalBefore || state.lastGlobalSnapshot || getGlobalSnapshot();
       var globalAfter = opts.globalAfter || getGlobalSnapshot();
       var flagParts = [];
@@ -1779,13 +1835,8 @@
         data.Camp = { before: before.camp, after: after.camp };
       }
       var line = buildLogLine(data);
-      var entry = '<div class="evt ' + cls + '"><span class="t">['+hh+':'+mm+']</span> <span class="t">(' + stepId + ')</span> ' + esc(line) + '</div>';
-      el.innerHTML += entry;
-      el.scrollTop = el.scrollHeight;
-      if (play){
-        play.innerHTML += entry;
-        play.scrollTop = play.scrollHeight;
-      }
+      appendLogEntry(el, cls, hh, mm, stepId, line);
+      appendLogEntry(play, cls, hh, mm, stepId, line);
       state.debugLogEntries.push({
         stepId: stepId,
         time: '[' + hh + ':' + mm + ']',
@@ -1930,9 +1981,22 @@
       });
     }
 
+    function seedRng(seed){
+      var s = Number(seed);
+      if (!isFinite(s)) s = Date.now();
+      s = Math.floor(Math.abs(s));
+      if (s === 0) s = 1;
+      state.rngSeed = s;
+      state.rngState = s >>> 0;
+      state.rngStep = 0;
+      return s;
+    }
+
     function rand(){
       state.rngStep = (state.rngStep || 0) + 1;
-      return Math.random();
+      if (!state.rngState) seedRng(state.rngSeed);
+      state.rngState = (state.rngState * 1664525 + 1013904223) >>> 0;
+      return state.rngState / 4294967296;
     }
 
     function shuffle(a){
@@ -3326,6 +3390,7 @@
       state.finalPushGraceUsed = false;
       state.finalPushForceNext = false;
       state.finalPushActor = -1;
+      state.catchUpGrantedRound = {};
 
       for (var i=0;i<state.players.length;i++){
         state.players[i].live = 0;
@@ -3416,11 +3481,40 @@
       endRound('Knall');
     }
 
+    function startCountdown(reason){
+      if (state.countdownActive) return false;
+      var globalBefore = getGlobalSnapshot();
+      state.countdownActive = true;
+      logStep('warn', {
+        action: 'COUNTDOWN',
+        actor: 'System',
+        reason: 'CountdownStart',
+        fields: { Base: '+' + countdownTickValue(), Aggressiv: (isAggCountdown() ? 'aktiv' : 'aus'), Trigger: reason },
+        msgHtml: 'COUNTDOWN_ACTIVE',
+        before: actorSnapshot(null),
+        after: actorSnapshot(null),
+        globalBefore: globalBefore,
+        globalAfter: getGlobalSnapshot(),
+        reasons: { extra: 'CountdownStart' }
+      });
+      return true;
+    }
+
+    function checkCountdownThreshold(before, after, reason){
+      if (state.countdownActive) return false;
+      if (before < 8 && after >= 8){
+        startCountdown(reason || 'Overload>=8');
+        return true;
+      }
+      return false;
+    }
+
     function applyOverloadDelta(delta){
       var before = state.overload;
       var after = clampOverload(state.overload + delta);
       state.overload = after;
       var reached = (before < 12 && after === 12);
+      checkCountdownThreshold(before, after, 'OverloadDelta');
       return { before: before, after: after, delta: (after - before), reached12: reached };
     }
 
@@ -3653,6 +3747,7 @@
       var capNote = describeOverloadCap(before, total, after);
       state.overload = after;
       var r = { before: before, after: after, delta: (after - before), reached12: (before < MAX_OVERLOAD && after === MAX_OVERLOAD) };
+      checkCountdownThreshold(before, after, 'Push');
       p.live += 1;
       state.pool += 1;
 
@@ -3676,6 +3771,7 @@
         action: 'EFFECT',
         actor: p.name,
         actorIdx: rev,
+        effectId: EFFECT_IDS.PUSH,
         reason: 'CrowdMood',
         fields: {
           CrowdMood: (moodValue >= 0 ? '+' : '') + moodValue,
@@ -3692,6 +3788,7 @@
         action: 'EFFECT',
         actor: p.name,
         actorIdx: rev,
+        effectId: EFFECT_IDS.PUSH,
         msgHtml: 'Card=' + esc(card.name) + ' | Effekt=Push (+' + base + ' Karte +' + mod + ' Feedback + Crowd ' + (moodValue >= 0 ? '+' : '') + moodValue + (pyroBonus ? ' + Pyro +1' : '') + ')' + capNote,
         before: { overload: before, pool: poolBefore, live: liveBefore, camp: campBefore },
         after: { overload: after, pool: state.pool, live: p.live, camp: p.camp },
@@ -3724,6 +3821,7 @@
         action: 'EFFECT',
         actor: p.name,
         actorIdx: rev,
+        effectId: EFFECT_IDS.STABILIZE,
         msgHtml: 'Stabilisiert: Overload ' + beforeOver + ' → ' + afterOver + (floorNote ? ' ' + floorNote : '') + '; Pool +0; Live +' + bonusLive + (bonusLive ? ' (nur weil Overload vorher hoch war)' : ''),
         before: { overload: beforeOver, pool: poolBefore, live: liveBefore, camp: campBefore },
         after: { overload: afterOver, pool: state.pool, live: p.live, camp: p.camp },
@@ -3772,6 +3870,7 @@
             action: 'EFFECT',
             actor: p.name,
             actorIdx: rev,
+            effectId: EFFECT_IDS.FEEDBACK_LEVEL_UP,
             msgHtml: 'STAGE_RULE | Feedback Level ' + oldLevel + '->' + newLevel + ' (Push +' + newLevel + ')' + replaceNote,
             before: actorSnapshot(rev),
             after: actorSnapshot(rev),
@@ -3788,6 +3887,7 @@
             action: 'EFFECT',
             actor: p.name,
             actorIdx: rev,
+            effectId: EFFECT_IDS.STAGE_RULE_REPLACE,
             msgHtml: 'STAGE_RULE_REPLACE | from=' + esc(state.stageRule.name) + ' | to=' + esc(card.name),
             before: actorSnapshot(rev),
             after: actorSnapshot(rev),
@@ -3798,6 +3898,7 @@
             action: 'EFFECT',
             actor: p.name,
             actorIdx: rev,
+            effectId: EFFECT_IDS.STAGE_RULE_ADD,
             msgHtml: 'STAGE_RULE_ADD | rule=' + esc(card.name),
             before: actorSnapshot(rev),
             after: actorSnapshot(rev),
@@ -3818,6 +3919,7 @@
           action: 'EFFECT',
           actor: p.name,
           actorIdx: rev,
+          effectId: EFFECT_IDS.TWIST_RICHTUNGSWECHSEL,
           msgHtml: 'TWIST aktiv: RICHTUNGSWECHSEL (Pool→Camp erst ab Live ' + minLive + ')',
           before: actorSnapshot(rev),
           after: actorSnapshot(rev),
@@ -3834,6 +3936,7 @@
           action: 'EFFECT',
           actor: p.name,
           actorIdx: rev,
+          effectId: EFFECT_IDS.TWIST_PYRO,
           msgHtml: 'TWIST aktiv: PYRO (+1 Overload auf alle Pushes)',
           before: actorSnapshot(rev),
           after: actorSnapshot(rev),
@@ -3847,11 +3950,12 @@
       if (card.fx === 'afterparty'){
         var globalBefore = getGlobalSnapshot();
         state.twistEffects.afterparty = true;
-        if (!state.countdownActive) state.countdownActive = true;
+        startCountdown('Afterparty');
         logStep('warn', {
           action: 'EFFECT',
           actor: p.name,
           actorIdx: rev,
+          effectId: EFFECT_IDS.TWIST_AFTERPARTY,
           msgHtml: 'TWIST aktiv: AFTERPARTY (Countdown sofort, Tick +2)',
           before: actorSnapshot(rev),
           after: actorSnapshot(rev),
@@ -3873,6 +3977,7 @@
                 action: 'EFFECT',
                 actor: p.name,
                 actorIdx: rev,
+                effectId: EFFECT_IDS.STAGE_DIVE,
                 msgHtml: 'STAGE_DIVE | Kein anderes aktives Ziel → Effekt verpufft',
                 before: actorSnapshot(rev),
                 after: actorSnapshot(rev),
@@ -3896,6 +4001,7 @@
               action: 'EFFECT',
               actor: p.name,
               actorIdx: rev,
+              effectId: EFFECT_IDS.STAGE_DIVE,
               msgHtml: 'STAGE_DIVE | Kein anderes aktives Ziel → Effekt verpufft',
               before: actorSnapshot(rev),
               after: actorSnapshot(rev),
@@ -3915,6 +4021,7 @@
                   action: 'EFFECT',
                   actor: p.name,
                   actorIdx: rev,
+                  effectId: EFFECT_IDS.STAGE_DIVE,
                   msgHtml: 'STAGE_DIVE | Keine Auswahl → Effekt verpufft',
                   before: actorSnapshot(rev),
                   after: actorSnapshot(rev),
@@ -3941,6 +4048,7 @@
               action: 'EFFECT',
               actor: p.name,
               actorIdx: rev,
+              effectId: EFFECT_IDS.STAGE_DIVE,
               msgHtml: 'STAGE_DIVE | Kein anderes aktives Ziel → Effekt verpufft',
               before: actorSnapshot(rev),
               after: actorSnapshot(rev),
@@ -3959,6 +4067,7 @@
                   action: 'EFFECT',
                   actor: p.name,
                   actorIdx: rev,
+                  effectId: EFFECT_IDS.STAGE_DIVE,
                   msgHtml: 'STAGE_DIVE | Keine Auswahl → Effekt verpufft',
                   before: actorSnapshot(rev),
                   after: actorSnapshot(rev),
@@ -3982,6 +4091,7 @@
         action: 'EFFECT',
         actor: p.name,
         actorIdx: rev,
+        effectId: EFFECT_IDS.TWIST_NO_EFFECT,
         msgHtml: 'TWIST | Kein Effekt | Card=' + esc(card.name),
         before: actorSnapshot(rev),
         after: actorSnapshot(rev),
@@ -4000,6 +4110,7 @@
           action: 'EFFECT',
           actor: revP.name,
           actorIdx: rev,
+          effectId: EFFECT_IDS.STAGE_DIVE,
           msgHtml: 'STAGE_DIVE | Kein anderes aktives Ziel → Effekt verpufft',
           before: actorSnapshot(rev),
           after: actorSnapshot(rev),
@@ -4014,6 +4125,7 @@
           action: 'EFFECT',
           actor: revP.name,
           actorIdx: rev,
+          effectId: EFFECT_IDS.STAGE_DIVE,
           msgHtml: 'STAGE_DIVE | Ziel nicht aktiv → Effekt verpufft',
           before: actorSnapshot(rev),
           after: actorSnapshot(rev),
@@ -4027,6 +4139,7 @@
         action: 'EFFECT',
         actor: revP.name,
         actorIdx: rev,
+        effectId: EFFECT_IDS.STAGE_DIVE,
         msgHtml: 'STAGE_DIVE | target=' + esc(tP.name),
         before: actorSnapshot(rev),
         after: actorSnapshot(rev),
@@ -4043,6 +4156,7 @@
             action: 'EFFECT',
             actor: tP.name,
             actorIdx: targetIdx,
+            effectId: EFFECT_IDS.STAGE_DIVE,
             msgHtml: 'STAGE_DIVE | Ersatz=Overload +1' + capNote,
             before: { overload: before, pool: state.pool, live: tP.live, camp: tP.camp },
             after: { overload: r.after, pool: state.pool, live: tP.live, camp: tP.camp },
@@ -4056,6 +4170,7 @@
             action: 'EFFECT',
             actor: tP.name,
             actorIdx: targetIdx,
+            effectId: EFFECT_IDS.STAGE_DIVE,
             msgHtml: 'STAGE_DIVE | Ersatz=Pool +1',
             before: { overload: state.overload, pool: poolBefore, live: tP.live, camp: tP.camp },
             after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
@@ -4076,6 +4191,7 @@
               action: 'EFFECT',
               actor: tP.name,
               actorIdx: targetIdx,
+              effectId: EFFECT_IDS.STAGE_DIVE,
               msgHtml: 'STAGE_DIVE | Zahlung=1 Live | Effekt ignoriert',
               before: { overload: state.overload, pool: state.pool, live: liveBeforeAuto, camp: tP.camp },
               after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
@@ -4089,6 +4205,7 @@
             action: 'EFFECT',
             actor: tP.name,
             actorIdx: targetIdx,
+            effectId: EFFECT_IDS.STAGE_DIVE,
             msgHtml: 'STAGE_DIVE | forcedStay=true',
             before: actorSnapshot(targetIdx),
             after: actorSnapshot(targetIdx),
@@ -4100,15 +4217,16 @@
 
         if (tP.live <= 0){
           tP.forcedStay = true;
-          logStep('bad', {
-            action: 'EFFECT',
-            actor: tP.name,
-            actorIdx: targetIdx,
-            msgHtml: 'STAGE_DIVE | forcedStay=true | reason=Live0',
-            before: actorSnapshot(targetIdx),
-            after: actorSnapshot(targetIdx),
-            reasons: { extra: 'StageDiveForcedStay' }
-          });
+        logStep('bad', {
+          action: 'EFFECT',
+          actor: tP.name,
+          actorIdx: targetIdx,
+          effectId: EFFECT_IDS.STAGE_DIVE,
+          msgHtml: 'STAGE_DIVE | forcedStay=true | reason=Live0',
+          before: actorSnapshot(targetIdx),
+          after: actorSnapshot(targetIdx),
+          reasons: { extra: 'StageDiveForcedStay' }
+        });
           toast('Stage Dive', 'Du musst drin bleiben (kein Live zum Zahlen).');
           doneCb();
           return;
@@ -4127,6 +4245,7 @@
                 action: 'EFFECT',
                 actor: tP.name,
                 actorIdx: targetIdx,
+                effectId: EFFECT_IDS.STAGE_DIVE,
                 msgHtml: 'STAGE_DIVE | Zahlung=1 Live | Effekt ignoriert',
                 before: { overload: state.overload, pool: state.pool, live: liveBeforeHuman, camp: tP.camp },
                 after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
@@ -4139,6 +4258,7 @@
                 action: 'EFFECT',
                 actor: tP.name,
                 actorIdx: targetIdx,
+                effectId: EFFECT_IDS.STAGE_DIVE,
                 msgHtml: 'STAGE_DIVE | forcedStay=true',
                 before: actorSnapshot(targetIdx),
                 after: actorSnapshot(targetIdx),
@@ -4159,6 +4279,7 @@
             action: 'EFFECT',
             actor: tP.name,
             actorIdx: targetIdx,
+            effectId: EFFECT_IDS.STAGE_DIVE,
             msgHtml: 'STAGE_DIVE | forcedStay=true | reason=Live0',
             before: actorSnapshot(targetIdx),
             after: actorSnapshot(targetIdx),
@@ -4180,6 +4301,7 @@
                 action: 'EFFECT',
                 actor: tP.name,
                 actorIdx: targetIdx,
+                effectId: EFFECT_IDS.STAGE_DIVE,
                 msgHtml: 'STAGE_DIVE | Zahlung=1 Live | Effekt ignoriert',
                 before: { overload: state.overload, pool: state.pool, live: liveBeforeBot, camp: tP.camp },
                 after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
@@ -4191,6 +4313,7 @@
                 action: 'EFFECT',
                 actor: tP.name,
                 actorIdx: targetIdx,
+                effectId: EFFECT_IDS.STAGE_DIVE,
                 msgHtml: 'STAGE_DIVE | forcedStay=true',
                 before: actorSnapshot(targetIdx),
                 after: actorSnapshot(targetIdx),
@@ -4210,6 +4333,7 @@
           action: 'EFFECT',
           actor: tP.name,
           actorIdx: targetIdx,
+          effectId: EFFECT_IDS.STAGE_DIVE,
           msgHtml: 'STAGE_DIVE | Zahlung=1 Live | Effekt ignoriert',
           before: { overload: state.overload, pool: state.pool, live: liveBeforeAutoBot, camp: tP.camp },
           after: { overload: state.overload, pool: state.pool, live: tP.live, camp: tP.camp },
@@ -4224,6 +4348,7 @@
         action: 'EFFECT',
         actor: tP.name,
         actorIdx: targetIdx,
+        effectId: EFFECT_IDS.STAGE_DIVE,
         msgHtml: 'STAGE_DIVE | forcedStay=true',
         before: actorSnapshot(targetIdx),
         after: actorSnapshot(targetIdx),
@@ -4245,6 +4370,7 @@
           action: 'EFFECT',
           actor: pl.name,
           actorIdx: i,
+          effectId: EFFECT_IDS.END_ENCORE,
           reason: 'EncoreBoost',
           fields: { EndCard: 'Encore', LiveBonus: 1 },
           msgHtml: 'ENDKARTE: ENCORE! → +1 Live',
@@ -4261,6 +4387,7 @@
       logStep('warn', {
         action: 'EFFECT',
         actor: 'System',
+        effectId: EFFECT_IDS.END_ENCORE,
         reason: 'EndCard',
         fields: { EndCard: 'Encore', ActivePlayers: esc(activeBefore.join(', ')) },
         msgHtml: 'ENDKARTE: ENCORE! → Alle Aktiven +1 Live → Finale Camp-Entscheidung → Runde endet',
@@ -4437,6 +4564,20 @@
       };
     }
 
+    function getCampStats(){
+      var leader = -Infinity;
+      var min = Infinity;
+      for (var i=0;i<state.players.length;i++){
+        leader = Math.max(leader, state.players[i].camp);
+        min = Math.min(min, state.players[i].camp);
+      }
+      return {
+        leaderCamp: leader,
+        minCamp: min,
+        allEqual: (leader === min)
+      };
+    }
+
     function triggerFinalPush(reason){
       var idx = getLastActiveIndex();
       if (idx === -1) return false;
@@ -4475,11 +4616,11 @@
 
       if (activeCount() === 0){
         logStep('good', {
-          action: 'ROUND_END',
+          action: 'ROUND_END_SUMMARY',
           actor: 'System',
           reason: 'AllCamped',
           fields: { RoundEndReason: 'Alle gecampt', PoolExpired: (state.pool > 0 ? 'yes' : 'no'), OverloadReset: 0 },
-          msgHtml: 'ROUND_END',
+          msgHtml: 'ROUND_END_SUMMARY',
           before: actorSnapshot(null),
           after: actorSnapshot(null),
           reasons: { extra: 'AllCamped' }
@@ -4759,17 +4900,28 @@
         var poolRequested = poolAllowed ? Math.min(poolBeforeCamper, poolGate) : 0;
         var poolGranted = (poolAllowed && poolPlan) ? (poolPlan.takes[String(idx2)] || 0) : 0;
         poolGranted = Math.min(poolGate, poolGranted);
-        var extraCamp = 0;
-        if (state.overload >= 8){
-          var minCamp = Infinity;
-          for (var cIdx=0;cIdx<state.players.length;cIdx++){
-            minCamp = Math.min(minCamp, state.players[cIdx].camp);
-          }
-          if (p3.camp <= minCamp){
-            extraCamp = 1;
-          }
-        }
-        var transfer = applyCampTransfer(p3, extraCamp, poolGranted);
+        var transfer = applyCampTransfer(p3, 0, poolGranted);
+        var campBeforeCatchUp = p3.camp;
+        var stats = getCampStats();
+        var leaderCamp = stats.leaderCamp;
+        var gapToLeader = leaderCamp - campBeforeCatchUp;
+        var reasonFlags = [];
+        if (state.overload >= 8) reasonFlags.push('Overload>=8');
+        else reasonFlags.push('Overload<8');
+        if (stats.allEqual) reasonFlags.push('AllEqual');
+        else reasonFlags.push('NotAllEqual');
+        if (campBeforeCatchUp < leaderCamp) reasonFlags.push('BehindLeader');
+        else reasonFlags.push('NotBehindLeader');
+        if (gapToLeader >= 2) reasonFlags.push('Gap>=2');
+        else reasonFlags.push('Gap<2');
+        if (state.catchUpGrantedRound[String(idx2)]) reasonFlags.push('AlreadyGranted');
+        else reasonFlags.push('NotGrantedYet');
+
+        var shouldCatchUp = (state.overload >= 8)
+          && !stats.allEqual
+          && (campBeforeCatchUp < leaderCamp)
+          && (gapToLeader >= 2)
+          && !state.catchUpGrantedRound[String(idx2)];
         anySuccessfulCamp = true;
         if (idx2 === state.finalPushActor) state.finalPushForceNext = false;
         logStep('warn', {
@@ -4788,21 +4940,31 @@
           },
           msgHtml: 'Pool→Camp möglich: ' + poolGate + ' (Overload-Gate), gewünscht: ' + poolRequested + ', gewährt: ' + poolGranted,
           before: { overload: state.overload, pool: transfer.poolBefore, live: transfer.liveBefore, camp: transfer.campBefore },
-          after: { overload: state.overload, pool: state.pool, live: 0, camp: p3.camp },
+          after: { overload: state.overload, pool: state.pool, live: 0, camp: campBeforeCatchUp },
           reasons: {
-            camp: 'LiveToCamp=' + transfer.liveBefore + ', PoolToCamp=' + poolGranted + (transfer.extraCamp ? ', CatchUp=+1' : ''),
+            camp: 'LiveToCamp=' + transfer.liveBefore + ', PoolToCamp=' + poolGranted,
             pool: '-'+poolGranted+' PoolToCamp(cap' + poolGate + ')'
           }
         });
-        if (transfer.extraCamp){
+        if (shouldCatchUp){
+          p3.camp += 1;
+          state.catchUpGrantedRound[String(idx2)] = true;
           logStep('info', {
             action: 'RESOLVE_CAMP',
             actor: p3.name,
             actorIdx: idx2,
             reason: 'CatchUp',
-            fields: { CatchUp: '+1', Overload: state.overload },
-            msgHtml: 'Catch-up: +1 Camp (Letzter/gleich Letzter, Overload>=8)',
-            before: { overload: state.overload, pool: state.pool, live: 0, camp: transfer.campBefore },
+            fields: {
+              CatchUp: '+1',
+              Overload: state.overload,
+              LeaderCamp: leaderCamp,
+              PlayerCampBefore: campBeforeCatchUp,
+              PlayerCampAfter: p3.camp,
+              Delta: 1,
+              ReasonFlags: reasonFlags.join(', ')
+            },
+            msgHtml: 'Catch-up: +1 Camp (strict hinten, Abstand ≥2, Overload>=8)',
+            before: { overload: state.overload, pool: state.pool, live: 0, camp: campBeforeCatchUp },
             after: { overload: state.overload, pool: state.pool, live: 0, camp: p3.camp },
             reasons: { camp: '+1 CatchUp' }
           });
@@ -4813,20 +4975,7 @@
       }
 
       if (!state.countdownActive && anySuccessfulCamp){
-        var countdownBefore = getGlobalSnapshot();
-        state.countdownActive = true;
-        logStep('warn', {
-          action: 'COUNTDOWN',
-          actor: 'System',
-          reason: 'CountdownStart',
-          fields: { Base: '+' + countdownTickValue(), Aggressiv: (isAggCountdown() ? 'aktiv' : 'aus') },
-          msgHtml: 'COUNTDOWN_ACTIVE',
-          before: actorSnapshot(null),
-          after: actorSnapshot(null),
-          globalBefore: countdownBefore,
-          globalAfter: getGlobalSnapshot(),
-          reasons: { extra: 'CountdownStart' }
-        });
+        startCountdown('FirstCamp');
       }
 
       state.awaitingDecision = false;
@@ -5233,12 +5382,8 @@
 
       // Mini-Testlauf (Seeded RNG): Nach RoundReset keine Entscheidung ohne Event.
       (function(){
-        var oldRand = Math.random;
-        var seed = 1337;
-        Math.random = function(){
-          seed = (seed * 1664525 + 1013904223) % 4294967296;
-          return seed / 4294967296;
-        };
+        var oldRng = { seed: state.rngSeed, rngState: state.rngState, rngStep: state.rngStep };
+        seedRng(1337);
 
         var oldState = {
           deck: state.deck.slice(),
@@ -5332,7 +5477,19 @@
         state.finalPushGraceUsed = oldState.finalPushGraceUsed;
         state.finalPushForceNext = oldState.finalPushForceNext;
         state.finalPushActor = oldState.finalPushActor;
-        Math.random = oldRand;
+        state.rngSeed = oldRng.seed;
+        state.rngState = oldRng.rngState;
+        state.rngStep = oldRng.rngStep;
+      })();
+
+      // Engine-Fix-Checks (deterministisch, optionaler Debug-Helper).
+      (function(){
+        if (!window.FestivalOverloadDebug || typeof window.FestivalOverloadDebug.runEngineFixChecks !== 'function') return;
+        var fixResults = window.FestivalOverloadDebug.runEngineFixChecks(20240202);
+        if (!fixResults || !fixResults.length) return;
+        for (var i=0;i<fixResults.length;i++){
+          ok('EngineFix: ' + fixResults[i].name, fixResults[i].pass);
+        }
       })();
 
       window.FestivalOverloadTests = results;
@@ -5346,12 +5503,9 @@
 
     window.FestivalOverloadDebug = {
       runCampPoolDemo: function(seed){
-        var oldRand = Math.random;
+        var oldRng = { seed: state.rngSeed, rngState: state.rngState, rngStep: state.rngStep };
         var s = (typeof seed === 'number') ? seed : 4242;
-        Math.random = function(){
-          s = (s * 1664525 + 1013904223) % 4294967296;
-          return s / 4294967296;
-        };
+        seedRng(s);
 
         var logEl = document.getElementById('log');
         if (logEl) logEl.innerHTML = '';
@@ -5386,7 +5540,158 @@
         });
         resolveDecisions();
         updateUI();
-        Math.random = oldRand;
+        state.rngSeed = oldRng.seed;
+        state.rngState = oldRng.rngState;
+        state.rngStep = oldRng.rngStep;
+      },
+      runEngineFixChecks: function(seed){
+        var results = [];
+        function ok(name, cond){ results.push({ name:name, pass:!!cond }); }
+        var oldState = {
+          players: state.players.slice(),
+          deck: state.deck.slice(),
+          discard: state.discard.slice(),
+          overload: state.overload,
+          pool: state.pool,
+          round: state.round,
+          awaitingDecision: state.awaitingDecision,
+          humanChoice: state.humanChoice,
+          humanLockedIn: state.humanLockedIn,
+          botChoices: state.botChoices,
+          revealer: state.revealer,
+          direction: state.direction,
+          lastEvent: state.lastEvent,
+          phase: state.phase,
+          roundResetId: state.roundResetId,
+          gameOver: state.gameOver,
+          turnId: state.turnId,
+          startPlayer: state.startPlayer,
+          stageRule: state.stageRule,
+          feedbackLevel: state.feedbackLevel,
+          countdownActive: state.countdownActive,
+          encoreChain: state.encoreChain,
+          finalPushUsed: state.finalPushUsed,
+          finalPushGraceUsed: state.finalPushGraceUsed,
+          finalPushForceNext: state.finalPushForceNext,
+          finalPushActor: state.finalPushActor,
+          skipCountdownOnce: state.skipCountdownOnce,
+          logSubStep: state.logSubStep,
+          debugLogEntries: state.debugLogEntries.slice(),
+          debugSnapshots: state.debugSnapshots.slice(),
+          rngSeed: state.rngSeed,
+          rngState: state.rngState,
+          rngStep: state.rngStep,
+          catchUpGrantedRound: Object.assign({}, state.catchUpGrantedRound)
+        };
+
+        var fixedSeed = (typeof seed === 'number') ? seed : 20240202;
+        seedRng(fixedSeed);
+
+        state.debugLogEntries = [];
+        state.debugSnapshots = [];
+
+        // Catch-up darf bei 0/0/0/0 nicht greifen.
+        state.players = [
+          { name:'Du', camp:0, live:1, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:1, roundState:'active', forcedStay:false }
+        ];
+        state.overload = 8;
+        state.pool = 0;
+        state.awaitingDecision = true;
+        state.humanIndex = 0;
+        state.humanChoice = 'camp';
+        state.humanLockedIn = true;
+        state.botChoices = { '1': 'camp' };
+        state.revealer = 0;
+        state.direction = 1;
+        state.countdownActive = false;
+        state.catchUpGrantedRound = {};
+        resolveDecisions();
+        ok('CatchUp: kein Bonus bei Gleichstand 0/0', state.players[0].camp === 1 && state.players[1].camp === 1);
+
+        // Overload >=8 im Zug: Countdown-Tick + Check vor Entscheidung.
+        state.players = [
+          { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStay:false }
+        ];
+        state.overload = 7;
+        state.pool = 0;
+        state.awaitingDecision = false;
+        state.humanChoice = 'stay';
+        state.humanLockedIn = false;
+        state.botChoices = {};
+        state.revealer = 0;
+        state.direction = 1;
+        state.countdownActive = false;
+        state.catchUpGrantedRound = {};
+        state.turnId = 0;
+        state.phase = 'reveal';
+        state.lastEvent = null;
+        state.deck = [
+          { type:'push', name:'Test-Push', delta:1, text:'' }
+        ];
+        state.discard = [];
+        revealEvent();
+        ok('Countdown: Tick im selben Zug (Overload >=9)', state.countdownActive && state.overload >= 9);
+        var countdownIdx = -1;
+        var decisionIdx = -1;
+        for (var i=0;i<state.debugLogEntries.length;i++){
+          var entry = state.debugLogEntries[i];
+          if (countdownIdx === -1 && entry.data.ActionType === 'COUNTDOWN') countdownIdx = i;
+          if (decisionIdx === -1 && entry.data.ActionType === 'DECISION' && entry.data.Fields.indexOf('DecisionWindow=OPEN') !== -1) decisionIdx = i;
+        }
+        ok('Countdown: Log vor DecisionWindow', countdownIdx !== -1 && decisionIdx !== -1 && countdownIdx < decisionIdx);
+
+        var unknownEffect = false;
+        for (var j=0;j<state.debugLogEntries.length;j++){
+          if (String(state.debugLogEntries[j].line).indexOf('EffectId=UNKNOWN_EFFECT') !== -1){
+            unknownEffect = true;
+            break;
+          }
+        }
+        ok('Log: kein UNKNOWN_EFFECT', !unknownEffect);
+
+        state.players = oldState.players;
+        state.deck = oldState.deck;
+        state.discard = oldState.discard;
+        state.overload = oldState.overload;
+        state.pool = oldState.pool;
+        state.round = oldState.round;
+        state.awaitingDecision = oldState.awaitingDecision;
+        state.humanChoice = oldState.humanChoice;
+        state.humanLockedIn = oldState.humanLockedIn;
+        state.botChoices = oldState.botChoices;
+        state.revealer = oldState.revealer;
+        state.direction = oldState.direction;
+        state.lastEvent = oldState.lastEvent;
+        state.phase = oldState.phase;
+        state.roundResetId = oldState.roundResetId;
+        state.gameOver = oldState.gameOver;
+        state.turnId = oldState.turnId;
+        state.startPlayer = oldState.startPlayer;
+        state.stageRule = oldState.stageRule;
+        state.feedbackLevel = oldState.feedbackLevel;
+        state.countdownActive = oldState.countdownActive;
+        state.encoreChain = oldState.encoreChain;
+        state.finalPushUsed = oldState.finalPushUsed;
+        state.finalPushGraceUsed = oldState.finalPushGraceUsed;
+        state.finalPushForceNext = oldState.finalPushForceNext;
+        state.finalPushActor = oldState.finalPushActor;
+        state.skipCountdownOnce = oldState.skipCountdownOnce;
+        state.logSubStep = oldState.logSubStep;
+        state.debugLogEntries = oldState.debugLogEntries;
+        state.debugSnapshots = oldState.debugSnapshots;
+        state.rngSeed = oldState.rngSeed;
+        state.rngState = oldState.rngState;
+        state.rngStep = oldState.rngStep;
+        state.catchUpGrantedRound = oldState.catchUpGrantedRound;
+
+        window.FestivalOverloadEngineFixResults = results;
+        var failed = 0;
+        for (var r=0;r<results.length;r++) if (!results[r].pass) failed++;
+        if (failed) console.warn('FestivalOverloadEngineFix: FAIL', results);
+        else console.log('FestivalOverloadEngineFix: OK', results);
+        return results;
       }
     };
 
@@ -5436,10 +5741,11 @@
       state.logSubStep = 0;
       state.debugSnapshots = [];
       state.debugLogEntries = [];
-      state.rngStep = 0;
+      seedRng(Date.now());
       state.lastGlobalSnapshot = null;
       state.decisionWindowId = 0;
       state.debugAssertTriggered = false;
+      state.catchUpGrantedRound = {};
       var askBack = document.getElementById('askBack');
       if (askBack){
         askBack.style.display = 'none';

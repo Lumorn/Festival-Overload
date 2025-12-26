@@ -189,8 +189,11 @@ Wenn du campst (nur mit mindestens 1 Live):
 
 Beim Campen gilt:
 
-* Wenn ein Spieler **den niedrigsten Camp-Stand** hat (Tie zählt) **und** Overload **≥ 8** ist,
-  erhält er **+1 Bonus-Camp**.
+* Catch-up greift **nur**, wenn ein Spieler **nach seinem Camp-Resolve** **strict** hinter mindestens einem anderen Spieler liegt
+  **und** der Abstand zum Leader **mindestens 2 Camp** beträgt.
+* Catch-up ist **maximal 1× pro Spieler und Runde** möglich.
+* Catch-up greift **nie**, wenn **alle Spieler gleichauf** sind.
+* Voraussetzung bleibt: Overload **≥ 8**.
 
 ---
 
@@ -240,11 +243,13 @@ Bei Knall:
 
 ---
 
-## 12) Countdown nach erstem Camper
+## 12) Countdown bei Overload ≥ 8
 
-Der Countdown wird **erst dann aktiv**, wenn in einer Runde **zum ersten Mal ein Spieler erfolgreich camped** (also mit mindestens 1 Live).
+Der Countdown wird **sofort aktiv**, sobald der Overload in einer Runde **zum ersten Mal** **≥ 8** erreicht.
+In diesem Zug erfolgt **sofort** ein Countdown-Tick (**+1**, bei Afterparty **+2**) und – falls nötig – der Overload-Check,
+**bevor** die Camp-Entscheidung geöffnet wird.
 
-**Afterparty-Twist:** Der Countdown wird **sofort aktiv** und tickt mit **+2** statt +1.
+**Afterparty-Twist:** Der Countdown wird **sofort aktiv** und tickt mit **+2** statt +1 (gilt auch für die sofortige Aktivierung).
 
 Solange der Countdown aktiv ist:
 
@@ -367,4 +372,4 @@ Diese Version ersetzt frühere Verwaltungsmechaniken vollständig durch:
 * sichtbaren **Bühnen-Pool**
 * **Endkarten** (Finale Camp-Entscheidung)
 * Overload-Check bei 12 mit Rückstoß auf 10
-* Countdown nach erstem Camper
+* Countdown bei Overload ≥ 8 (Tick + Check vor Camp-Entscheidung)
