@@ -65,6 +65,68 @@
     .bar > div{height:100%;background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444);width:0%;transition:width .18s ease}
     .bar:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
 
+    .tableau{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+    .stack{
+      background:rgba(11,15,23,.35);
+      border:1px solid rgba(148,163,184,.12);
+      border-radius:16px;
+      padding:10px;
+      min-height:180px;
+      position:relative;
+      overflow:hidden;
+    }
+    .stackTitle{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}
+    .stackTitle b{color:var(--text)}
+    .cardStack{position:relative;height:120px;margin-top:8px}
+    .cardStack.empty{opacity:.45}
+    .cardBack{
+      position:absolute;inset:0;
+      border-radius:14px;
+      border:1px solid rgba(148,163,184,.22);
+      background:
+        linear-gradient(135deg, rgba(99,102,241,.22), rgba(15,23,42,.85)),
+        radial-gradient(180px 120px at 20% 20%, rgba(255,255,255,.08), transparent 60%);
+      box-shadow:0 12px 28px rgba(0,0,0,.35);
+    }
+    .cardBack.layer2{transform:translate(6px,6px);opacity:.75}
+    .cardBack.layer3{transform:translate(12px,12px);opacity:.5}
+    .cardBack.discard{
+      background:
+        linear-gradient(135deg, rgba(239,68,68,.18), rgba(15,23,42,.85)),
+        radial-gradient(180px 120px at 20% 20%, rgba(255,255,255,.06), transparent 60%);
+    }
+
+    .cardFace{
+      position:relative;
+      height:120px;
+      border-radius:14px;
+      padding:10px;
+      border:1px solid rgba(148,163,184,.22);
+      background:
+        radial-gradient(140px 90px at 20% 20%, rgba(255,255,255,.12), transparent 60%),
+        rgba(31,42,68,.78);
+      box-shadow:0 14px 30px rgba(0,0,0,.4);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .cardFace:before{
+      content:"";
+      position:absolute;left:0;right:0;top:0;height:8px;
+      background:rgba(148,163,184,.35);
+    }
+    .cardFace[data-type="push"]:before{background:rgba(239,68,68,.85)}
+    .cardFace[data-type="stabilize"]:before{background:rgba(34,197,94,.85)}
+    .cardFace[data-type="twist"]:before{background:rgba(245,158,11,.85)}
+    .cardFace[data-type="encore"]:before{background:rgba(96,165,250,.85)}
+    .cardFace[data-type="empty"]:before{background:rgba(148,163,184,.35)}
+
+    .rTop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px}
+    .rName{font-weight:900;font-size:12px}
+    .rType{font-size:11px;color:#d6dbea}
+    .rText{font-size:11px;color:#d6dbea;line-height:1.28}
+
     .hint{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.35}
     .mini{font-size:11px;color:var(--muted);line-height:1.35}
     .sep{height:1px;background:rgba(148,163,184,.14);margin:10px 0}
@@ -380,6 +442,34 @@
           <div class="pill big" id="deckPill"><b>Deck</b>: <span id="deckCount">0</span></div>
           <div class="pill big" id="discardPill"><b>Ablage</b>: <span id="discardCount">0</span></div>
         </div>
+        <div class="tableau">
+          <div class="stack">
+            <div class="stackTitle"><b>Deck</b><span id="deckCountMini">0 Karten</span></div>
+            <div class="cardStack" id="deckStack">
+              <div class="cardBack layer3"></div>
+              <div class="cardBack layer2"></div>
+              <div class="cardBack"></div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="stackTitle"><b>Aufgedeckte Karte</b><span id="revealMeta">—</span></div>
+            <div class="cardFace" id="revealCard" data-type="empty">
+              <div class="rTop">
+                <span class="rName" id="revealName">Noch keine Karte</span>
+                <span class="rType" id="revealType">—</span>
+              </div>
+              <div class="rText" id="revealText">Klicke auf „Event aufdecken“, um den ersten Draw zu sehen.</div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="stackTitle"><b>Ablage</b><span id="discardCountMini">0 Karten</span></div>
+            <div class="cardStack" id="discardStack">
+              <div class="cardBack discard layer3"></div>
+              <div class="cardBack discard layer2"></div>
+              <div class="cardBack discard"></div>
+            </div>
+          </div>
+        </div>
         <div style="margin-top:10px" class="bar"><div id="barFill"></div><div class="tick t8" title="Ab 8 gibt es beim Campen +1 extra aus dem Pool (falls vorhanden)">8</div><div class="tick t12" title="Bei 12 wird sofort der Katastrophen-Check ausgelöst">12</div></div>
         <div class="banner" id="banner"></div>
         <div class="hint">
@@ -533,10 +623,18 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.12';
+    var VERSION = 'v0.13';
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.13',
+        date: '2025-12-27',
+        items: [
+          'Neu: Kartenoptik für Deck, Ablage und zuletzt aufgedeckte Karte, damit man den Spielfluss besser sieht.',
+          'UI: Zusätzliche Kartenfläche mit Live-Infos zur zuletzt aufgedeckten Karte.'
+        ]
+      },
       {
         ver: 'v0.12',
         date: '2025-12-26',
@@ -628,6 +726,10 @@
         .replace(/&/g,'&amp;')
         .replace(/</g,'&lt;')
         .replace(/>/g,'&gt;');
+    }
+
+    function cardCountLabel(n){
+      return n + (n === 1 ? ' Karte' : ' Karten');
     }
 
     function toast(msg, sub){
@@ -841,6 +943,28 @@
       document.getElementById('eventText').innerHTML = esc(c.text) + (extraText ? '<br><span class="mini">'+esc(extraText)+'</span>' : '');
     }
 
+    function updateRevealCard(){
+      var card = state.lastEvent;
+      var reveal = document.getElementById('revealCard');
+      if (!reveal) return;
+
+      if (!card){
+        reveal.setAttribute('data-type', 'empty');
+        document.getElementById('revealName').textContent = 'Noch keine Karte';
+        document.getElementById('revealType').textContent = '—';
+        document.getElementById('revealText').textContent = 'Klicke auf „Event aufdecken“, um den ersten Draw zu sehen.';
+        document.getElementById('revealMeta').textContent = '—';
+        return;
+      }
+
+      var meta = labelType(card.type);
+      reveal.setAttribute('data-type', card.type);
+      document.getElementById('revealName').textContent = card.name;
+      document.getElementById('revealType').textContent = meta.icon + ' ' + meta.txt;
+      document.getElementById('revealText').textContent = card.text;
+      document.getElementById('revealMeta').textContent = 'Aufgedeckt in T' + state.turnId;
+    }
+
     // ---------- UX helpers (Phase / Banner / Summary) ----------
     function phaseLabel(){
       if (state.gameOver) return 'Spielende';
@@ -1011,6 +1135,13 @@
       document.getElementById('pool').textContent = String(state.pool);
       document.getElementById('deckCount').textContent = String(state.deck.length);
       document.getElementById('discardCount').textContent = String(state.discard.length);
+      document.getElementById('deckCountMini').textContent = cardCountLabel(state.deck.length);
+      document.getElementById('discardCountMini').textContent = cardCountLabel(state.discard.length);
+
+      var deckStack = document.getElementById('deckStack');
+      var discardStack = document.getElementById('discardStack');
+      if (deckStack) deckStack.classList.toggle('empty', state.deck.length === 0);
+      if (discardStack) discardStack.classList.toggle('empty', state.discard.length === 0);
 
       var pct = (state.overload / MAX_OVERLOAD) * 100;
       document.getElementById('barFill').style.width = pct + '%';
@@ -1028,6 +1159,7 @@
 
       document.getElementById('revealerName').textContent = state.players[state.revealer] ? state.players[state.revealer].name : '—';
       document.getElementById('dir').textContent = (state.direction === 1) ? '↻' : '↺';
+      updateRevealCard();
 
       // Stat flashes (optisch "was ist passiert")
       if (prev){

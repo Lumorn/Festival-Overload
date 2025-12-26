@@ -1,5 +1,5 @@
 # Changelog
 
 ## Unreleased
-- GitHub Pages Einstiegspunkt `index.html` hinzugefügt, damit das Spiel direkt aus dem Repository-Root gehostet werden kann.
-- README um Schritte für GitHub Pages ergänzt.
+- Kartenoptik für Deck, Ablage und zuletzt aufgedeckte Karte ergänzt, um den Spielablauf besser sichtbar zu machen.
+- README um UI-Highlights ergänzt.
