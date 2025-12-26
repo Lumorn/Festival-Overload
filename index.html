@@ -274,6 +274,7 @@
     .playLog .evt.info{border-color:rgba(99,102,241,.18);background:rgba(99,102,241,.05)}
 
     .toggle{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;justify-content:flex-end}
+    .botControls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     input[type=checkbox]{transform:scale(1.08)}
     select{background:rgba(148,163,184,.10);color:var(--text);border:1px solid rgba(148,163,184,.22);border-radius:10px;padding:6px 8px}
 
@@ -989,6 +990,12 @@
             <label class="mini">Bot-Profil:
               <select id="optBotProfile"></select>
             </label>
+            <div class="botControls mini">
+              <span id="botCountLabel">Bots: 3</span>
+              <button class="btn slim" id="btnAddBot">Bot hinzufügen</button>
+              <button class="btn slim" id="btnRemoveBot">Bot entfernen</button>
+              <span class="tag">nur vor Spielstart</span>
+            </div>
             <label class="mini"><input id="optDecisionTimer" type="checkbox" checked> Timer aktiv (20s, Auto-Bleib)</label>
             <label class="mini">Tempo:
               <select id="optSpeed">
@@ -1108,10 +1115,22 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.18';
+    var VERSION = 'v0.19';
+
+    // Bot-Limits für die UI-Anpassung
+    var MIN_BOTS = 1;
+    var MAX_BOTS = 6;
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.19',
+        date: '2026-01-04',
+        items: [
+          'Neu: Bot-Anzahl vor Spielstart anpassbar (Bot hinzufügen/entfernen).',
+          'UI: Bot-Zähler in den Einstellungen ergänzt, inkl. Sperre nach Spielstart.'
+        ]
+      },
       {
         ver: 'v0.18',
         date: '2026-01-03',
@@ -1287,6 +1306,7 @@
       players: [],
       humanIndex: 0,
       botProfileId: 'standard',
+      botCount: 3,
 
       awaitingDecision: false,
       humanChoice: 'stay', // 'stay' | 'camp'
@@ -1317,6 +1337,41 @@
 
     function cardCountLabel(n){
       return n + (n === 1 ? ' Karte' : ' Karten');
+    }
+
+    function clampBotCount(count){
+      if (count < MIN_BOTS) return MIN_BOTS;
+      if (count > MAX_BOTS) return MAX_BOTS;
+      return count;
+    }
+
+    function botNameForIndex(idx){
+      var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      if (idx < letters.length) return 'Bot ' + letters.charAt(idx);
+      return 'Bot ' + (idx + 1);
+    }
+
+    function buildPlayers(botCount){
+      // Spieler-Setup neu aufbauen (nur vor Spielstart anpassen).
+      var list = [
+        { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false }
+      ];
+
+      for (var i=0;i<botCount;i++){
+        list.push({
+          name: botNameForIndex(i),
+          camp: 0,
+          live: 0,
+          roundState: 'active',
+          forcedStayNext: false,
+          botId: state.botProfileId
+        });
+      }
+      return list;
+    }
+
+    function canAdjustBots(){
+      return state.turnId === 0 && !state.awaitingDecision && !state.gameOver;
     }
 
     function toast(msg, sub){
@@ -1930,6 +1985,10 @@
       // prev snapshot
       var prev = state._uiPrev || null;
 
+      if (state.players.length){
+        state.botCount = clampBotCount(Math.max(0, state.players.length - 1));
+      }
+
       document.getElementById('verText').textContent = VERSION;
       var playVer = document.getElementById('playVersion');
       if (playVer) playVer.textContent = VERSION;
@@ -2014,6 +2073,16 @@
       updateRevealCard();
       renderOverloadTrack();
       renderPlayChips(state.lastEvent);
+
+      var botLabel = document.getElementById('botCountLabel');
+      if (botLabel){
+        botLabel.textContent = 'Bots: ' + state.botCount;
+      }
+      var addBtn = document.getElementById('btnAddBot');
+      var removeBtn = document.getElementById('btnRemoveBot');
+      var adjustBots = canAdjustBots();
+      if (addBtn) addBtn.disabled = !adjustBots || state.botCount >= MAX_BOTS;
+      if (removeBtn) removeBtn.disabled = !adjustBots || state.botCount <= MIN_BOTS;
 
       // Stat flashes (optisch "was ist passiert")
       if (prev){
@@ -2146,6 +2215,38 @@
         if (i === state.humanIndex) continue;
         state.players[i].botId = botId;
       }
+    }
+
+    function addBot(){
+      if (!canAdjustBots()){
+        toast('Bots gesperrt', 'Bots lassen sich nur vor dem ersten Event anpassen.');
+        return;
+      }
+      if (state.botCount >= MAX_BOTS){
+        toast('Limit erreicht', 'Maximal ' + MAX_BOTS + ' Bots möglich.');
+        return;
+      }
+      state.botCount = clampBotCount(state.botCount + 1);
+      state.players = buildPlayers(state.botCount);
+      state.botChoices = {};
+      applyBotProfileToBots(state.botProfileId);
+      updateUI();
+    }
+
+    function removeBot(){
+      if (!canAdjustBots()){
+        toast('Bots gesperrt', 'Bots lassen sich nur vor dem ersten Event anpassen.');
+        return;
+      }
+      if (state.botCount <= MIN_BOTS){
+        toast('Minimum erreicht', 'Mindestens ' + MIN_BOTS + ' Bot bleibt im Spiel.');
+        return;
+      }
+      state.botCount = clampBotCount(state.botCount - 1);
+      state.players = buildPlayers(state.botCount);
+      state.botChoices = {};
+      applyBotProfileToBots(state.botProfileId);
+      updateUI();
     }
 
     function renderOverloadTrack(){
@@ -3495,16 +3596,12 @@
       state.revealer = 0;
       state.extraRevealSame = false;
       state.botProfileId = botProfilePick();
+      state.botCount = clampBotCount(state.botCount || 3);
 
       state.deck = mkDeck();
       state.discard = [];
 
-      state.players = [
-        { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false },
-        { name:'Bot A', camp:0, live:0, roundState:'active', forcedStayNext:false, botId: state.botProfileId },
-        { name:'Bot B', camp:0, live:0, roundState:'active', forcedStayNext:false, botId: state.botProfileId },
-        { name:'Bot C', camp:0, live:0, roundState:'active', forcedStayNext:false, botId: state.botProfileId }
-      ];
+      state.players = buildPlayers(state.botCount);
 
       state.awaitingDecision = false;
       state.humanChoice = 'stay';
@@ -3600,6 +3697,8 @@
       updateUI();
       if (state.awaitingDecision) startDecisionTimer();
     };
+    document.getElementById('btnAddBot').onclick = addBot;
+    document.getElementById('btnRemoveBot').onclick = removeBot;
 
     document.getElementById('btnStay').onclick = function(){ state.humanChoice = 'stay'; state.humanLockedIn = true; updateUI(); };
     document.getElementById('btnCamp').onclick = function(){ state.humanChoice = 'camp'; state.humanLockedIn = true; updateUI(); };
