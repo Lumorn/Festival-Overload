@@ -105,7 +105,7 @@ Wenn eine Stabilisieren-Karte aufgedeckt wird:
 
 **Ertrag (abhängig vom Overload vor dem Senken):**
 
-* Overload **0** → **Null-Stabi: +1 Pool** (exklusiv, kein weiterer Ertrag).
+* Overload **0** → **Null-Stabi: kein Ertrag**.
 * Overload **1–3** → **kein Ertrag**.
 * Overload **4–7** → **+1 Pool**.
 * Overload **8+** → **+1 Live** (aus dem Vorrat).
@@ -134,6 +134,7 @@ Twists sind Chaos-Schalter. Es gibt zwei Arten:
 Encore bedeutet: **Sofort ein weiteres Event**, bevor irgendwer campen darf.
 
 * Der **aufdeckende Spieler** darf **1 Live zahlen**, um Encore zu stoppen.
+* Hat er **0 Live**, darf er trotzdem stoppen, zahlt aber **Overload +1** (mit Cap).
 * Zahlt er nicht (oder kann nicht), deckt er sofort die nächste Karte auf.
 * Mehrere Encore können sich **ketten**.
 
@@ -167,6 +168,7 @@ Wenn du campst:
 
 Wenn du campst (nur mit mindestens 1 Live):
 
+* **Pool→Camp ist nur erlaubt, wenn du mindestens 2 Live** hast.
 * **poolTake = min(Pool, 1)** → maximal **+1 Pool** pro Camper (**cap1**).
 
 ### Pool-Bonus bei simultanem Campen
@@ -175,6 +177,8 @@ Wenn du campst (nur mit mindestens 1 Live):
 * Jeder Camper erhält **maximal +1 Pool** in dieser Reihenfolge, solange Pool übrig ist.
 
 **Wichtig:** Maßgeblich ist der **Overload nach dem Event** (inkl. Countdown und Overload-Checks), **direkt vor der Camp-Entscheidung**.
+
+**DecisionWindow-Note:** Wenn **niemand campen darf** (z. B. alle Live = 0) und es **keinen Zwangseffekt** gibt, wird die Entscheidungsphase übersprungen (alle bleiben automatisch).
 
 ---
 
@@ -250,9 +254,9 @@ Wenn nach einer Camp-Phase nur noch **1 Spieler aktiv** ist:
 
 1. Die Runde endet **nicht sofort**.
 2. Der letzte aktive Spieler erhält **genau 1 Extra-Event** (**Final Push**).
-3. Danach folgt eine **normale Camp-Entscheidung** (nur dieser Spieler).
-4. **Camp** → Runde endet.
-5. **Bleib** → Spiel läuft normal weiter. Bleibt er weiterhin allein aktiv, **endet die Runde** (Final Push wiederholt sich nicht).
+3. Danach folgt eine **Camp-Entscheidung** (nur dieser Spieler) mit **genau 1 Gnaden-Bleib**.
+4. Wählt er **Bleib**, muss er im **nächsten** DecisionWindow **zwingend campen** (FinalPushLastCall).
+5. **Camp** oder **erzwungenes Camp** → Runde endet (es sei denn, er fliegt vorher durch Knall raus).
 
 ### Neustart
 
@@ -313,7 +317,7 @@ Sobald ein Spieler **8 Camp-Punkte** erreicht:
 
 **Encore! (🎤) – 6**
 
-* Encore! ×6 – 🎤 Ketten-Event (1 Live zahlen, um zu stoppen)
+* Encore! ×6 – 🎤 Ketten-Event (1 Live zahlen; bei Live 0: Overload +1, um zu stoppen)
 
 ---
 
