@@ -772,7 +772,10 @@
         <div class="statusIcons devOnly">
           <span class="statusChip warn" id="countdownStatus">🔥 Countdown aktiv</span>
           <span class="statusChip blue" id="stageRuleChip">🌀 Bühnenregel</span>
-          <span class="statusChip bad" id="encoreChip">🎤 Encore-Kette</span>
+          <span class="statusChip bad" id="twistPyroChip">🔥 PYRO aktiv</span>
+          <span class="statusChip warn" id="twistRichtungswechselChip">🔄 Richtungswechsel</span>
+          <span class="statusChip blue" id="twistAfterpartyChip">🎉 Afterparty</span>
+          <span class="statusChip bad" id="encoreChip">🎤 Endkarte</span>
         </div>
       </div>
     </div>
@@ -855,8 +858,8 @@
 
         <div class="steps" id="steps" aria-label="Phasen">
           <div class="step" data-step="reveal" title="Der aktive Spieler deckt genau 1 Event auf"><span class="n">1</span>Aufdecken</div>
-          <div class="step" data-step="event" title="Event-Effekt wird ausgeführt (inkl. Encore-Ketten, Twist, Overload-Check)"><span class="n">2</span>Effekt</div>
-          <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (optional +2 bei Pool ≥3, falls aktiviert)"><span class="n">3</span>Countdown</div>
+          <div class="step" data-step="event" title="Event-Effekt wird ausgeführt (inkl. Endkarten, Twist, Overload-Check)"><span class="n">2</span>Effekt</div>
+          <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (Afterparty: +2), optional +1 extra bei Pool ≥3 (falls aktiviert)"><span class="n">3</span>Countdown</div>
           <div class="step" data-step="decision" title="Alle aktiven Spieler entscheiden gleichzeitig Bleib/Camp"><span class="n">4</span>Entscheidung</div>
         </div>
 
@@ -895,11 +898,11 @@
               <div class="hint">
                 <b>Camp (nur mit Live):</b> Ohne mindestens <b>1 Live</b> gibt es keinen Cashout.
                 <br>
-                <b>Pool-Bonus:</b> Pool→Camp ist nur bei <b>Live ≥2</b> erlaubt, Max-Bonus bleibt <b>1</b> (cap1).
+                <b>Pool-Bonus:</b> Pool→Camp ist nur bei <b>Live ≥2</b> (bzw. <b>Live ≥3</b> bei Richtungswechsel) erlaubt. Zusätzlich gilt ein Overload-Gate: <b>0/1/2</b> (bei Overload &lt;7 / 7–9 / 10+).
                 <br>
                 <b>Wichtig:</b> Maßgeblich ist der <b>Overload nach dem Event</b> (inkl. Countdown/Checks), direkt vor der Camp-Entscheidung.
                 <br>
-                <b>Verteilung (gleichzeitig campen):</b> In Zugreihenfolge (ab Aufdecker) erhält jeder Camper maximal <b>+1 Pool</b>, solange Pool verfügbar ist.
+                <b>Verteilung (gleichzeitig campen):</b> In Zugreihenfolge (ab Aufdecker) erhält jeder Camper maximal bis zum Gate, solange Pool verfügbar ist.
               </div>
             </details>
           </div>
@@ -912,7 +915,7 @@
                 <div class="poolCard"></div>
                 <div class="poolCard"></div>
               </div>
-              <div class="mini" id="poolHint">Camp-Bonus: max. 1 pro Camper (Live ≥2, cap1)</div>
+              <div class="mini" id="poolHint">Camp-Bonus: Gate 0/1/2 (Overload), Live ≥2/3</div>
             </div>
 
             <div class="tableau">
@@ -1106,7 +1109,9 @@
         <ul class="ruleList mini">
           <li><b>Nach jedem Event</b>: Alle aktiven Spieler entscheiden simultan Bleib oder Camp.</li>
           <li><b>Camp</b> ist nur mit mindestens 1 Live möglich.</li>
-          <li><b>Pool-Bonus</b>: Nur bei Live ≥2 erlaubt, maximal +1 pro Camper (cap1), Reihenfolge ab Aufdecker.</li>
+          <li><b>Pool-Bonus</b>: Nur bei Live ≥2 (bzw. ≥3 bei Richtungswechsel) und Overload-Gate 0/1/2 (bei &lt;7 / 7–9 / 10+), Reihenfolge ab Aufdecker.</li>
+          <li><b>Crowd-Mood</b>: Jede Push-Erhöhung wird durch das Mood-Deck leicht verschoben (min. +1).</li>
+          <li><b>Twists</b>: Pyro, Richtungswechsel und Afterparty gelten bis Rundenende.</li>
           <li><b>Overload 12</b>: Katastrophen-Check – Push bedeutet Knall.</li>
         </ul>
       </div>
@@ -1118,8 +1123,11 @@
     'use strict';
 
     var VERSION = 'v0.37';
+    var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
+    var MOOD_DECK_BASE = [-1, 0, 0, 1, 1, 2];
+    var MIN_LIVE_FOR_POOL_BASE = 2;
     var STABILIZE_CARDS = [
       { name:'Atem holen', value:2, count:8 },
       { name:'Security greift ein', value:3, count:6 }
@@ -1131,6 +1139,21 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'ruleset 0.8',
+        date: '2026-02-02',
+        items: [
+          'Neu: Crowd-Mood-Deck (−1/0/0/+1/+1/+2) modifiziert jede Push-Erhöhung, inkl. Log.',
+          'Neu: Stabilisieren gibt keinen Pool mehr; Bonus-Live nur bei Overload ≥9.',
+          'Neu: Pool→Camp ist per Overload-Gate 0/1/2 begrenzt; Live-Schwelle steigt bei Richtungswechsel.',
+          'Neu: Twist-Effekte sind bis Rundenende aktiv (Pyro, Richtungswechsel, Afterparty).',
+          'Neu: Afterparty startet Countdown sofort und erhöht den Tick auf +2.',
+          'Neu: Endkarte Encore! gibt allen Aktiven +1 Live und triggert finale Camp-Entscheidung.',
+          'Neu: Catch-up-Bonus +1 Camp für Letzte bei Overload ≥8.',
+          'Neu: Bots nutzen die neuen Camp-Gates und finale Camp-Phase.',
+          'Fix: Nach jeder Kartenauflösung werden Overload/Pool/Live/Camp geklammert.'
+        ]
+      },
       {
         ver: 'v0.37',
         date: '2026-01-22',
@@ -1415,14 +1438,12 @@
           if (p.roundState !== 'active') return 'stay';
           if (p.forcedStay) return 'stay';
           if (p.live <= 0) return 'stay';
+          if (ctx.finalCamp) return 'camp';
           if (p.camp + p.live >= WIN_CAMP) return 'camp';
-          if (ctx.overload >= 10 && p.live >= 2) return 'camp';
-          if (ctx.overload >= 11 && p.live === 1) return (rand() < 0.4) ? 'camp' : 'stay';
-          if (p.live >= 3) return 'camp';
-          if (p.live >= 2 && ctx.pool >= 1 && ctx.overload >= 8) return (rand() < 0.6) ? 'camp' : 'stay';
-          if (p.live === 2 && ctx.overload >= 9) return (rand() < 0.35) ? 'camp' : 'stay';
-          if (p.live === 1) return (rand() < 0.1) ? 'camp' : 'stay';
-          return (rand() < 0.18) ? 'camp' : 'stay';
+          if (p.live >= 4) return 'camp';
+          if (ctx.overload >= 9) return 'camp';
+          if (ctx.overload >= 7 && p.live >= ctx.minLiveForPool && ctx.pool > 0 && ctx.poolGate > 0) return 'camp';
+          return 'stay';
         },
         stopEncore: function(ctx){
           var p = ctx.player;
@@ -1473,6 +1494,10 @@
       startPlayer: 0,
       revealer: 0,
       extraRevealSame: false,
+      moodDeck: [],
+      twistEffects: { pyro:false, richtungswechsel:false, afterparty:false },
+      forceFinalCampWindow: false,
+      skipCountdownOnce: false,
 
       deck: [],
       discard: [],
@@ -1961,7 +1986,52 @@
       return out;
     }
 
+    function resetMoodDeck(){
+      // Crowd-Mood-Deck wird zu Rundenbeginn frisch gemischt.
+      state.moodDeck = shuffle(MOOD_DECK_BASE);
+    }
+
+    function drawCrowdMoodValue(){
+      // Zyklisches Ziehen: wenn leer, neu mischen.
+      if (!state.moodDeck || !state.moodDeck.length) resetMoodDeck();
+      return state.moodDeck.pop();
+    }
+
     function clampOverload(x){ return Math.max(0, Math.min(MAX_OVERLOAD, x)); }
+
+    function clampStateAfterCard(){
+      // Nach jeder Kartenauflösung: Werte in gültige Bereiche zwingen.
+      state.overload = clampOverload(state.overload);
+      state.pool = Math.max(0, state.pool);
+      for (var i=0;i<state.players.length;i++){
+        state.players[i].live = Math.max(0, state.players[i].live);
+        state.players[i].camp = Math.max(0, state.players[i].camp);
+      }
+    }
+
+    function resetTwistEffects(){
+      state.twistEffects = { pyro:false, richtungswechsel:false, afterparty:false };
+    }
+
+    function isTwistActive(key){
+      return !!(state.twistEffects && state.twistEffects[key]);
+    }
+
+    function minLiveForPool(){
+      var minLive = MIN_LIVE_FOR_POOL_BASE;
+      if (isTwistActive('richtungswechsel')) minLive += 1;
+      return minLive;
+    }
+
+    function maxPoolToCampThisCamp(){
+      if (state.overload >= 10) return 2;
+      if (state.overload >= 7) return 1;
+      return 0;
+    }
+
+    function countdownTickValue(){
+      return isTwistActive('afterparty') ? 2 : 1;
+    }
 
     function controlMode(){
       var el = document.getElementById('optControlMode');
@@ -2035,36 +2105,37 @@
     }
 
     function darfPoolZuCamp(live){
-      // Pool→Camp ist nur erlaubt, wenn mindestens 2 Live vorhanden sind.
-      return live >= 2;
+      // Pool→Camp ist nur erlaubt, wenn die Live-Schwelle erreicht ist.
+      return live >= minLiveForPool();
     }
 
     function darfJetztCampen(p){
       return p.roundState === 'active' && p.live > 0;
     }
 
-    function poolTakeFor(pool){
-      return Math.min(pool, 1);
+    function poolTakeFor(pool, maxPerCamper){
+      return Math.min(pool, Math.max(0, maxPerCamper || 0));
     }
 
-    function planCampPoolDistribution(order, poolAvailable){
-      var maxPerCamper = 1;
+    function planCampPoolDistribution(order, poolAvailable, maxPerCamper){
+      var perCap = Math.max(0, maxPerCamper || 0);
       var takes = {};
       for (var i=0;i<order.length;i++) takes[String(order[i])] = 0;
       var rounds = [];
       var remaining = poolAvailable;
-      if (remaining > 0){
+      for (var r=0;r<perCap && remaining > 0;r++){
         var round = [];
         for (var j=0;j<order.length;j++){
           if (remaining <= 0) break;
           var idx = order[j];
+          if (takes[String(idx)] >= perCap) continue;
           takes[String(idx)] += 1;
           remaining -= 1;
           round.push(idx);
         }
         if (round.length) rounds.push(round);
       }
-      return { takes: takes, rounds: rounds, maxPerCamper: maxPerCamper };
+      return { takes: takes, rounds: rounds, maxPerCamper: perCap };
     }
 
     function describeOverloadCap(before, add, after){
@@ -2096,7 +2167,10 @@
         players: state.players,
         overload: state.overload,
         pool: state.pool,
-        revealer: state.revealer
+        revealer: state.revealer,
+        minLiveForPool: minLiveForPool(),
+        poolGate: maxPoolToCampThisCamp(),
+        finalCamp: !!state.forceFinalCampWindow
       };
     }
 
@@ -2145,18 +2219,18 @@
 
       if (t === 'push'){
         var add = (c.delta || 1) + feedbackLevel();
-        parts.push('<span class="imp bad">⚡ <b>Overload +' + add + '</b></span>');
+        parts.push('<span class="imp bad">⚡ <b>Overload +' + add + ' (+ Crowd-Mood)</b></span>');
         parts.push('<span class="imp blue">🎟️ <b>Aufdecker +1 Live</b></span>');
         parts.push('<span class="imp warn">🎁 <b>Pool +1</b></span>');
         if (hasFeedbackRule()) parts.push('<span class="imp warn">🌀∞ <b>Feedback L' + feedbackLevel() + ' aktiv</b></span>');
+        if (isTwistActive('pyro')) parts.push('<span class="imp bad">🔥 <b>Pyro aktiv: +1 Overload</b></span>');
         parts.push('<span class="imp blue">👥 <b>Danach: Entscheidung</b></span>');
       }
       else if (t === 'stabilize'){
         var d = (typeof c.delta === 'number' ? c.delta : -2);
         parts.push('<span class="imp good">🛠️ <b>Overload ' + d + '</b></span>');
-        parts.push('<span class="imp warn">🎁 <b>+1 Pool bei Overload 4–7</b></span>');
-        parts.push('<span class="imp blue">🎟️ <b>+1 Live bei 8+ vorher</b></span>');
-        parts.push('<span class="imp warn">🧯 <b>Null-Stabi: kein Ertrag</b></span>');
+        parts.push('<span class="imp blue">🎟️ <b>+1 Live nur bei Overload 9+ vorher</b></span>');
+        parts.push('<span class="imp warn">🎁 <b>Pool +0</b></span>');
         parts.push('<span class="imp blue">👥 <b>Danach: Entscheidung</b></span>');
       }
       else if (t === 'twist'){
@@ -2164,18 +2238,18 @@
           parts.push('<span class="imp warn">🌀∞ <b>Bühnenregel</b></span>');
           parts.push('<span class="imp blue">⏳ <b>Gilt bis Rundenende</b></span>');
         } else {
-          parts.push('<span class="imp warn">🌀 <b>Sofort-Twist</b></span>');
+          parts.push('<span class="imp warn">🌀 <b>Rundeneffekt bis Rundenende</b></span>');
         }
-        if (c.fx === 'pyro') parts.push('<span class="imp bad">🔥 <b>Overload +2</b></span>');
-        if (c.fx === 'flipDir') parts.push('<span class="imp warn">🔄 <b>Richtung dreht</b></span>');
-        if (c.fx === 'setwechsel') parts.push('<span class="imp warn">🎛️ <b>Aufdecker noch einmal</b></span>');
+        if (c.fx === 'pyro') parts.push('<span class="imp bad">🔥 <b>Push +1 Overload</b></span>');
+        if (c.fx === 'flipDir') parts.push('<span class="imp warn">🔄 <b>Pool→Camp erst ab Live 3</b></span>');
+        if (c.fx === 'afterparty') parts.push('<span class="imp warn">🎉 <b>Countdown sofort, Tick +2</b></span>');
         if (c.fx === 'stageDive') parts.push('<span class="imp bad">🪂 <b>Ziel: zahlen 1 Live oder muss bleiben</b></span>');
         parts.push('<span class="imp blue">👥 <b>Danach: Entscheidung</b></span>');
       }
       else if (t === 'encore'){
-        parts.push('<span class="imp blue">🎤 <b>Encore-Kette</b></span>');
-        parts.push('<span class="imp warn">✋ <b>Stop: 1 Live (bei Live 0: Overload +1)</b></span>');
-        parts.push('<span class="imp bad">⛓️ <b>Kein Camp dazwischen</b></span>');
+        parts.push('<span class="imp blue">🎤 <b>Endkarte: Encore!</b></span>');
+        parts.push('<span class="imp blue">🎟️ <b>Alle Aktiven +1 Live</b></span>');
+        parts.push('<span class="imp warn">🏕️ <b>Finale Camp-Entscheidung</b></span>');
       }
       else {
         parts.push('<span class="imp">Event</span>');
@@ -2231,27 +2305,26 @@
       var addFeedback = feedbackLevel();
 
       if (t === 'push'){
-        chips.push({ cls:'bad', text:'Overload +' + ((card.delta || 1) + addFeedback) });
+        chips.push({ cls:'bad', text:'Overload +' + ((card.delta || 1) + addFeedback) + ' (+ Mood)' });
         chips.push({ cls:'blue', text:(state.revealer === state.humanIndex ? '+1 Live (Du)' : 'Aufdecker +1 Live') });
         chips.push({ cls:'warn', text:'Pool +1' });
+        if (isTwistActive('pyro')) chips.push({ cls:'bad', text:'Pyro aktiv: +1 Overload' });
       } else if (t === 'stabilize'){
         chips.push({ cls:'good', text:'Overload ' + (card.delta || -2) });
-        chips.push({ cls:'warn', text:'Pool +1 bei Overload 4–7' });
-        chips.push({ cls:'blue', text:'Live +1 bei 8+ vorher' });
-        chips.push({ cls:'warn', text:'Null-Stabi: kein Ertrag' });
+        chips.push({ cls:'blue', text:'Live +1 nur bei Overload 9+ vorher' });
+        chips.push({ cls:'warn', text:'Pool +0' });
       } else if (t === 'twist'){
         if (card.stage) chips.push({ cls:'warn', text:'Bühnenregel: ' + card.name });
-        if (card.fx === 'pyro') chips.push({ cls:'bad', text:'Overload +2' });
-        if (card.fx === 'flipDir') chips.push({ cls:'warn', text:'Richtung dreht' });
-        if (card.fx === 'setwechsel') chips.push({ cls:'warn', text:'Aufdecker noch einmal' });
+        if (card.fx === 'pyro') chips.push({ cls:'bad', text:'Push +1 Overload' });
+        if (card.fx === 'flipDir') chips.push({ cls:'warn', text:'Pool→Camp erst ab Live 3' });
+        if (card.fx === 'afterparty') chips.push({ cls:'warn', text:'Countdown sofort, Tick +2' });
         if (card.fx === 'stageDive') chips.push({ cls:'bad', text:'Stage Dive' });
       } else if (t === 'encore'){
-        chips.push({ cls:'blue', text:'Encore-Kette' });
-        chips.push({ cls:'warn', text:'Stop: 1 Live / Live 0 → Overload +1' });
-        chips.push({ cls:'warn', text:'Kein Camp dazwischen' });
+        chips.push({ cls:'blue', text:'Endkarte: Alle Aktiven +1 Live' });
+        chips.push({ cls:'warn', text:'Finale Camp-Entscheidung' });
       }
 
-      if (state.countdownActive) chips.push({ cls:'warn', text:'Countdown +1' });
+      if (state.countdownActive) chips.push({ cls:'warn', text:'Countdown +' + countdownTickValue() });
 
       if (!chips.length) chips.push({ cls:'blue', text:'Event' });
 
@@ -2406,6 +2479,7 @@
     function statusHeadlineText(){
       if (state.uiHeadline) return state.uiHeadline;
       if (state.gameOver) return 'Runde endet';
+      if (state.forceFinalCampWindow) return 'Finale Camp-Entscheidung';
       if (state.awaitingDecision) return 'Alle entscheiden: Bleib oder Camp';
       if (state.phase === 'countdown') return (state.overload >= 12 ? 'Katastrophen-Check!' : 'Countdown läuft');
       if (state.phase === 'event') return 'Event wirkt';
@@ -2616,8 +2690,9 @@
       if (stageRule) stageRule.textContent = stageRuleLabel();
       var poolHint = document.getElementById('poolHint');
       if (poolHint){
-        var poolTake = poolTakeFor(state.pool);
-        poolHint.textContent = 'Camp-Bonus (max): +' + poolTake + ' (Live ≥2, Pool ' + state.pool + ', cap1)';
+        var gate = maxPoolToCampThisCamp();
+        var poolTake = poolTakeFor(state.pool, gate);
+        poolHint.textContent = 'Camp-Bonus (max): +' + poolTake + ' (Live ≥' + minLiveForPool() + ', Overload-Gate ' + gate + ')';
       }
 
       var pill = document.getElementById('stateChip');
@@ -2654,13 +2729,26 @@
 
       var encoreChip = document.getElementById('encoreChip');
       if (encoreChip){
-        if (state.encoreChain > 0){
-          encoreChip.textContent = '🎤 Encore-Kette ' + state.encoreChain;
+        if (state.forceFinalCampWindow){
+          encoreChip.textContent = '🎤 Finale Camp-Phase';
           encoreChip.classList.add('active');
         } else {
-          encoreChip.textContent = '🎤 Encore-Kette';
+          encoreChip.textContent = '🎤 Endkarte';
           encoreChip.classList.remove('active');
         }
+      }
+
+      var twistPyroChip = document.getElementById('twistPyroChip');
+      if (twistPyroChip){
+        twistPyroChip.classList.toggle('active', isTwistActive('pyro'));
+      }
+      var twistRichtChip = document.getElementById('twistRichtungswechselChip');
+      if (twistRichtChip){
+        twistRichtChip.classList.toggle('active', isTwistActive('richtungswechsel'));
+      }
+      var twistAfterpartyChip = document.getElementById('twistAfterpartyChip');
+      if (twistAfterpartyChip){
+        twistAfterpartyChip.classList.toggle('active', isTwistActive('afterparty'));
       }
 
       document.getElementById('revealerName').textContent = state.players[state.revealer] ? state.players[state.revealer].name : '—';
@@ -2736,7 +2824,11 @@
         var hp = state.players[state.humanIndex];
         if (hp && hp.roundState === 'active'){
           var extra = (isAggCountdown() && state.countdownActive && state.pool >= 3) ? ' (Achtung: Countdown ist aggressiv, Pool ≥3)' : '';
-          showBanner('warn','Entscheidung: Bleib oder Camp','Camp ist nur mit mindestens 1 Live möglich. Pool-Bonus nur bei Live ≥2.' + extra);
+          if (state.forceFinalCampWindow){
+            showBanner('warn','Finale Camp-Entscheidung','Runde endet danach. Pool-Bonus: Gate ' + maxPoolToCampThisCamp() + ', Live ≥' + minLiveForPool() + '.' + extra);
+          } else {
+            showBanner('warn','Entscheidung: Bleib oder Camp','Camp ist nur mit mindestens 1 Live möglich. Pool-Bonus: Gate ' + maxPoolToCampThisCamp() + ', Live ≥' + minLiveForPool() + '.' + extra);
+          }
         } else {
           showBanner('good','Du bist gecampt','Du beobachtest diese Runde.');
         }
@@ -2793,6 +2885,8 @@
         h.textContent = 'Du bist in dieser Runde gecampt.';
       } else if (forcedFinalPush) {
         h.innerHTML = 'Final Push: <b>Letzte Chance</b> – du musst jetzt campen.';
+      } else if (state.forceFinalCampWindow) {
+        h.innerHTML = 'Finale Camp-Entscheidung: <b>Runde endet danach</b>.';
       } else if (forced) {
         h.innerHTML = 'Du bist durch <b>Stage Dive</b> gezwungen, diese Phase <b>drin zu bleiben</b>.';
       } else if (campBlockedByZero) {
@@ -2800,7 +2894,7 @@
       } else {
         if (auto) h.textContent = 'Autoplay ist aktiv – Entscheidungen werden automatisch aufgelöst.';
         else if (areBotsManual()) h.textContent = 'Wähle Bleib oder Camp. Danach entscheide auch die Bots.';
-        else h.textContent = 'Wähle Bleib oder Camp (Camp nur mit Live, Pool-Bonus ab Live ≥2). Dann wird simultan aufgelöst.';
+        else h.textContent = 'Wähle Bleib oder Camp (Camp nur mit Live, Pool-Bonus ab Live ≥' + minLiveForPool() + ', Gate ' + maxPoolToCampThisCamp() + '). Dann wird simultan aufgelöst.';
       }
 
       // highlight choice
@@ -2891,8 +2985,9 @@
       var campHint = document.getElementById('campHint');
       if (human.live <= 0) campHint.textContent = 'Camp erst ab 1 Live';
       else if (human.forcedStay) campHint.textContent = 'Zwang: Bleib';
-      else if (human.live === 1) campHint.textContent = 'Camp ohne Pool-Bonus (Live <2)';
-      else campHint.textContent = 'Pool-Bonus möglich (Live ≥2)';
+      else if (human.live < minLiveForPool()) campHint.textContent = 'Camp ohne Pool-Bonus (Live <' + minLiveForPool() + ')';
+      else if (maxPoolToCampThisCamp() <= 0) campHint.textContent = 'Pool-Bonus gesperrt (Gate 0)';
+      else campHint.textContent = 'Pool-Bonus möglich (Gate ' + maxPoolToCampThisCamp() + ')';
 
       var preview = document.getElementById('decisionPreview');
       var gainLine = document.getElementById('decisionGain');
@@ -2903,7 +2998,7 @@
         totalLine.textContent = '—';
       } else {
         preview.style.opacity = '1';
-        var poolBonus = (human.live >= 2) ? poolTakeFor(state.pool) : 0;
+        var poolBonus = (human.live >= minLiveForPool()) ? poolTakeFor(state.pool, maxPoolToCampThisCamp()) : 0;
         if (human.roundState !== 'active'){
           gainLine.textContent = 'Du beobachtest diese Runde.';
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
@@ -2915,7 +3010,7 @@
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
         } else {
           gainLine.textContent = 'Du sicherst: +' + human.live + ' Camp';
-          totalLine.textContent = 'Pool-Bonus (max, cap1): +' + poolBonus + ' · Gesamt danach: ' + (human.camp + human.live + poolBonus);
+          totalLine.textContent = 'Pool-Bonus (max, Gate): +' + poolBonus + ' · Gesamt danach: ' + (human.camp + human.live + poolBonus);
         }
       }
 
@@ -3123,7 +3218,7 @@
       for (i=0;i<10;i++) deck.push({ type:'push', name:'Crowd Surf', delta:2, text:'Overload +2. Aufdecker +1 Live. +1 in Pool.' });
       for (i=0;i<6;i++) deck.push({ type:'push', name:'Bassdrop', delta:3, text:'Overload +3. Aufdecker +1 Live. +1 in Pool.' });
 
-      // Stabilisieren (14) – Ertrag: 4–7 → +1 Pool, 8+ → +1 Live, 0 → Null-Stabi kein Ertrag
+      // Stabilisieren (14) – nur Safety: Pool +0, Bonus-Live nur bei Overload 9+
       for (i=0;i<STABILIZE_CARDS.length;i++){
         var sc = STABILIZE_CARDS[i];
         for (var j=0;j<sc.count;j++){
@@ -3131,20 +3226,20 @@
             type:'stabilize',
             name: sc.name,
             delta: -sc.value,
-            text:'Overload −' + sc.value + '. Overload 4–7 vorher: +1 Pool. Overload 8+ vorher: +1 Live. Null-Stabi (0): kein Ertrag.'
+            text:'Overload −' + sc.value + '. Pool +0. Bonus: +1 Live nur wenn Overload vorher ≥9.'
           });
         }
       }
 
       // Twist (14)
-      for (i=0;i<2;i++) deck.push({ type:'twist', name:'Richtungswechsel', fx:'flipDir', text:'Drehe die Aufdeck-Reihenfolge um.' });
+      for (i=0;i<2;i++) deck.push({ type:'twist', name:'Richtungswechsel', fx:'flipDir', text:'Rundeneffekt: Pool→Camp erst ab Live 3.' });
       for (i=0;i<4;i++) deck.push({ type:'twist', name:'Feedback', fx:'feedback', stage:true, text:'Bühnenregel 🌀∞: Bis Rundenende gibt jede ⚡ zusätzlich +1 Overload pro Feedback-Level.' });
-      for (i=0;i<3;i++) deck.push({ type:'twist', name:'Pyro', fx:'pyro', text:'Overload +2.' });
+      for (i=0;i<3;i++) deck.push({ type:'twist', name:'Pyro', fx:'pyro', text:'Rundeneffekt: Jede ⚡ gibt zusätzlich +1 Overload.' });
       for (i=0;i<3;i++) deck.push({ type:'twist', name:'Stage Dive', fx:'stageDive', text:'Wähle einen aktiven Spieler: Er zahlt 1 Live oder bleibt beim nächsten Camp-Entscheid automatisch drin. Ist er bereits betroffen: Overload +1 (cap 12).' });
-      for (i=0;i<2;i++) deck.push({ type:'twist', name:'Setwechsel', fx:'setwechsel', text:'Der nächste Event wird vom gleichen Spieler aufgedeckt (noch einmal).' });
+      for (i=0;i<2;i++) deck.push({ type:'twist', name:'Setwechsel', fx:'afterparty', text:'Rundeneffekt: Countdown sofort aktiv, Tick +2.' });
 
       // Encore (6)
-      for (i=0;i<6;i++) deck.push({ type:'encore', name:'Encore!', fx:'encore', text:'Ketten-Event: Aufdecker kann 1 Live zahlen (bei Live 0: Overload +1), um zu stoppen. Sonst sofort nächstes Event.' });
+      for (i=0;i<6;i++) deck.push({ type:'encore', name:'Encore!', fx:'encore', text:'Endkarte: Alle Aktiven +1 Live. Danach finale Camp-Entscheidung, dann Rundenende.' });
 
       return shuffle(deck);
     }
@@ -3220,10 +3315,13 @@
       state.feedbackLevel = 0;
       state.feedbackLevel = 0;
       state.countdownActive = false;
+      resetTwistEffects();
       state.direction = 1;
       state.extraRevealSame = false;
       state.overload = 0;
       state.encoreChain = 0;
+      state.forceFinalCampWindow = false;
+      state.skipCountdownOnce = false;
       state.finalPushUsed = false;
       state.finalPushGraceUsed = false;
       state.finalPushForceNext = false;
@@ -3245,6 +3343,7 @@
       state.botChoices = {};
       state.lastEvent = null;
       state.askOpen = false;
+      resetMoodDeck();
       var askBack = document.getElementById('askBack');
       if (askBack){
         askBack.style.display = 'none';
@@ -3417,14 +3516,24 @@
       state.encoreChain = 0;
       setPhase('decision');
 
-      setSummary('Entscheidung',
-        [
-          { cls:'good', sym:'✅', text:'Bleib: Live bleibt im Risiko' },
-          { cls:'warn', sym:'🏕️', text:'Camp: nur mit mindestens 1 Live' },
-          { cls:'blue', sym:'🎁', text:'Pool-Bonus: +1 nur bei Live ≥2 (cap1)' }
-        ],
-        'Simultan, offen'
-      );
+      if (state.forceFinalCampWindow){
+        setSummary('Finale Camp-Entscheidung',
+          [
+            { cls:'warn', sym:'🏕️', text:'Letzter Cashout: Camp oder Bleib' },
+            { cls:'blue', sym:'🎁', text:'Pool-Bonus: Gate ' + maxPoolToCampThisCamp() + ', Live ≥' + minLiveForPool() }
+          ],
+          'Runde endet danach'
+        );
+      } else {
+        setSummary('Entscheidung',
+          [
+            { cls:'good', sym:'✅', text:'Bleib: Live bleibt im Risiko' },
+            { cls:'warn', sym:'🏕️', text:'Camp: nur mit mindestens 1 Live' },
+            { cls:'blue', sym:'🎁', text:'Pool-Bonus: Gate ' + maxPoolToCampThisCamp() + ', Live ≥' + minLiveForPool() }
+          ],
+          'Simultan, offen'
+        );
+      }
 
       updateUI();
       startDecisionTimer();
@@ -3455,7 +3564,7 @@
       if (state.gameOver) return;
       setPhase('countdown');
 
-      var add = 1;
+      var add = countdownTickValue();
       if (isAggCountdown() && state.pool >= 3) add += 1;
 
       var r = applyOverloadDelta(+add);
@@ -3464,7 +3573,7 @@
         action: 'COUNTDOWN',
         actor: 'System',
         reason: 'CountdownApply',
-        fields: { Add: add, Cap: capNote ? 'true' : 'false' },
+        fields: { Add: add, Base: countdownTickValue(), Cap: capNote ? 'true' : 'false' },
         msgHtml: 'COUNTDOWN_APPLY',
         before: { overload: r.before, pool: state.pool, live: null, camp: null },
         after: { overload: r.after, pool: state.pool, live: null, camp: null },
@@ -3530,7 +3639,11 @@
       var p = state.players[rev];
       var base = (typeof card.delta === 'number') ? card.delta : 1;
       var mod = feedbackLevel();
-      var total = base + mod;
+      var baseIncrease = base + mod;
+      var moodValue = drawCrowdMoodValue();
+      var afterMood = Math.max(1, baseIncrease + moodValue);
+      var pyroBonus = isTwistActive('pyro') ? 1 : 0;
+      var total = afterMood + pyroBonus;
       var before = state.overload;
       var liveBefore = p.live;
       var campBefore = p.camp;
@@ -3551,20 +3664,44 @@
         ],
         'Danach: Entscheidung Bleib/Camp'
       );
+      if (moodValue !== 0){
+        state.lastSummary.chips.push({ cls:'blue', sym:'🎭', text:'Crowd-Mood ' + (moodValue >= 0 ? '+' : '') + moodValue });
+      }
+      if (pyroBonus){
+        state.lastSummary.chips.push({ cls:'bad', sym:'🔥', text:'Pyro +1 Overload' });
+      }
+      renderSummary();
 
       logStep('info', {
         action: 'EFFECT',
         actor: p.name,
         actorIdx: rev,
-        msgHtml: 'Card=' + esc(card.name) + ' | Effekt=Push (+' + base + ' Karte +' + mod + ' Feedback)' + capNote,
+        reason: 'CrowdMood',
+        fields: {
+          CrowdMood: (moodValue >= 0 ? '+' : '') + moodValue,
+          PushBase: baseIncrease,
+          PushAfterMood: afterMood,
+          PyroBonus: pyroBonus
+        },
+        msgHtml: 'Crowd-Mood: ' + (moodValue >= 0 ? '+' : '') + moodValue + ' (Push +' + baseIncrease + ' → +' + afterMood + ' Overload)',
+        before: { overload: before, pool: poolBefore, live: liveBefore, camp: campBefore },
+        after: { overload: before, pool: poolBefore, live: liveBefore, camp: campBefore }
+      });
+
+      logStep('info', {
+        action: 'EFFECT',
+        actor: p.name,
+        actorIdx: rev,
+        msgHtml: 'Card=' + esc(card.name) + ' | Effekt=Push (+' + base + ' Karte +' + mod + ' Feedback + Crowd ' + (moodValue >= 0 ? '+' : '') + moodValue + (pyroBonus ? ' + Pyro +1' : '') + ')' + capNote,
         before: { overload: before, pool: poolBefore, live: liveBefore, camp: campBefore },
         after: { overload: after, pool: state.pool, live: p.live, camp: p.camp },
         reasons: {
-          overload: 'CardBase=+' + base + ', FeedbackBonus=+' + mod,
+          overload: 'CardBase=+' + base + ', FeedbackBonus=+' + mod + ', CrowdMood=' + (moodValue >= 0 ? '+' : '') + moodValue + ', PyroBonus=' + pyroBonus,
           pool: '+1 from Push',
           live: '+1 Push'
         }
       });
+      clampStateAfterCard();
       updateUI();
       onOverloadMayHit12(r, 'Push');
     }
@@ -3580,81 +3717,34 @@
       var afterOver = Math.max(0, unclamped);
       var floorNote = describeOverloadFloor(beforeOver, valueAbs, afterOver);
       state.overload = afterOver;
+      var bonusLive = (beforeOver >= 9) ? 1 : 0;
+      if (bonusLive > 0) p.live += bonusLive;
 
       logStep('good', {
         action: 'EFFECT',
         actor: p.name,
         actorIdx: rev,
-        msgHtml: 'Card=' + esc(card.name) + ' | Effekt=Stabilisieren (−' + valueAbs + ')' + floorNote,
+        msgHtml: 'Stabilisiert: Overload ' + beforeOver + ' → ' + afterOver + (floorNote ? ' ' + floorNote : '') + '; Pool +0; Live +' + bonusLive + (bonusLive ? ' (nur weil Overload vorher hoch war)' : ''),
         before: { overload: beforeOver, pool: poolBefore, live: liveBefore, camp: campBefore },
         after: { overload: afterOver, pool: state.pool, live: p.live, camp: p.camp },
         reasons: {
-          overload: 'Stabilize=-' + valueAbs
+          overload: 'Stabilize=-' + valueAbs,
+          live: (bonusLive ? '+1 from Stabilize(9+)' : '')
         }
       });
-
-      var reward = 'none';
-      if (beforeOver === 0){
-        logStep('info', {
-          action: 'EFFECT',
-          actor: p.name,
-          actorIdx: rev,
-          msgHtml: 'Null-Stabi: Overload war 0 → kein Ertrag',
-          before: { overload: state.overload, pool: state.pool, live: liveBefore, camp: campBefore },
-          after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
-          reasons: { extra: 'NullStabiNoReward' }
-        });
-      } else if (beforeOver >= 4 && beforeOver <= 7){
-        var poolBeforeMid = state.pool;
-        state.pool += 1;
-        reward = 'pool';
-        logStep('info', {
-          action: 'EFFECT',
-          actor: p.name,
-          actorIdx: rev,
-          msgHtml: 'Stabilisieren-Ertrag: Overload vor dem Senken ' + beforeOver + ' (4–7) → +1 Pool',
-          before: { overload: state.overload, pool: poolBeforeMid, live: liveBefore, camp: campBefore },
-          after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
-          reasons: { pool: '+1 from Stabilize(4-7)' }
-        });
-      } else if (beforeOver >= 8){
-        var liveBeforeReward = p.live;
-        p.live += 1;
-        reward = 'live';
-        logStep('good', {
-          action: 'EFFECT',
-          actor: p.name,
-          actorIdx: rev,
-          msgHtml: 'Stabilisieren-Ertrag: Overload vor dem Senken ' + beforeOver + ' (8+) → +1 Live',
-          before: { overload: state.overload, pool: state.pool, live: liveBeforeReward, camp: campBefore },
-          after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
-          reasons: { live: '+1 from Stabilize(8+)' }
-        });
-      } else {
-        logStep('info', {
-          action: 'EFFECT',
-          actor: p.name,
-          actorIdx: rev,
-          msgHtml: 'Stabilisieren-Ertrag: Overload vor dem Senken ' + beforeOver + ' (1–3) → kein Ertrag',
-          before: { overload: state.overload, pool: state.pool, live: liveBefore, camp: campBefore },
-          after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
-          reasons: { extra: 'StabilizeReward=none' }
-        });
-      }
 
       var summaryChips = [
         { cls:'good', sym:'🛠️', text:'Overload −' + valueAbs + ' → ' + afterOver }
       ];
-      if (reward === 'live'){
+      if (bonusLive){
         summaryChips.push({ cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' });
-      } else if (reward === 'pool'){
-        summaryChips.push({ cls:'warn', sym:'🎁', text:'Pool +1 (jetzt ' + state.pool + ')' });
       } else {
-        summaryChips.push({ cls:'blue', sym:'—', text:'Kein Ertrag (Null-Stabi möglich)' });
+        summaryChips.push({ cls:'blue', sym:'—', text:'Kein Bonus (nur bei Overload 9+)' });
       }
 
       setSummary('🛠️ Stabilisieren – ' + card.name, summaryChips, 'Danach: Entscheidung Bleib/Camp');
 
+      clampStateAfterCard();
       updateUI();
     }
 
@@ -3722,17 +3812,16 @@
       }
 
       if (card.fx === 'flipDir'){
-        state.direction *= -1;
-        var nextFlip = nextActiveFrom(state.revealer, state.direction);
-        var nextFlipName = (nextFlip === -1) ? '—' : state.players[nextFlip].name;
+        state.twistEffects.richtungswechsel = true;
+        var minLive = minLiveForPool();
         logStep('warn', {
           action: 'EFFECT',
           actor: p.name,
           actorIdx: rev,
-          msgHtml: 'TWIST | Effekt=Richtung drehen (' + (state.direction === 1 ? '↻' : '↺') + ') | nextRevealer=' + esc(nextFlipName),
+          msgHtml: 'TWIST aktiv: RICHTUNGSWECHSEL (Pool→Camp erst ab Live ' + minLive + ')',
           before: actorSnapshot(rev),
           after: actorSnapshot(rev),
-          reasons: { extra: 'FlipDir' }
+          reasons: { extra: 'Richtungswechsel' }
         });
         updateUI();
         doneCb();
@@ -3740,33 +3829,35 @@
       }
 
       if (card.fx === 'pyro'){
-        var r = applyOverloadDelta(+2);
-        var capNote = describeOverloadCap(r.before, 2, r.after);
+        state.twistEffects.pyro = true;
         logStep('warn', {
           action: 'EFFECT',
           actor: p.name,
           actorIdx: rev,
-          msgHtml: 'TWIST | Effekt=Pyro (+2)' + capNote,
-          before: { overload: r.before, pool: state.pool, live: p.live, camp: p.camp },
-          after: { overload: r.after, pool: state.pool, live: p.live, camp: p.camp },
-          reasons: { overload: 'Pyro=+2' }
+          msgHtml: 'TWIST aktiv: PYRO (+1 Overload auf alle Pushes)',
+          before: actorSnapshot(rev),
+          after: actorSnapshot(rev),
+          reasons: { extra: 'PyroActive' }
         });
         updateUI();
-        onOverloadMayHit12(r, 'Pyro');
         doneCb();
         return;
       }
 
-      if (card.fx === 'setwechsel'){
-        state.extraRevealSame = true;
+      if (card.fx === 'afterparty'){
+        var globalBefore = getGlobalSnapshot();
+        state.twistEffects.afterparty = true;
+        if (!state.countdownActive) state.countdownActive = true;
         logStep('warn', {
           action: 'EFFECT',
           actor: p.name,
           actorIdx: rev,
-          msgHtml: 'TWIST | Effekt=Setwechsel | nextRevealer=' + esc(p.name),
+          msgHtml: 'TWIST aktiv: AFTERPARTY (Countdown sofort, Tick +2)',
           before: actorSnapshot(rev),
           after: actorSnapshot(rev),
-          reasons: { extra: 'Setwechsel' }
+          globalBefore: globalBefore,
+          globalAfter: getGlobalSnapshot(),
+          reasons: { extra: 'Afterparty' }
         });
         updateUI();
         doneCb();
@@ -4141,115 +4232,53 @@
       doneCb();
     }
 
-    function applyEncore(rev, card, cb){
+    function applyEncore(rev, card){
       var p = state.players[rev];
+
+      var activeBefore = getActivePlayerNames();
+      for (var i=0;i<state.players.length;i++){
+        var pl = state.players[i];
+        if (pl.roundState !== 'active') continue;
+        var liveBefore = pl.live;
+        pl.live += 1;
+        logStep('info', {
+          action: 'EFFECT',
+          actor: pl.name,
+          actorIdx: i,
+          reason: 'EncoreBoost',
+          fields: { EndCard: 'Encore', LiveBonus: 1 },
+          msgHtml: 'ENDKARTE: ENCORE! → +1 Live',
+          before: { overload: state.overload, pool: state.pool, live: liveBefore, camp: pl.camp },
+          after: { overload: state.overload, pool: state.pool, live: pl.live, camp: pl.camp },
+          reasons: { live: '+1 from Encore' }
+        });
+      }
+
+      state.forceFinalCampWindow = true;
+      state.skipCountdownOnce = true;
+      state.encoreChain = 0;
 
       logStep('warn', {
         action: 'EFFECT',
-        actor: p.name,
-        actorIdx: rev,
-        reason: 'EncoreChainStart',
-        effectId: 'ENCORE_CHAIN_START',
-        msgHtml: 'ENCORE_CHAIN_START',
-        before: actorSnapshot(rev),
-        after: actorSnapshot(rev),
-        fields: { EffectId: 'ENCORE_CHAIN_START' }
+        actor: 'System',
+        reason: 'EndCard',
+        fields: { EndCard: 'Encore', ActivePlayers: esc(activeBefore.join(', ')) },
+        msgHtml: 'ENDKARTE: ENCORE! → Alle Aktiven +1 Live → Finale Camp-Entscheidung → Runde endet',
+        before: actorSnapshot(null),
+        after: actorSnapshot(null),
+        reasons: { extra: 'EncoreFinalCamp' }
       });
 
-      function proceed(stop){
-        if (stop){
-          if (p.live >= 1){
-            var liveBeforeStop = p.live;
-            p.live = Math.max(0, p.live - 1);
-            logStep('good', {
-              action: 'EFFECT',
-              actor: p.name,
-              actorIdx: rev,
-              reason: 'EncoreStop',
-              effectId: 'ENCORE_STOP',
-              msgHtml: 'ENCORE_STOP',
-              fields: { Payment: 'Live-1', EffectId: 'ENCORE_STOP' },
-              before: { overload: state.overload, pool: state.pool, live: liveBeforeStop, camp: p.camp },
-              after: { overload: state.overload, pool: state.pool, live: p.live, camp: p.camp },
-              reasons: { live: '-1 pay Encore stop' }
-            });
-            toast('Encore gestoppt', p.name + ' zahlt 1 Live.');
-          } else {
-            var overBeforeStop = state.overload;
-            var rStop = applyOverloadDelta(1);
-            var capNoteStop = describeOverloadCap(overBeforeStop, 1, rStop.after);
-            logStep('good', {
-              action: 'EFFECT',
-              actor: p.name,
-              actorIdx: rev,
-              reason: 'EncoreStop',
-              effectId: 'ENCORE_STOP',
-              msgHtml: 'ENCORE_STOP | cost=Overload+1' + capNoteStop,
-              fields: { Payment: 'Overload+1', EffectId: 'ENCORE_STOP' },
-              before: { overload: rStop.before, pool: state.pool, live: p.live, camp: p.camp },
-              after: { overload: rStop.after, pool: state.pool, live: p.live, camp: p.camp },
-              reasons: { overload: 'EncoreStopCost=+1' }
-            });
-            toast('Encore gestoppt', p.name + ' zahlt Overload +1.');
-            onOverloadMayHit12(rStop, 'EncoreStopCost');
-          }
-          state.encoreChain = 0;
-          cb(false);
-          return;
-        }
-        logStep('warn', {
-          action: 'EFFECT',
-          actor: p.name,
-          actorIdx: rev,
-          reason: 'EncoreChainContinue',
-          effectId: 'ENCORE_CHAIN_START',
-          msgHtml: 'ENCORE_CHAIN_CONTINUE',
-          fields: { EffectId: 'ENCORE_CHAIN_START', Continue: 'true' },
-          before: actorSnapshot(rev),
-          after: actorSnapshot(rev),
-          reasons: { extra: 'EncoreChain' }
-        });
-        state.encoreChain = (state.encoreChain || 0) + 1;
-        cb(true);
-      }
+      setSummary('🎤 Endkarte – ' + card.name,
+        [
+          { cls:'blue', sym:'🎟️', text:'Alle Aktiven +1 Live' },
+          { cls:'warn', sym:'🏕️', text:'Finale Camp-Entscheidung' }
+        ],
+        'Danach endet die Runde'
+      );
 
-      if (rev === state.humanIndex){
-        if (isAutoAll()){
-          proceed(!!botEncoreStop(rev));
-          return;
-        }
-
-        var stopLabel = (p.live >= 1) ? 'Stoppen (1 Live)' : 'Stoppen (Overload +1)';
-        var stopText = (p.live >= 1)
-          ? 'Encore! würde ein weiteres Event auslösen.<br><br>Willst du <b>1 Live</b> zahlen, um Encore zu stoppen?'
-          : 'Encore! würde ein weiteres Event auslösen.<br><br>Du hast <b>0 Live</b> – Stoppen kostet <b>Overload +1</b>.';
-        askYesNo(
-          'Encore! – Stoppen?',
-          stopText,
-          stopLabel,
-          'Weiterlaufen lassen',
-          function(use){ proceed(!!use); }
-        );
-        return;
-      }
-
-      if (areBotsManual()){
-        var botStopLabel = (p.live >= 1) ? 'Stoppen (1 Live)' : 'Stoppen (Overload +1)';
-        var botStopText = (p.live >= 1)
-          ? '<b>' + esc(p.name) + '</b> darf Encore stoppen. Willst du 1 Live zahlen?'
-          : '<b>' + esc(p.name) + '</b> darf Encore stoppen. Live=0 → Stoppen kostet Overload +1.';
-        askYesNo(
-          'Encore! – ' + p.name + ' stoppen?',
-          botStopText,
-          botStopLabel,
-          'Weiterlaufen lassen',
-          function(use){ proceed(!!use); }
-        );
-        return;
-      }
-
-      if (botEncoreStop(rev)) proceed(true);
-      else proceed(false);
+      clampStateAfterCard();
+      updateUI();
     }
 
     // ---------- main loop ----------
@@ -4325,8 +4354,20 @@
       resolveEventCard(rev, card, function(){
         if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
 
-        resolveCountdownTick();
-        if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
+        if (state.forceFinalCampWindow){
+          if (!state.awaitingDecision){
+            ensureDecisionPhase();
+          }
+          pumpBots();
+          return;
+        }
+
+        if (state.skipCountdownOnce){
+          state.skipCountdownOnce = false;
+        } else {
+          resolveCountdownTick();
+          if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
+        }
 
         if (sollDecisionWindowOeffnen()){
           ensureDecisionPhase();
@@ -4343,6 +4384,7 @@
       if (type === 'push'){
         applyPush(rev, card);
         state.discard.push(card);
+        clampStateAfterCard();
         done();
         return;
       }
@@ -4350,6 +4392,7 @@
       if (type === 'stabilize'){
         applyStabilize(rev, card);
         state.discard.push(card);
+        clampStateAfterCard();
         done();
         return;
       }
@@ -4357,6 +4400,7 @@
       if (type === 'twist'){
         applyTwist(rev, card, function(){
           if (!card.stage) state.discard.push(card);
+          clampStateAfterCard();
           done();
         });
         return;
@@ -4364,48 +4408,9 @@
 
       if (type === 'encore'){
         state.discard.push(card);
-        applyEncore(rev, card, function(shouldChain){
-          if (!shouldChain){ done(); return; }
-          if (state.gameOver){ done(); return; }
-
-          var next = draw(1)[0] || null;
-          if (!next){
-            logStep('bad', {
-              action: 'ENCORE_CHAIN_DRAW',
-              actor: state.players[rev].name,
-              actorIdx: rev,
-              reason: 'EncoreNoCard',
-              fields: { Card: '—', DeckPos: '—', DeckRemaining: 0 },
-              msgHtml: 'ENCORE_CHAIN_FAIL',
-              before: actorSnapshot(rev),
-              after: actorSnapshot(rev),
-              reasons: { extra: 'EncoreNoCard' }
-            });
-            done();
-            return;
-          }
-
-          state.lastEvent = next;
-          setEventCard(next, 'Encore-Kette');
-          updateUI();
-          logStep('warn', {
-            action: 'ENCORE_CHAIN_DRAW',
-            actor: state.players[rev].name,
-            actorIdx: rev,
-            reason: 'EncoreChainDraw',
-            fields: {
-              Card: esc(next.name),
-              DeckPos: next._drawMeta ? next._drawMeta.deckPos : '—',
-              DeckRemaining: next._drawMeta ? next._drawMeta.deckRemaining : '—'
-            },
-            msgHtml: 'ENCORE_CHAIN_DRAW',
-            before: actorSnapshot(rev),
-            after: actorSnapshot(rev),
-            reasons: { extra: 'EncoreChainDraw' }
-          });
-
-          resolveEventCard(rev, next, done);
-        });
+        applyEncore(rev, card);
+        clampStateAfterCard();
+        done();
         return;
       }
 
@@ -4417,8 +4422,7 @@
       var liveBefore = p.live;
       var campBefore = p.camp;
       var poolBefore = state.pool;
-      var poolTake = (typeof poolTakeOverride === 'number') ? poolTakeOverride : poolTakeFor(state.pool);
-      poolTake = Math.min(1, poolTake);
+      var poolTake = (typeof poolTakeOverride === 'number') ? poolTakeOverride : poolTakeFor(state.pool, maxPoolToCampThisCamp());
       if (!darfPoolZuCamp(liveBefore)) poolTake = 0;
       p.camp += liveBefore + poolTake + extraCamp;
       p.live = 0;
@@ -4661,6 +4665,7 @@
       for (var k=0;k<choices.length;k++) if (choices[k].choice === 'camp') campersSet[String(choices[k].idx)] = true;
 
       var anySuccessfulCamp = false;
+      var poolGate = maxPoolToCampThisCamp();
       var eligibleCampers = [];
       var poolEligibleCampers = [];
       for (var o=0;o<order.length;o++){
@@ -4683,19 +4688,19 @@
         }
 
         eligibleCampers.push(idx);
-        if (darfPoolZuCamp(p2.live)) poolEligibleCampers.push(idx);
+        if (poolGate > 0 && darfPoolZuCamp(p2.live)) poolEligibleCampers.push(idx);
       }
 
       var poolPlan = null;
       if (poolEligibleCampers.length){
-        poolPlan = planCampPoolDistribution(poolEligibleCampers, state.pool);
+        poolPlan = planCampPoolDistribution(poolEligibleCampers, state.pool, poolGate);
         var camperNames = [];
         for (var n=0;n<poolEligibleCampers.length;n++) camperNames.push(esc(state.players[poolEligibleCampers[n]].name));
         logStep('info', {
           action: 'RESOLVE_CAMP',
           actor: 'System',
           reason: 'CampOrder',
-          fields: { Order: camperNames.join(', '), PoolCap: 1 },
+          fields: { Order: camperNames.join(', '), PoolCap: poolGate, PoolGate: poolGate },
           msgHtml: 'RESOLVE_CAMP_ORDER',
           before: actorSnapshot(null),
           after: actorSnapshot(null)
@@ -4714,7 +4719,7 @@
             action: 'RESOLVE_CAMP',
             actor: 'System',
             reason: 'CampPlan',
-            fields: { PoolPlan: roundParts.join(' · ') },
+            fields: { PoolPlan: roundParts.join(' · '), PoolGate: poolGate },
             msgHtml: 'POOL_DISTRIBUTION',
             before: actorSnapshot(null),
             after: actorSnapshot(null)
@@ -4724,12 +4729,22 @@
             action: 'RESOLVE_CAMP',
             actor: 'System',
             reason: 'CampPlan',
-            fields: { PoolPlan: 'Pool leer' },
+            fields: { PoolPlan: 'Pool leer', PoolGate: poolGate },
             msgHtml: 'POOL_DISTRIBUTION',
             before: actorSnapshot(null),
             after: actorSnapshot(null)
           });
         }
+      } else if (poolGate <= 0){
+        logStep('info', {
+          action: 'RESOLVE_CAMP',
+          actor: 'System',
+          reason: 'CampPlan',
+          fields: { PoolPlan: 'Overload-Gate=0', PoolGate: poolGate },
+          msgHtml: 'POOL_DISTRIBUTION',
+          before: actorSnapshot(null),
+          after: actorSnapshot(null)
+        });
       }
 
       for (var o2=0;o2<order.length;o2++){
@@ -4740,12 +4755,21 @@
         if (p3.live <= 0) continue;
 
         var poolBeforeCamper = state.pool;
-        var dangerBonus = (state.overload >= 8) ? 1 : 0;
-        var poolAllowed = darfPoolZuCamp(p3.live);
-        var poolRequested = poolAllowed ? Math.min(poolBeforeCamper, 1 + dangerBonus) : 0;
+        var poolAllowed = (poolGate > 0 && darfPoolZuCamp(p3.live));
+        var poolRequested = poolAllowed ? Math.min(poolBeforeCamper, poolGate) : 0;
         var poolGranted = (poolAllowed && poolPlan) ? (poolPlan.takes[String(idx2)] || 0) : 0;
-        poolGranted = Math.min(1, poolGranted);
-        var transfer = applyCampTransfer(p3, 0, poolGranted);
+        poolGranted = Math.min(poolGate, poolGranted);
+        var extraCamp = 0;
+        if (state.overload >= 8){
+          var minCamp = Infinity;
+          for (var cIdx=0;cIdx<state.players.length;cIdx++){
+            minCamp = Math.min(minCamp, state.players[cIdx].camp);
+          }
+          if (p3.camp <= minCamp){
+            extraCamp = 1;
+          }
+        }
+        var transfer = applyCampTransfer(p3, extraCamp, poolGranted);
         anySuccessfulCamp = true;
         if (idx2 === state.finalPushActor) state.finalPushForceNext = false;
         logStep('warn', {
@@ -4757,17 +4781,32 @@
             LiveToCamp: transfer.liveBefore,
             PoolToCampRequested: poolRequested,
             PoolToCampGranted: poolGranted,
-            PoolCap: 1,
-            PoolToCampBlocked: (poolAllowed ? null : 'LiveTooLow')
+            PoolCap: poolGate,
+            PoolGate: poolGate,
+            PoolToCampPossible: poolGate,
+            PoolToCampBlocked: (poolAllowed ? null : (poolGate > 0 ? 'LiveTooLow' : 'OverloadGate'))
           },
-          msgHtml: 'RESOLVE_CAMP',
+          msgHtml: 'Pool→Camp möglich: ' + poolGate + ' (Overload-Gate), gewünscht: ' + poolRequested + ', gewährt: ' + poolGranted,
           before: { overload: state.overload, pool: transfer.poolBefore, live: transfer.liveBefore, camp: transfer.campBefore },
           after: { overload: state.overload, pool: state.pool, live: 0, camp: p3.camp },
           reasons: {
-            camp: 'LiveToCamp=' + transfer.liveBefore + ', PoolToCamp=' + poolGranted,
-            pool: '-'+poolGranted+' PoolToCamp(cap1)'
+            camp: 'LiveToCamp=' + transfer.liveBefore + ', PoolToCamp=' + poolGranted + (transfer.extraCamp ? ', CatchUp=+1' : ''),
+            pool: '-'+poolGranted+' PoolToCamp(cap' + poolGate + ')'
           }
         });
+        if (transfer.extraCamp){
+          logStep('info', {
+            action: 'RESOLVE_CAMP',
+            actor: p3.name,
+            actorIdx: idx2,
+            reason: 'CatchUp',
+            fields: { CatchUp: '+1', Overload: state.overload },
+            msgHtml: 'Catch-up: +1 Camp (Letzter/gleich Letzter, Overload>=8)',
+            before: { overload: state.overload, pool: state.pool, live: 0, camp: transfer.campBefore },
+            after: { overload: state.overload, pool: state.pool, live: 0, camp: p3.camp },
+            reasons: { camp: '+1 CatchUp' }
+          });
+        }
       }
       if (anySuccessfulCamp){
         showPlayBanner('good', 'Camp-Auflösung abgeschlossen', 1200);
@@ -4780,7 +4819,7 @@
           action: 'COUNTDOWN',
           actor: 'System',
           reason: 'CountdownStart',
-          fields: { Base: '+1', Aggressiv: (isAggCountdown() ? 'aktiv' : 'aus') },
+          fields: { Base: '+' + countdownTickValue(), Aggressiv: (isAggCountdown() ? 'aktiv' : 'aus') },
           msgHtml: 'COUNTDOWN_ACTIVE',
           before: actorSnapshot(null),
           after: actorSnapshot(null),
@@ -4792,6 +4831,12 @@
 
       state.awaitingDecision = false;
       state.humanChoice = 'stay';
+
+      if (state.forceFinalCampWindow){
+        state.forceFinalCampWindow = false;
+        endRound('Finale Camp-Phase');
+        return;
+      }
 
       advanceAfterDecision();
     }
@@ -4982,21 +5027,24 @@
         state.gameOver = oldGO;
       })();
 
-      // Pool->Camp-Cap (max. +1 Pool)
+      // Pool->Camp-Gate (Overload >=10 => +2 Pool möglich)
       (function(){
         var oldPlayers = state.players.slice();
         var oldPool = state.pool;
+        var oldOver = state.overload;
 
         state.players = [
           { name:'Du', camp:0, live:2, roundState:'active', forcedStay:false }
         ];
         state.pool = 5;
+        state.overload = 10;
         var transfer = applyCampTransfer(state.players[0], 0);
-        ok('PoolToCamp cap: Camp +3 (Live 2 + Pool 1)', state.players[0].camp === 3);
-        ok('PoolToCamp cap: Pool -1', state.pool === 4);
+        ok('PoolToCamp Gate: Camp +4 (Live 2 + Pool 2)', state.players[0].camp === 4);
+        ok('PoolToCamp Gate: Pool -2', state.pool === 3);
 
         state.players = oldPlayers;
         state.pool = oldPool;
+        state.overload = oldOver;
       })();
 
       // Knall: Halbierung + Pflaster
@@ -5032,7 +5080,7 @@
         state.gameOver = oldGO;
       })();
 
-      // Stabilisieren-Ertrag nach Overload-Bereich
+      // Stabilisieren-Ertrag nur bei Overload 9+
       (function(){
         var oldOver = state.overload;
         var oldPlayers = state.players.slice();
@@ -5050,30 +5098,32 @@
         state.pool = 0;
         state.overload = 5;
         applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
-        ok('Stabilisieren: Overload 5 -> +1 Pool', state.pool === 1);
+        ok('Stabilisieren: Overload 5 -> kein Pool', state.pool === 0);
 
         state.pool = 0;
-        state.overload = 8;
+        state.overload = 9;
         applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
-        ok('Stabilisieren: Overload 8 -> +1 Live', state.players[0].live === 1);
+        ok('Stabilisieren: Overload 9 -> +1 Live', state.players[0].live === 1);
 
         state.overload = oldOver;
         state.players = oldPlayers;
         state.pool = oldPool;
       })();
 
-      // Camp mit Live=1 bekommt keinen Pool-Bonus
+      // Camp mit Live=1 bekommt keinen Pool-Bonus (Gate egal)
       (function(){
         var oldPlayers = state.players.slice();
         var oldPool = state.pool;
         var oldAwait = state.awaitingDecision;
         var oldAdvance = advanceAfterDecision;
+        var oldOver = state.overload;
 
         state.players = [
           { name:'Du', camp:0, live:1, roundState:'active', forcedStay:false },
           { name:'Bot A', camp:0, live:2, roundState:'active', forcedStay:false }
         ];
         state.pool = 3;
+        state.overload = 8;
         state.awaitingDecision = true;
         state.humanIndex = 0;
         state.humanChoice = 'camp';
@@ -5091,6 +5141,7 @@
         state.players = oldPlayers;
         state.pool = oldPool;
         state.awaitingDecision = oldAwait;
+        state.overload = oldOver;
       })();
 
       // Anti-Solo: Final Push triggert Extra-Event
@@ -5353,6 +5404,7 @@
       state.stageRule = null;
       state.feedbackLevel = 0;
       state.countdownActive = false;
+      resetTwistEffects();
       state.direction = 1;
       state.startPlayer = 0;
       state.revealer = 0;
@@ -5375,6 +5427,8 @@
       state.botChoices = {};
       state.askOpen = false;
       state.roundResetId = 0;
+      state.forceFinalCampWindow = false;
+      state.skipCountdownOnce = false;
       state.finalPushUsed = false;
       state.finalPushGraceUsed = false;
       state.finalPushForceNext = false;
@@ -5394,6 +5448,7 @@
 
       state.phase = 'reveal';
       state.lastSummary = null;
+      resetMoodDeck();
 
       document.getElementById('log').innerHTML = '';
       var playLog = document.getElementById('logPlay');
@@ -5404,7 +5459,7 @@
         [
           { cls:'blue', sym:'▶', text:'Klicke auf „Event aufdecken“, um zu starten' },
           { cls:'warn', sym:'🏁', text:'Ziel: ' + WIN_CAMP + ' Camp' },
-          { cls:'good', sym:'🛠️', text:'Stabilisieren: Pool +1 bei 4–7, Live +1 bei 8+, Null-Stabi ohne Ertrag' }
+          { cls:'good', sym:'🛠️', text:'Stabilisieren: Pool +0, Live +1 nur bei Overload 9+' }
         ],
         'Runde 1 beginnt'
       );

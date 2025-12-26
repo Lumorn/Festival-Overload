@@ -65,7 +65,7 @@ Weitere Komponenten werden nicht benötigt.
 Eine Runde läuft in einer Schleife:
 
 1. **Event aufdecken** (genau 1 Karte)
-2. **Event vollständig ausführen** (inkl. Ketten, Overload-Check)
+2. **Event vollständig ausführen** (inkl. Overload-Check)
 3. **Alle aktiven Spieler gleichzeitig: Bleib oder Camp**
 4. Nächster aktiver Spieler deckt das nächste Event auf
 
@@ -90,10 +90,12 @@ Danach geht das Aufdecken **im Uhrzeigersinn** an den nächsten **aktiven** Spie
 
 Wenn eine Push-Karte aufgedeckt wird:
 
-1. **Overload +X** (maximal 12)
+1. **Overload +X** (maximal 12), modifiziert durch **Crowd-Mood** (−1/0/0/+1/+1/+2, min. +1)
 2. Der aufdeckende Spieler erhält **+1 Live**
 3. Lege **+1 Punktekarte** in den **Bühnen-Pool**
 4. Führe danach sofort den **Overload-Check** aus (siehe Abschnitt 11)
+
+**Pyro (Twist aktiv):** Jeder Push erhält zusätzlich **+1 Overload** (nach dem Mood-Modifikator).
 
 ---
 
@@ -105,12 +107,10 @@ Wenn eine Stabilisieren-Karte aufgedeckt wird:
 
 **Ertrag (abhängig vom Overload vor dem Senken):**
 
-* Overload **0** → **Null-Stabi: kein Ertrag**.
-* Overload **1–3** → **kein Ertrag**.
-* Overload **4–7** → **+1 Pool**.
-* Overload **8+** → **+1 Live** (aus dem Vorrat).
+* Overload **0–8** → **kein Ertrag** (Pool bleibt 0).
+* Overload **9+** → **+1 Live** (aus dem Vorrat).
 
-Stabilisieren ist damit **Rettung mit Risiko-Belohnung**, aber keine sichere Punktequelle bei niedrigem Overload.
+Stabilisieren ist ein **Safety-Tool** ohne Pool-Farming.
 
 ---
 
@@ -119,32 +119,34 @@ Stabilisieren ist damit **Rettung mit Risiko-Belohnung**, aber keine sichere Pun
 
 ### C) Twist (🌀)
 
-Twists sind Chaos-Schalter. Es gibt zwei Arten:
+Twists setzen nun **Rundeneffekte bis zum Rundenende** (zusätzlich zu möglichen Bühnenregeln 🌀∞).
 
-1. **Sofort-Twist**: Effekt ausführen, danach Karte ablegen.
-2. **Bühnenregel (🌀∞)**: Bleibt offen liegen und gilt bis zum Rundenende.
+**Kern-Twists:**
+
+* **Pyro**: Jeder Push erhält **+1 Overload** (nach Crowd-Mood).
+* **Richtungswechsel**: Pool→Camp ist erst ab **Live ≥3** erlaubt.
+* **Afterparty**: Countdown wird **sofort aktiv** und tickt mit **+2** statt +1.
+
+**Bühnenregel (🌀∞)** bleibt wie gehabt:
 
 * Es kann immer nur **eine Bühnenregel gleichzeitig** aktiv sein.
 * Wird eine neue Bühnenregel aufgedeckt, ersetzt sie die alte.
 
 ---
 
-### D) Encore! (🎤) – Ketten-Event
+### D) Encore! (🎤) – Endkarte
 
-Encore bedeutet: **Sofort ein weiteres Event**, bevor irgendwer campen darf.
+Encore bedeutet jetzt einen **letzten Adrenalinschub**:
 
-* Der **aufdeckende Spieler** darf **1 Live zahlen**, um Encore zu stoppen.
-* Hat er **0 Live**, darf er trotzdem stoppen, zahlt aber **Overload +1** (mit Cap).
-* Zahlt er nicht (oder kann nicht), deckt er sofort die nächste Karte auf.
-* Mehrere Encore können sich **ketten**.
-
-**Wichtig:** Erst wenn keine Encore-Kette mehr läuft, kommt die Bleib/Camp-Entscheidung.
+1. **Alle aktiven Spieler erhalten +1 Live**.
+2. Es folgt **sofort** eine **finale Camp-Entscheidung**.
+3. Danach endet die Runde **zwangsläufig**.
 
 ---
 
 ## 9) Bleib oder Camp (simultan)
 
-Nach jedem abgeschlossenen Event (inkl. Encore-Ketten, Twist-Effekt und Overload-Check) entscheiden alle **aktiven Spieler gleichzeitig**:
+Nach jedem abgeschlossenen Event (inkl. Twist-Effekt, Endkarten und Overload-Check) entscheiden alle **aktiven Spieler gleichzeitig**:
 
 ### Bleib
 
@@ -168,24 +170,34 @@ Wenn du campst:
 
 Wenn du campst (nur mit mindestens 1 Live):
 
-* **Pool→Camp ist nur erlaubt, wenn du mindestens 2 Live** hast.
-* **poolTake = min(Pool, 1)** → maximal **+1 Pool** pro Camper (**cap1**).
+* **Pool→Camp ist nur erlaubt, wenn du mindestens 2 Live** hast (**3 Live bei Richtungswechsel**).
+* Zusätzlich gilt das **Overload-Gate**:
+  * Overload **< 7** → **0**
+  * Overload **7–9** → **max. 1**
+  * Overload **10+** → **max. 2**
 
 ### Pool-Bonus bei simultanem Campen
 
 * **Reihenfolge:** beginnend beim **aktuellen Aufdecker**, dann in der **aktuellen Richtung**.
-* Jeder Camper erhält **maximal +1 Pool** in dieser Reihenfolge, solange Pool übrig ist.
+* Jeder Camper erhält **maximal bis zum Gate**, solange Pool übrig ist.
 
 **Wichtig:** Maßgeblich ist der **Overload nach dem Event** (inkl. Countdown und Overload-Checks), **direkt vor der Camp-Entscheidung**.
 
 **DecisionWindow-Note:** Wenn **niemand campen darf** (z. B. alle Live = 0) und es **keinen Zwangseffekt** gibt, wird die Entscheidungsphase übersprungen (alle bleiben automatisch).
+
+### Catch-up (gegen Runaway-Leader)
+
+Beim Campen gilt:
+
+* Wenn ein Spieler **den niedrigsten Camp-Stand** hat (Tie zählt) **und** Overload **≥ 8** ist,
+  erhält er **+1 Bonus-Camp**.
 
 ---
 
 
 ## 10) Kosten statt Zwang (No-Thanks-Grundregel)
 
-Trifft dich ein **Zwangseffekt** (z. B. Twist oder Encore), darfst du:
+Trifft dich ein **Zwangseffekt** (z. B. Twist), darfst du:
 
 * **1 Live zahlen**, um für diesen Effekt als **nicht betroffen** zu gelten.
 
@@ -232,10 +244,12 @@ Bei Knall:
 
 Der Countdown wird **erst dann aktiv**, wenn in einer Runde **zum ersten Mal ein Spieler erfolgreich camped** (also mit mindestens 1 Live).
 
+**Afterparty-Twist:** Der Countdown wird **sofort aktiv** und tickt mit **+2** statt +1.
+
 Solange der Countdown aktiv ist:
 
-* Nach **jedem weiteren Event** steigt der Overload automatisch um **+1**.
-* **Optionaler Eskalations-Boost:** Liegen **mindestens 3 Karten im Bühnen-Pool**, steigt der Overload stattdessen um **+2**.
+* Nach **jedem weiteren Event** steigt der Overload automatisch um **+1** (Afterparty: **+2**).
+* **Optionaler Eskalations-Boost:** Liegen **mindestens 3 Karten im Bühnen-Pool**, steigt der Overload zusätzlich um **+1**.
 * Jeder Anstieg kann einen Overload-Check auslösen.
 
 ---
@@ -283,8 +297,8 @@ Sobald ein Spieler **8 Camp-Punkte** erreicht:
 
 * ⚡ Push: Overload hoch, +1 Live, +1 Pool
 * 🛠️ Stabilisieren: Overload runter
-* 🌀 Twist: Chaos (Sofort oder Bühnenregel 🌀∞)
-* 🎤 Encore: Ketten-Event
+* 🌀 Twist: Rundeneffekt bis Rundenende (plus Bühnenregel 🌀∞)
+* 🎤 Encore: Endkarte (Finale Camp-Entscheidung)
 
 **Festival-UX:**
 
@@ -309,15 +323,15 @@ Sobald ein Spieler **8 Camp-Punkte** erreicht:
 
 **Twist (🌀) – 14**
 
-* Richtungswechsel ×2 – 🌀 Drehe die Aufdeck-Reihenfolge um
+* Richtungswechsel ×2 – 🌀 Pool→Camp erst ab Live 3
 * Feedback ×4 – 🌀∞ Bis Rundenende: Jeder ⚡ gibt zusätzlich +1 Overload pro Feedback-Level (max. 3)
-* Pyro ×3 – 🌀 Overload +2
+* Pyro ×3 – 🌀 Jeder ⚡ gibt zusätzlich +1 Overload
 * Stage Dive ×3 – 🌀 Wähle einen aktiven Spieler: Er zahlt 1 Live oder bleibt beim **nächsten Camp-Entscheid** automatisch drin (Bleib-Zwang für genau 1 Entscheidung). Ist er bereits betroffen, greift ein **Ersatz-Effekt** (Overload +1, cap 12).
-* Setwechsel ×2 – 🌀 Der nächste Event wird vom gleichen Spieler aufgedeckt
+* Setwechsel ×2 – 🌀 Afterparty: Countdown sofort, Tick +2
 
 **Encore! (🎤) – 6**
 
-* Encore! ×6 – 🎤 Ketten-Event (1 Live zahlen; bei Live 0: Overload +1, um zu stoppen)
+* Encore! ×6 – 🎤 Endkarte: Alle Aktiven +1 Live, dann finale Camp-Entscheidung
 
 ---
 
@@ -335,7 +349,7 @@ Sobald ein Spieler **8 Camp-Punkte** erreicht:
 **Do:**
 
 * Neue Karten klar einem Typ zuordnen (⚡ / 🛠️ / 🌀 / 🎤).
-* Dauerhafte Effekte immer als Bühnenregel.
+* Dauerhafte Effekte klar als Twist-Status oder Bühnenregel markieren.
 
 **Don’t:**
 
@@ -351,6 +365,6 @@ Diese Version ersetzt frühere Verwaltungsmechaniken vollständig durch:
 
 * simultanes **Bleib / Camp**
 * sichtbaren **Bühnen-Pool**
-* **Encore-Ketten**
+* **Endkarten** (Finale Camp-Entscheidung)
 * Overload-Check bei 12 mit Rückstoß auf 10
 * Countdown nach erstem Camper

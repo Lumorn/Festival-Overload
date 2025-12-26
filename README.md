@@ -15,18 +15,21 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 
 - Neuer Spielmodus (minimal) mit großem Phasen-Status, Fokus auf Overload/Pool/Karte und Vollbild-Entscheidung Bleib/Camp.
 - „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
-- Overload-Track als 0–12 Pills mit deutlicher Markierung von Gefahrenschwellen sowie Status-Chips (Countdown, Bühnenregel, Encore).
+- Overload-Track als 0–12 Pills mit deutlicher Markierung von Gefahrenschwellen sowie Status-Chips (Countdown, Bühnenregel, Twist-Effekte, Endkarte).
 - Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.
 - Simultane Bleib/Camp-Entscheidung als Vollbild-Overlay inkl. Vorschau auf Pool-Bonus und Gesamtstand.
 - Steuerungsmodi für Bots (Bots automatisch, Bots manuell, alles automatisch) und auswählbares Bot-Profil für modular erweiterbare KI.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
 - Overload-Änderungen im Log und in den Overlays berücksichtigen die tatsächliche Deckelung bei 0/12.
-- Pool-Bonus bei simultanem Campen ist auf +1 pro Camper begrenzt (cap1) und wird in Zugreihenfolge verteilt; Pool→Camp ist nur bei Live ≥2 erlaubt und wird entsprechend geloggt.
-- Stabilisieren belohnt Overload 4–7 mit +1 Pool, Overload 8+ mit +1 Live; Null-Stabi (Overload 0) gibt keinen Ertrag mehr.
+- Pool-Bonus bei simultanem Campen folgt dem Overload-Gate (0/1/2) und der Live-Schwelle (≥2, bei Richtungswechsel ≥3); Verteilung bleibt in Zugreihenfolge.
+- Stabilisieren ist ein Safety-Tool ohne Pool-Ertrag; Bonus-Live gibt es nur bei Overload ≥9.
+- Crowd-Mood-Deck macht Push-Erhöhungen pro Karte leicht unberechenbar (sichtbar geloggt).
+- Twist-Karten setzen Rundeneffekte (Pyro, Richtungswechsel, Afterparty) bis Rundenende.
+- Endkarte Encore! gibt allen Aktiven +1 Live und triggert eine finale Camp-Entscheidung.
 - DecisionWindows öffnen nur, wenn eine sinnvolle Entscheidung möglich ist oder ein Zwangseffekt greift (sonst automatisches „alle bleiben“ mit Logeintrag).
 - Final Push gewährt dem letzten aktiven Spieler 1 Gnaden-Bleib, danach folgt ein erzwungenes Camp (Last Call).
-- Encore-Stop ist auch bei Live 0 möglich und kostet dann Overload +1 (cap, geloggt).
+- Catch-up-Bonus: Letzte Camp-Stände erhalten bei Overload ≥8 +1 Camp beim Campen (geloggt).
 - Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und markieren min 0/Cap 12 inklusive Statuswerte.
 - Anti-Solo läuft als Final Push: letzter aktiver Spieler bekommt 1 Extra-Event mit 1 Gnaden-Bleib, danach erzwungenes Camp.
 - KNALL halbiert Live der aktiven Spieler, Pflaster rettet +1 Live nach der Halbierung; Logs nutzen Step-IDs, ActionType und Delta-Reasons.
