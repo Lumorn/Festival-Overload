@@ -10,3 +10,7 @@ Dieses Repository ist so vorbereitet, dass GitHub Pages das Spiel direkt aus dem
 4. Speichern und die angezeigte URL öffnen.
 
 Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
+
+## UI-Highlights
+
+- Visualisierte Kartenbereiche für Deck, Ablage und die zuletzt aufgedeckte Karte, damit der Spielablauf schneller erfassbar ist.
