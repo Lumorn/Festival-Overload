@@ -33,6 +33,13 @@
 
     .wrap{max-width:1400px;margin:0 auto;padding:14px;height:100%;display:flex;flex-direction:column;gap:12px}
 
+    .devOnly{display:block}
+    .playOnly{display:none}
+    body.ui-play .devOnly{display:none}
+    body.ui-play .playOnly{display:block}
+    body.ui-dev .devOnly{display:block}
+    body.ui-dev .playOnly{display:none}
+
     .topBar{
       display:grid;
       grid-template-columns:1fr auto 1fr;
@@ -51,8 +58,11 @@
     .gameTitle{display:flex;flex-direction:column;gap:2px}
     .gameTitle b{font-size:16px;letter-spacing:.2px}
     .gameTitle span{font-size:12px;color:var(--mutedStrong)}
+    .playTitle{font-size:13px;color:var(--mutedStrong);font-weight:700;letter-spacing:.25px}
+    .playTitle b{color:var(--text)}
     .roundEvent{font-size:16px;font-weight:900;letter-spacing:.2px}
     .roundEvent small{display:block;font-size:12px;color:var(--mutedStrong);font-weight:500}
+    .statusHeadline{font-size:24px;font-weight:950;letter-spacing:.3px}
     .roundBadge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;background:rgba(31,42,68,.7);border:1px solid rgba(148,163,184,.18);font-size:12px;position:relative}
     .goalChip{padding:6px 10px;border-radius:999px;background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.38);font-size:12px;font-weight:700}
     .statusIcons{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
@@ -61,6 +71,8 @@
     .statusChip.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
     .statusChip.blue{border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.12)}
     .statusChip.bad{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.12)}
+    .modeToggle{display:inline-flex;gap:6px}
+    .modeToggle .btn.active{border-color:rgba(226,232,240,.45);background:rgba(255,255,255,.08);font-weight:800}
 
     h1{margin:0;font-size:20px;letter-spacing:.2px}
     .sub{color:var(--mutedStrong);font-size:14px;max-width:920px;line-height:1.45}
@@ -249,11 +261,17 @@
     .logActions{display:flex;gap:8px;align-items:center}
     .log{flex:1;min-height:240px;overflow:auto;background:rgba(16,22,35,.65);border:1px solid rgba(148,163,184,.18);border-radius:14px;padding:12px;font-size:13px;line-height:1.5}
     .log .t{color:var(--muted)}
+    .playLog .t{color:var(--muted)}
     .log .evt{padding:8px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.16);background:rgba(0,0,0,.18);margin-bottom:8px;box-shadow:0 10px 22px rgba(0,0,0,.18)}
     .log .evt.good{border-color:rgba(34,197,94,.22);background:rgba(34,197,94,.06)}
     .log .evt.warn{border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.06)}
     .log .evt.bad{border-color:rgba(239,68,68,.22);background:rgba(239,68,68,.06)}
     .log .evt.info{border-color:rgba(99,102,241,.18);background:rgba(99,102,241,.05)}
+    .playLog .evt{padding:8px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.16);background:rgba(0,0,0,.18);margin-bottom:8px;box-shadow:0 10px 22px rgba(0,0,0,.18)}
+    .playLog .evt.good{border-color:rgba(34,197,94,.22);background:rgba(34,197,94,.06)}
+    .playLog .evt.warn{border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.06)}
+    .playLog .evt.bad{border-color:rgba(239,68,68,.22);background:rgba(239,68,68,.06)}
+    .playLog .evt.info{border-color:rgba(99,102,241,.18);background:rgba(99,102,241,.05)}
 
     .toggle{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;justify-content:flex-end}
     input[type=checkbox]{transform:scale(1.08)}
@@ -475,6 +493,116 @@
 
     /* --- Scorett Layout --- */
     .mainGrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.9fr) minmax(0,1fr);gap:12px;flex:1;min-height:0}
+    .playLayout{display:none;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:12px;flex:1;min-height:0}
+    body.ui-play .playLayout{display:grid}
+    body.ui-play .devLayout{display:none}
+    body.ui-dev .playLayout{display:none}
+    body.ui-dev .devLayout{display:grid}
+
+    .playStage{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      padding:16px;
+      border-radius:18px;
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      min-height:0;
+    }
+    .playOverloadTrack{padding:14px;border-radius:18px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
+    .playOverloadTrack .overloadPill{font-size:12px;padding:8px 0}
+    .playOverloadTrack.pulse{animation:trackPulse .55s ease}
+    .playOverloadTrack.pulseStrong{animation:trackPulseStrong .6s ease}
+    .playOverloadTrack.shake{animation:trackShake .5s ease}
+    @keyframes trackPulse{0%{box-shadow:0 0 0 rgba(255,255,255,0)}40%{box-shadow:0 0 0 4px rgba(255,255,255,.08)}100%{box-shadow:0 0 0 rgba(255,255,255,0)}}
+    @keyframes trackPulseStrong{0%{box-shadow:0 0 0 rgba(245,158,11,0)}40%{box-shadow:0 0 0 6px rgba(245,158,11,.18)}100%{box-shadow:0 0 0 rgba(245,158,11,0)}}
+    @keyframes trackShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
+
+    .playCard{
+      min-height:420px;
+      border-radius:22px;
+      padding:18px;
+      background:rgba(31,42,68,.82);
+      border:1px solid rgba(148,163,184,.22);
+      box-shadow:0 20px 46px rgba(0,0,0,.45);
+    }
+    .playCard .kName{font-size:22px}
+    .playCard .kType{font-size:13px}
+    .playCard .kText{font-size:16px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .playChips{display:flex;gap:8px;flex-wrap:wrap}
+    .playChip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid rgba(148,163,184,.18);background:rgba(0,0,0,.18);font-size:13px;font-weight:700}
+    .playChip.good{border-color:rgba(34,197,94,.38);background:rgba(34,197,94,.12)}
+    .playChip.warn{border-color:rgba(245,158,11,.38);background:rgba(245,158,11,.12)}
+    .playChip.bad{border-color:rgba(239,68,68,.38);background:rgba(239,68,68,.12)}
+    .playChip.blue{border-color:rgba(96,165,250,.38);background:rgba(96,165,250,.12)}
+
+    .playPoolRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .playPoolChip{padding:10px 16px;border-radius:999px;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.4);font-size:16px;font-weight:900}
+    .playCountdownBadge{padding:6px 10px;border-radius:999px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.16);font-size:12px;font-weight:800;display:none}
+    .playCountdownBadge.active{display:inline-flex}
+    .playPrimary{padding:14px 18px;font-size:16px;font-weight:800;border-radius:16px}
+    .playPrimary:disabled{opacity:.5}
+
+    .playPlayers{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:16px;
+      border-radius:18px;
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      min-height:0;
+    }
+    .playPlayersHeader{display:flex;justify-content:space-between;align-items:center;font-weight:900}
+    .playPlayersList{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0}
+    .playPlayer{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.16)}
+    .playPlayerMain{display:flex;align-items:center;gap:8px;font-weight:800}
+    .playPlayerRight{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .playStatus{font-size:11px;padding:4px 8px;border-radius:999px}
+    .playStatus.active{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.4)}
+    .playStatus.camped{background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.4)}
+    .playStatus.out{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4)}
+    .playStats{display:flex;gap:8px;font-size:12px;color:var(--mutedStrong)}
+    .playRevealer{font-size:12px;padding:2px 6px;border-radius:999px;background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.4)}
+
+    .playDrawer{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+    }
+    .playLogDrawer{
+      position:fixed;
+      left:12px;
+      right:12px;
+      bottom:12px;
+      max-height:40vh;
+      background:rgba(20,27,42,.98);
+      border:1px solid rgba(148,163,184,.22);
+      border-radius:18px;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
+      padding:12px;
+      display:none;
+      z-index:140;
+    }
+    .playLogDrawer.open{display:block}
+    .playLogHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .playLog{overflow:auto;max-height:30vh;border-radius:12px;border:1px solid rgba(148,163,184,.16);background:rgba(11,15,23,.55);padding:10px;font-size:12px;line-height:1.5}
+
+    .playBanner{
+      display:none;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(31,42,68,.45);
+      border:1px solid rgba(148,163,184,.16);
+      font-weight:800;
+    }
+    .playBanner.show{display:block}
+    .playBanner.good{border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.08)}
+    .playBanner.warn{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.08)}
+    .playBanner.bad{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)}
+
     .stageCard{display:flex;flex-direction:column;gap:12px}
     .stageTop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
     .stageMeta{display:flex;gap:8px;flex-wrap:wrap}
@@ -539,12 +667,13 @@
     .decisionOverlay.show{display:flex}
     .decisionModal{width:min(820px, 100%);background:rgba(20,27,42,.97);border:1px solid rgba(148,163,184,.22);border-radius:20px;box-shadow:0 22px 70px rgba(0,0,0,.6);padding:18px;display:flex;flex-direction:column;gap:14px}
     .decisionHeader{display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .decisionTitle{font-size:20px;font-weight:900}
+    .decisionTitle{font-size:22px;font-weight:950}
     .decisionStats{display:flex;gap:8px;flex-wrap:wrap}
-    .decisionStat{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.2);border:1px solid rgba(148,163,184,.16);font-size:12px}
+    .decisionStat{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.2);border:1px solid rgba(148,163,184,.16);font-size:13px}
+    .decisionAvatars{display:flex;gap:8px;flex-wrap:wrap}
     .decisionMain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
     .decisionBtn{padding:16px;border-radius:16px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.6);display:flex;flex-direction:column;gap:6px;align-items:flex-start;cursor:pointer}
-    .decisionBtn strong{font-size:18px}
+    .decisionBtn strong{font-size:20px}
     .decisionBtn small{color:var(--mutedStrong)}
     .decisionBtn.good{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.12)}
     .decisionBtn.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
@@ -564,6 +693,7 @@
     @media (max-width:1150px){
       .mainColumns{grid-template-columns:1fr}
       .mainGrid{grid-template-columns:1fr}
+      .playLayout{grid-template-columns:1fr}
       .topBar{grid-template-columns:1fr;gap:8px}
       .topCenter{text-align:left}
       .playersList{max-height:240px}
@@ -573,6 +703,18 @@
       .stageGrid{grid-template-columns:1fr}
       .decisionMain{grid-template-columns:1fr}
       .logDrawer{display:none}
+      .playDrawer{
+        position:fixed;
+        left:12px;
+        right:12px;
+        bottom:12px;
+        background:rgba(11,15,23,.6);
+        border:1px solid rgba(148,163,184,.18);
+        border-radius:16px;
+        padding:8px 10px;
+        z-index:150;
+        justify-content:space-between;
+      }
       body.logOpen .logDrawer{
         display:block;
         position:fixed;
@@ -588,28 +730,36 @@
     }
   </style>
 </head>
-<body>
+<body class="ui-play">
   <div class="wrap">
     <div class="topBar">
       <div class="topLeft">
         <div class="ver" id="verBtn" title="Patch Notes anzeigen">
           <span>🎛️</span><b id="verText">v0.0</b><span class="mini">(klicken)</span>
         </div>
-        <div class="gameTitle">
+        <div class="gameTitle devOnly">
           <b>Festival Overload</b>
           <span>Scorett UI · Prototyp</span>
         </div>
+        <div class="playTitle playOnly">
+          <b>Festival Overload</b> · <span id="playVersion">v0.0</span>
+        </div>
       </div>
       <div class="topCenter">
-        <div class="roundEvent">
+        <div class="roundEvent devOnly">
           Runde <span class="roundBadge" id="roundBadge"><span id="roundNo">1</span></span>
           · Event <span class="roundBadge" id="eventBadge"><span id="eventNo">0</span></span>
         </div>
-        <small class="mini">Ein Blick: Overload · Pool · Karte · Aktivität</small>
+        <div class="statusHeadline playOnly" id="statusHeadline">Event aufdecken</div>
+        <small class="mini devOnly">Ein Blick: Overload · Pool · Karte · Aktivität</small>
       </div>
       <div class="topRight">
         <div class="goalChip">Ziel: 8 Camp</div>
-        <div class="statusIcons">
+        <div class="modeToggle" role="group" aria-label="Modus wechseln">
+          <button class="btn slim" id="btnModePlay">Spielmodus</button>
+          <button class="btn slim" id="btnModeDev">Dev</button>
+        </div>
+        <div class="statusIcons devOnly">
           <span class="statusChip warn" id="countdownStatus">🔥 Countdown aktiv</span>
           <span class="statusChip blue" id="stageRuleChip">🌀 Bühnenregel</span>
           <span class="statusChip bad" id="encoreChip">🎤 Encore-Kette</span>
@@ -617,7 +767,59 @@
       </div>
     </div>
 
-    <div class="mainGrid">
+    <div class="playLayout">
+      <section class="playStage">
+        <div class="playOverloadTrack" id="playOverloadTrack" aria-label="Overload-Track">
+          <div class="overloadTrackHeader">
+            <div><b>Overload</b> <span class="mini">0–12</span></div>
+            <div class="overloadHint"><span class="chip">⏱️ Countdown +1</span> <span class="mini" id="playCountdownHint">inaktiv</span></div>
+          </div>
+          <div class="overloadPills" id="overloadPillsPlay"></div>
+        </div>
+
+        <div class="eventCard playCard" id="playEventCard" data-type="twist">
+          <div class="stripe"></div>
+          <div class="kTop">
+            <div class="kName" id="playEventName">Bereit</div>
+            <div class="kType" id="playEventType"><span class="dot" style="background:rgba(148,163,184,.6)"></span> ⏺️ Event</div>
+          </div>
+          <div class="kText" id="playEventText">Klicke auf „Event aufdecken“, um zu starten.</div>
+        </div>
+
+        <div class="playChips" id="playEventChips">—</div>
+
+        <div class="playPoolRow">
+          <div class="playPoolChip">Pool: <span id="poolValuePlay">0</span></div>
+          <div class="playCountdownBadge" id="playCountdownBadge">Countdown +1</div>
+        </div>
+
+        <button class="btn good primary playPrimary" id="btnRevealPlay">Event aufdecken</button>
+        <div class="playBanner" id="playBanner"></div>
+      </section>
+
+      <section class="playPlayers">
+        <div class="playPlayersHeader">
+          <span>Spielerleisten</span>
+          <span class="mini">Status & Werte</span>
+        </div>
+        <div class="playPlayersList" id="playersPlay"></div>
+      </section>
+    </div>
+
+    <div class="playDrawer playOnly">
+      <button class="btn slim" id="btnPlayLog">Log</button>
+      <button class="btn slim" id="btnPlayRules" aria-label="Kurzregeln">?</button>
+    </div>
+
+    <div class="playLogDrawer" id="playLogDrawer" aria-hidden="true">
+      <div class="playLogHead">
+        <b>Log</b>
+        <button class="btn slim" id="btnPlayLogClose">Schließen</button>
+      </div>
+      <div class="playLog" id="logPlay"></div>
+    </div>
+
+    <div class="mainGrid devLayout">
       <section class="card stageCard">
         <div class="stageTop">
           <div class="stageMeta">
@@ -769,6 +971,7 @@
             <label class="mini"><input id="optPflaster" type="checkbox" checked> Pflaster nach Knall: Aktiver Spieler rettet 1 Live als Camp</label>
             <label class="mini"><input id="optAggCountdown" type="checkbox"> Countdown aggressiv: +1 extra wenn Pool ≥3</label>
             <label class="mini"><input id="optAuto" type="checkbox"> Autoplay: Bots spielen automatisch (Zuschauermodus)</label>
+            <label class="mini"><input id="optDecisionTimer" type="checkbox" checked> Timer aktiv (20s, Auto-Bleib)</label>
             <label class="mini">Tempo:
               <select id="optSpeed">
                 <option value="250">schnell</option>
@@ -776,6 +979,7 @@
                 <option value="1100">langsam</option>
               </select>
             </label>
+            <button class="btn blue" id="btnPlayPreview">Spielmodus Vorschau</button>
             <button class="btn bad" id="btnRestart">Neustart</button>
           </div>
         </div>
@@ -801,7 +1005,12 @@
             <div class="decisionStat">Live: <b id="decisionLive">0</b></div>
           </div>
         </div>
-        <div class="decisionTimer" id="decisionTimer">15s</div>
+        <div class="decisionTimer" id="decisionTimer">20s</div>
+      </div>
+
+      <div>
+        <div class="mini">Wer hat schon gewählt?</div>
+        <div class="decisionAvatars" id="decisionPlayers"></div>
       </div>
 
       <div class="decisionMain">
@@ -819,11 +1028,6 @@
         <div class="mini" id="decisionHint">Wähle Bleib oder Camp. Danach wird simultan aufgelöst.</div>
         <div class="mini" id="decisionGain">—</div>
         <div class="mini" id="decisionTotal">—</div>
-      </div>
-
-      <div>
-        <div class="mini">Wer hat schon gewählt?</div>
-        <div class="decisionPlayers" id="decisionPlayers"></div>
       </div>
 
       <div class="controls" style="justify-content:flex-end">
@@ -863,14 +1067,42 @@
     </div>
   </div>
 
+  <!-- Kurzregeln Modal (Spielmodus) -->
+  <div class="modalBack" id="rulesBack" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Kurzregeln">
+      <div class="modalTop">
+        <b>Kurzregeln</b>
+        <button class="btn slim" id="rulesClose">Schließen</button>
+      </div>
+      <div class="modalBody">
+        <ul class="ruleList mini">
+          <li><b>Nach jedem Event</b>: Alle aktiven Spieler entscheiden simultan Bleib oder Camp.</li>
+          <li><b>Camp</b> ist nur mit mindestens 1 Live möglich.</li>
+          <li><b>Pool-Bonus</b>: +1, bei Overload 8+ zusätzlich +1 (solange Pool vorhanden).</li>
+          <li><b>Overload 12</b>: Katastrophen-Check – Push bedeutet Knall.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
   <script>
   (function(){
     'use strict';
 
-    var VERSION = 'v0.16';
+    var VERSION = 'v0.17';
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.17',
+        date: '2026-01-02',
+        items: [
+          'UI: Spielmodus mit minimaler Bühne, großem Statussatz, Overload-Track und Kartenfokus ergänzt.',
+          'UI: Dev-Modus bleibt vollständig, inkl. Schnellwechsel über Modus-Toggle und Vorschau-Button.',
+          'UI: Bleib/Camp-Overlay mit klaren Vorschauzeilen und optionalem 20s-Timer erweitert.',
+          'UX: Log/Regeln im Spielmodus als Drawer/Modal, Overload-Pulse und Ergebnisbanner für Knall/Checks.'
+        ]
+      },
       {
         ver: 'v0.16',
         date: '2025-12-30',
@@ -965,6 +1197,11 @@
       round: 1,
       overload: 0,
       pool: 0,
+      uiMode: 'play',
+      activeEffects: [],
+      uiHeadline: null,
+      uiHeadlineTimer: null,
+      playBannerTimer: null,
       stageRule: null, // { name, text, fx, _cardRef }
       countdownActive: false,
       direction: 1, // 1 clockwise, -1 counter
@@ -989,6 +1226,7 @@
       humanLockedIn: false,
 
       autoTimer: null,
+      decisionTimer: { enabled:true, seconds:20, remaining:20, timerId:null },
 
       phase: 'reveal',
       banner: null,
@@ -1018,12 +1256,18 @@
 
     function log(kind, msgHtml){
       var el = document.getElementById('log');
+      var play = document.getElementById('logPlay');
       var t = new Date();
       var hh = String(t.getHours()); if (hh.length < 2) hh = '0'+hh;
       var mm = String(t.getMinutes()); if (mm.length < 2) mm = '0'+mm;
       var cls = kind || 'info';
-      el.innerHTML += '<div class="evt ' + cls + '"><span class="t">['+hh+':'+mm+']</span> <span class="t">(T'+state.turnId+')</span> ' + msgHtml + '</div>';
+      var entry = '<div class="evt ' + cls + '"><span class="t">['+hh+':'+mm+']</span> <span class="t">(T'+state.turnId+')</span> ' + msgHtml + '</div>';
+      el.innerHTML += entry;
       el.scrollTop = el.scrollHeight;
+      if (play){
+        play.innerHTML += entry;
+        play.scrollTop = play.scrollHeight;
+      }
     }
 
     function shuffle(a){
@@ -1216,6 +1460,93 @@
       if (imp) imp.innerHTML = impactHTML(card) + (extraText ? '<span class="imp blue">⛓️ <b>' + esc(extraText) + '</b></span>' : '');
 
       document.getElementById('eventText').innerHTML = esc(c.text) + (extraText ? '<br><span class="mini">'+esc(extraText)+'</span>' : '');
+
+      var playCard = document.getElementById('playEventCard');
+      if (playCard){
+        playCard.setAttribute('data-type', c.type);
+        playCard.classList.remove('pop');
+        void playCard.offsetWidth;
+        playCard.classList.add('pop');
+      }
+      var playName = document.getElementById('playEventName');
+      if (playName) playName.textContent = c.name;
+      var playType = document.getElementById('playEventType');
+      if (playType) playType.innerHTML = '<span class="dot" style="background:'+meta.dot+'"></span> '+meta.icon+' '+meta.txt;
+      var playText = document.getElementById('playEventText');
+      if (playText) playText.textContent = c.text + (extraText ? ' · ' + extraText : '');
+      renderPlayChips(card);
+    }
+
+    function renderPlayChips(card){
+      var wrap = document.getElementById('playEventChips');
+      if (!wrap) return;
+      if (!card){
+        wrap.innerHTML = '<span class="playChip">Bereit</span>';
+        return;
+      }
+
+      var chips = [];
+      var t = card.type;
+      var addFeedback = hasFeedbackRule() ? 1 : 0;
+
+      if (t === 'push'){
+        chips.push({ cls:'bad', text:'Overload +' + ((card.delta || 1) + addFeedback) });
+        chips.push({ cls:'blue', text:(state.revealer === state.humanIndex ? '+1 Live (Du)' : 'Aufdecker +1 Live') });
+        chips.push({ cls:'warn', text:'Pool +1' });
+      } else if (t === 'stabilize'){
+        chips.push({ cls:'good', text:'Overload ' + (card.delta || -2) });
+        chips.push({ cls:'blue', text:'Live +1 nur bei 8+ vorher' });
+      } else if (t === 'twist'){
+        if (card.stage) chips.push({ cls:'warn', text:'Bühnenregel: ' + card.name });
+        if (card.fx === 'pyro') chips.push({ cls:'bad', text:'Overload +2' });
+        if (card.fx === 'flipDir') chips.push({ cls:'warn', text:'Richtung dreht' });
+        if (card.fx === 'setwechsel') chips.push({ cls:'warn', text:'Aufdecker noch einmal' });
+        if (card.fx === 'stageDive') chips.push({ cls:'bad', text:'Stage Dive' });
+      } else if (t === 'encore'){
+        chips.push({ cls:'blue', text:'Encore-Kette' });
+        chips.push({ cls:'warn', text:'Kein Camp dazwischen' });
+      }
+
+      if (state.countdownActive) chips.push({ cls:'warn', text:'Countdown +1' });
+
+      if (!chips.length) chips.push({ cls:'blue', text:'Event' });
+
+      var html = '';
+      for (var i=0;i<chips.length;i++){
+        var c = chips[i];
+        html += '<span class="playChip' + (c.cls ? ' ' + c.cls : '') + '">' + esc(c.text) + '</span>';
+      }
+      wrap.innerHTML = html;
+    }
+
+    function showPlayCheckCard(card){
+      var playCard = document.getElementById('playEventCard');
+      var playName = document.getElementById('playEventName');
+      var playType = document.getElementById('playEventType');
+      var playText = document.getElementById('playEventText');
+      if (!playCard || !playName || !playType || !playText) return;
+
+      var prev = {
+        name: playName.textContent,
+        type: playType.innerHTML,
+        text: playText.textContent,
+        dataType: playCard.getAttribute('data-type')
+      };
+
+      var meta = labelType(card.type);
+      playCard.setAttribute('data-type', card.type);
+      playName.textContent = 'Check: ' + card.name;
+      playType.innerHTML = '<span class="dot" style="background:'+meta.dot+'"></span> '+meta.icon+' '+meta.txt;
+      playText.textContent = card.text;
+      renderPlayChips(card);
+
+      setTimeout(function(){
+        playCard.setAttribute('data-type', prev.dataType || 'twist');
+        playName.textContent = prev.name;
+        playType.innerHTML = prev.type;
+        playText.textContent = prev.text;
+        renderPlayChips(state.lastEvent);
+      }, 700);
     }
 
     function updateRevealCard(){
@@ -1317,6 +1648,92 @@
       renderSteps();
     }
 
+    function setUiMode(mode){
+      state.uiMode = (mode === 'dev') ? 'dev' : 'play';
+      document.body.classList.toggle('ui-play', state.uiMode === 'play');
+      document.body.classList.toggle('ui-dev', state.uiMode === 'dev');
+      var btnPlay = document.getElementById('btnModePlay');
+      var btnDev = document.getElementById('btnModeDev');
+      if (btnPlay) btnPlay.classList.toggle('active', state.uiMode === 'play');
+      if (btnDev) btnDev.classList.toggle('active', state.uiMode === 'dev');
+      updateUI();
+    }
+
+    function statusHeadlineText(){
+      if (state.uiHeadline) return state.uiHeadline;
+      if (state.gameOver) return 'Runde endet';
+      if (state.awaitingDecision) return 'Alle entscheiden: Bleib oder Camp';
+      if (state.phase === 'countdown') return (state.overload >= 12 ? 'Katastrophen-Check!' : 'Countdown läuft');
+      if (state.phase === 'event') return 'Event wirkt';
+      return 'Event aufdecken';
+    }
+
+    function setHeadline(text, ms){
+      state.uiHeadline = text || null;
+      updateUI();
+      if (ms){
+        if (state.uiHeadlineTimer) clearTimeout(state.uiHeadlineTimer);
+        state.uiHeadlineTimer = setTimeout(function(){
+          state.uiHeadline = null;
+          updateUI();
+        }, ms);
+      }
+    }
+
+    function showPlayBanner(kind, text, ms){
+      var el = document.getElementById('playBanner');
+      if (!el) return;
+      el.textContent = text || '';
+      el.className = 'playBanner show ' + (kind || '');
+      if (ms){
+        if (state.playBannerTimer) clearTimeout(state.playBannerTimer);
+        state.playBannerTimer = setTimeout(function(){
+          el.className = 'playBanner';
+          el.textContent = '';
+        }, ms);
+      }
+    }
+
+    function stopDecisionTimer(){
+      var t = state.decisionTimer;
+      if (t && t.timerId){
+        clearInterval(t.timerId);
+        t.timerId = null;
+      }
+    }
+
+    function startDecisionTimer(){
+      var t = state.decisionTimer;
+      if (!t || !t.enabled) return;
+      stopDecisionTimer();
+      t.remaining = t.seconds;
+      updateDecisionTimer();
+      t.timerId = setInterval(function(){
+        t.remaining -= 1;
+        updateDecisionTimer();
+        if (t.remaining <= 0){
+          stopDecisionTimer();
+          if (state.awaitingDecision){
+            state.humanChoice = 'stay';
+            state.humanLockedIn = true;
+            updateUI();
+            resolveDecisions();
+          }
+        }
+      }, 1000);
+    }
+
+    function updateDecisionTimer(){
+      var el = document.getElementById('decisionTimer');
+      var t = state.decisionTimer;
+      if (!el || !t) return;
+      if (!t.enabled || !state.awaitingDecision){
+        el.textContent = '—';
+        return;
+      }
+      el.textContent = t.remaining + 's';
+    }
+
     // ---------- modal helpers ----------
     function askYesNo(title, htmlText, yesLabel, noLabel, cb){
       var back = document.getElementById('askBack');
@@ -1405,11 +1822,15 @@
       var prev = state._uiPrev || null;
 
       document.getElementById('verText').textContent = VERSION;
+      var playVer = document.getElementById('playVersion');
+      if (playVer) playVer.textContent = VERSION;
       document.getElementById('roundNo').textContent = String(state.round);
       document.getElementById('eventNo').textContent = String(state.turnId);
       document.getElementById('overloadValue').textContent = String(state.overload);
       document.getElementById('poolValue').textContent = String(state.pool);
       document.getElementById('poolValueSide').textContent = String(state.pool);
+      var poolPlay = document.getElementById('poolValuePlay');
+      if (poolPlay) poolPlay.textContent = String(state.pool);
       document.getElementById('deckCount').textContent = String(state.deck.length);
       document.getElementById('discardCount').textContent = String(state.discard.length);
       document.getElementById('deckCountMini').textContent = cardCountLabel(state.deck.length);
@@ -1422,6 +1843,15 @@
 
       document.getElementById('countdown').textContent = state.countdownActive ? 'an' : 'aus';
       document.getElementById('countdownHint').textContent = state.countdownActive ? 'aktiv' : 'inaktiv';
+      var playCountdownHint = document.getElementById('playCountdownHint');
+      if (playCountdownHint) playCountdownHint.textContent = state.countdownActive ? 'aktiv' : 'inaktiv';
+      var playCountdownBadge = document.getElementById('playCountdownBadge');
+      if (playCountdownBadge) playCountdownBadge.classList.toggle('active', state.countdownActive);
+      var timerOpt = document.getElementById('optDecisionTimer');
+      if (timerOpt){
+        state.decisionTimer.enabled = !!timerOpt.checked;
+        state.decisionTimer.seconds = 20;
+      }
       document.getElementById('stageRule').textContent = state.stageRule ? state.stageRule.name : '—';
       var poolHint = document.getElementById('poolHint');
       if (poolHint){
@@ -1470,8 +1900,11 @@
 
       document.getElementById('revealerName').textContent = state.players[state.revealer] ? state.players[state.revealer].name : '—';
       document.getElementById('dir').textContent = (state.direction === 1) ? '↻' : '↺';
+      var statusHeadline = document.getElementById('statusHeadline');
+      if (statusHeadline) statusHeadline.textContent = statusHeadlineText();
       updateRevealCard();
       renderOverloadTrack();
+      renderPlayChips(state.lastEvent);
 
       // Stat flashes (optisch "was ist passiert")
       if (prev){
@@ -1482,6 +1915,19 @@
           var dO = state.overload - prev.overload;
           var kindO = (dO > 0) ? (state.overload >= 10 ? 'bad' : 'warn') : 'good';
           flashStat('overloadChip', kindO, (dO>0?'+':'') + dO);
+          var playTrack = document.getElementById('playOverloadTrack');
+          if (playTrack){
+            playTrack.classList.remove('pulse','pulseStrong','shake');
+            void playTrack.offsetWidth;
+            if (state.overload >= 12){
+              playTrack.classList.add('shake');
+              showPlayBanner('warn', '12 erreicht!', 1200);
+            } else if (state.overload >= 8 && prev.overload < 8){
+              playTrack.classList.add('pulseStrong');
+            } else {
+              playTrack.classList.add('pulse');
+            }
+          }
         }
         if (prev.pool !== state.pool){
           var dP = state.pool - prev.pool;
@@ -1526,7 +1972,10 @@
       }
 
       renderPlayers();
+      renderPlayPlayers();
       updateDecisionOverlay();
+      updateDecisionTimer();
+      if (!state.awaitingDecision || !state.decisionTimer.enabled) stopDecisionTimer();
 
       // store snapshot
       state._uiPrev = {
@@ -1551,6 +2000,11 @@
       // reveal
       var canReveal = !state.gameOver && !state.awaitingDecision && state.revealer === state.humanIndex && isHumanActive;
       document.getElementById('btnReveal').disabled = !canReveal || auto;
+      var playReveal = document.getElementById('btnRevealPlay');
+      if (playReveal){
+        playReveal.disabled = !canReveal || auto;
+        playReveal.textContent = canReveal ? 'Event aufdecken' : 'Warten…';
+      }
 
       // hint
       var h = document.getElementById('decisionHint');
@@ -1575,26 +2029,29 @@
     }
 
     function renderOverloadTrack(){
-      var wrap = document.getElementById('overloadPills');
-      if (!wrap) return;
-      if (!wrap.dataset.ready){
-        wrap.innerHTML = '';
-        for (var i=0;i<=MAX_OVERLOAD;i++){
-          var pill = document.createElement('span');
-          pill.className = 'overloadPill';
-          pill.textContent = String(i);
-          pill.dataset.val = String(i);
-          wrap.appendChild(pill);
+      var wraps = [document.getElementById('overloadPills'), document.getElementById('overloadPillsPlay')];
+      for (var w=0;w<wraps.length;w++){
+        var wrap = wraps[w];
+        if (!wrap) continue;
+        if (!wrap.dataset.ready){
+          wrap.innerHTML = '';
+          for (var i=0;i<=MAX_OVERLOAD;i++){
+            var pill = document.createElement('span');
+            pill.className = 'overloadPill';
+            pill.textContent = String(i);
+            pill.dataset.val = String(i);
+            wrap.appendChild(pill);
+          }
+          wrap.dataset.ready = 'true';
         }
-        wrap.dataset.ready = 'true';
-      }
 
-      var pills = wrap.querySelectorAll('.overloadPill');
-      for (var j=0;j<pills.length;j++){
-        var v = Number(pills[j].dataset.val || j);
-        pills[j].classList.toggle('active', v === state.overload);
-        pills[j].classList.toggle('mark', v === 8);
-        pills[j].classList.toggle('danger', v === 12);
+        var pills = wrap.querySelectorAll('.overloadPill');
+        for (var j=0;j<pills.length;j++){
+          var v = Number(pills[j].dataset.val || j);
+          pills[j].classList.toggle('active', v === state.overload);
+          pills[j].classList.toggle('mark', v === 8);
+          pills[j].classList.toggle('danger', v === 12);
+        }
       }
     }
 
@@ -1605,7 +2062,7 @@
       overlay.setAttribute('aria-hidden', state.awaitingDecision ? 'false' : 'true');
 
       var human = state.players[state.humanIndex] || { live:0, camp:0, roundState:'camped', forcedStayNext:false };
-      document.getElementById('decisionOverload').textContent = String(state.overload);
+      document.getElementById('decisionOverload').textContent = String(state.overload) + '/12';
       document.getElementById('decisionPool').textContent = String(state.pool);
       document.getElementById('decisionLive').textContent = String(human.live);
 
@@ -1635,8 +2092,8 @@
           gainLine.textContent = 'Zwang: Bleib (Stage Dive).';
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
         } else {
-          gainLine.textContent = 'Du sicherst: +' + human.live + ' Camp · Pool-Bonus +' + poolBonus;
-          totalLine.textContent = 'Gesamt jetzt: Camp ' + (human.camp + human.live + poolBonus);
+          gainLine.textContent = 'Du sicherst: +' + human.live + ' Camp';
+          totalLine.textContent = 'Pool-Bonus: +' + poolBonus + ' · Gesamt danach: ' + (human.camp + human.live + poolBonus);
         }
       }
 
@@ -1716,6 +2173,58 @@
       state._uiPrevPlayers = nextPrev;
     }
 
+    function renderPlayPlayers(){
+      var el = document.getElementById('playersPlay');
+      if (!el) return;
+      el.innerHTML = '';
+
+      for (var i=0;i<state.players.length;i++){
+        var p = state.players[i];
+        var statusText = 'AKTIV';
+        var statusCls = 'active';
+        if (state.gameOver && p.camp < WIN_CAMP){
+          statusText = 'RAUS';
+          statusCls = 'out';
+        } else if (p.roundState === 'camped'){
+          statusText = 'GECAMPT';
+          statusCls = 'camped';
+        }
+
+        var row = document.createElement('div');
+        row.className = 'playPlayer';
+
+        var main = document.createElement('div');
+        main.className = 'playPlayerMain';
+        main.innerHTML = '<span class="playerAvatar">' + esc(p.name.substring(0,1)) + '</span><span>' + esc(p.name) + '</span>';
+
+        var right = document.createElement('div');
+        right.className = 'playPlayerRight';
+
+        var status = document.createElement('span');
+        status.className = 'playStatus ' + statusCls;
+        status.textContent = statusText;
+
+        var stats = document.createElement('div');
+        stats.className = 'playStats';
+        stats.innerHTML = '<span>🎟️ ' + p.live + '</span><span>⛺ ' + p.camp + '</span>';
+
+        right.appendChild(status);
+        right.appendChild(stats);
+
+        if (i === state.revealer && p.roundState === 'active'){
+          var rev = document.createElement('span');
+          rev.className = 'playRevealer';
+          rev.textContent = '⬅️ Aufdecker';
+          right.appendChild(rev);
+        }
+
+        row.appendChild(main);
+        row.appendChild(right);
+
+        el.appendChild(row);
+      }
+    }
+
     // ---------- deck -----------------
     function mkDeck(){
       var deck = [];
@@ -1761,6 +2270,7 @@
 
     function endRound(reason){
       if (state.gameOver) return;
+      stopDecisionTimer();
 
       // stage rule to discard
       if (state.stageRule && state.stageRule._cardRef){
@@ -1817,6 +2327,8 @@
       log('bad','<b>KNALL</b>: ' + esc(reason) + '. Alle aktiven Spieler verlieren ihr Live.' + (pfl ? ' <span class="t">(Pflaster aktiv: ' + (affected.length ? esc(affected.join(', ')) : 'niemand') + ')</span>' : ''));
       screenFlash('bad');
       toast('KNALL!', 'Runde endet sofort.');
+      setHeadline('KNALL! Runde endet', 1600);
+      showPlayBanner('bad', 'KNALL! Runde endet', 1600);
 
       if (checkWin()) { updateUI(); return; }
       endRound('Knall');
@@ -1830,25 +2342,30 @@
     }
 
     function catastropheCheck(){
+      setHeadline('Katastrophen-Check!', 1200);
       var card = draw(1)[0] || null;
       if (!card){
         log('warn','Katastrophen-Check: Keine Karte verfügbar → gerade noch gut gegangen. Overload 12 → 10.');
         state.overload = 10;
+        showPlayBanner('good', 'Gerade noch so!', 1200);
         updateUI();
         return;
       }
 
       var isPush = (card.type === 'push');
       state.discard.push(card);
+      showPlayCheckCard(card);
 
       if (isPush){
         log('bad','<b>Katastrophen-Check</b>: Aufgedeckte Karte ist <b>⚡ Push</b> → <b>Knall</b>.');
+        showPlayBanner('bad', 'KNALL!', 1200);
         doKnall('Katastrophen-Check hat Push aufgedeckt');
         return;
       }
 
       log('good','<b>Katastrophen-Check</b>: Keine Push-Karte → Check-Karte wird abgeworfen, Overload 12 → <b>10</b>.');
       state.overload = 10;
+      showPlayBanner('good', 'Gerade noch so!', 1200);
       updateUI();
     }
 
@@ -1878,6 +2395,7 @@
       );
 
       updateUI();
+      startDecisionTimer();
     }
 
     function resolveCountdownTick(){
@@ -2341,6 +2859,8 @@
 
       var p = state.players[idx];
       log('warn','<b>Anti-Solo</b>: Nur noch <b>1</b> Spieler aktiv → Runde endet sofort.');
+      setHeadline('Anti-Solo: letzter Spieler campt', 1600);
+      showPlayBanner('warn', 'Anti-Solo: letzter Spieler campt', 1600);
 
       var poolBefore = state.pool;
 
@@ -2370,6 +2890,7 @@
       setPhase('event');
       if (state.gameOver) return;
       if (!state.awaitingDecision) return;
+      stopDecisionTimer();
 
       var choices = [];
       for (var i=0;i<state.players.length;i++){
@@ -2439,6 +2960,9 @@
         if (dist.pass1 || dist.pass2){
           log('info','Pool-Bonus: +' + dist.pass1 + ' (Grundbonus)' + (overloadNow >= 8 ? ' +'+dist.pass2+' (Gefahrenbonus)' : '') + ' verteilt. <span class="t">(Overload maßgeblich: ' + overloadNow + ')</span> Pool jetzt ' + state.pool + '.');
         }
+      }
+      if (campersOrdered.length){
+        showPlayBanner('good', 'Camp-Auflösung abgeschlossen', 1200);
       }
 
       if (!state.countdownActive && anySuccessfulCamp){
@@ -2593,6 +3117,28 @@
       back.setAttribute('aria-hidden','true');
     }
 
+    function openRules(){
+      var back = document.getElementById('rulesBack');
+      if (!back) return;
+      back.style.display = 'flex';
+      back.setAttribute('aria-hidden','false');
+    }
+
+    function closeRules(){
+      var back = document.getElementById('rulesBack');
+      if (!back) return;
+      back.style.display = 'none';
+      back.setAttribute('aria-hidden','true');
+    }
+
+    function togglePlayLog(forceOpen){
+      var drawer = document.getElementById('playLogDrawer');
+      if (!drawer) return;
+      var shouldOpen = (typeof forceOpen === 'boolean') ? forceOpen : !drawer.classList.contains('open');
+      drawer.classList.toggle('open', shouldOpen);
+      drawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+    }
+
     // ---------- self tests ----------
     function runSelfTests(){
       var results = [];
@@ -2689,9 +3235,15 @@
 
     // ---------- init / restart ----------
     function restart(){
+      stopDecisionTimer();
+      if (state.uiHeadlineTimer) clearTimeout(state.uiHeadlineTimer);
+      if (state.playBannerTimer) clearTimeout(state.playBannerTimer);
+      state.uiHeadlineTimer = null;
+      state.playBannerTimer = null;
       state.round = 1;
       state.overload = 0;
       state.pool = 0;
+      state.uiHeadline = null;
       state.stageRule = null;
       state.countdownActive = false;
       state.direction = 1;
@@ -2721,6 +3273,9 @@
       state.lastSummary = null;
 
       document.getElementById('log').innerHTML = '';
+      var playLog = document.getElementById('logPlay');
+      if (playLog) playLog.innerHTML = '';
+      togglePlayLog(false);
       setEventCard(null);
       setSummary('Bereit',
         [
@@ -2745,6 +3300,8 @@
     document.addEventListener('keydown', function(e){
       if (e.key === 'Escape'){
         closePatchNotes();
+        closeRules();
+        togglePlayLog(false);
         if (state.askOpen){
           var back = document.getElementById('askBack');
           back.style.display = 'none';
@@ -2754,7 +3311,12 @@
       }
     });
 
+    document.getElementById('btnModePlay').onclick = function(){ setUiMode('play'); };
+    document.getElementById('btnModeDev').onclick = function(){ setUiMode('dev'); };
+    document.getElementById('btnPlayPreview').onclick = function(){ setUiMode('play'); };
+
     document.getElementById('btnReveal').onclick = function(){ revealEvent(); };
+    document.getElementById('btnRevealPlay').onclick = function(){ revealEvent(); };
     document.getElementById('btnRestart').onclick = function(){ restart(); };
     document.getElementById('btnLog').onclick = function(){
       if (window.matchMedia('(max-width:1150px)').matches){
@@ -2764,10 +3326,19 @@
       }
     };
     document.getElementById('btnCopyLog').onclick = copyLog;
+    document.getElementById('btnPlayLog').onclick = function(){ togglePlayLog(); };
+    document.getElementById('btnPlayLogClose').onclick = function(){ togglePlayLog(false); };
+    document.getElementById('btnPlayRules').onclick = openRules;
+    document.getElementById('rulesClose').onclick = closeRules;
+    document.getElementById('rulesBack').addEventListener('click', function(e){ if (e.target.id === 'rulesBack') closeRules(); });
 
     document.getElementById('optAuto').onchange = function(){ updateUI(); pumpBots(); };
     document.getElementById('optSpeed').onchange = function(){ pumpBots(); };
     document.getElementById('optAggCountdown').onchange = function(){ updateUI(); };
+    document.getElementById('optDecisionTimer').onchange = function(){
+      updateUI();
+      if (state.awaitingDecision) startDecisionTimer();
+    };
 
     document.getElementById('btnStay').onclick = function(){ state.humanChoice = 'stay'; state.humanLockedIn = true; updateUI(); };
     document.getElementById('btnCamp').onclick = function(){ state.humanChoice = 'camp'; state.humanLockedIn = true; updateUI(); };
@@ -2776,6 +3347,7 @@
     // init
     runSelfTests();
     restart();
+    setUiMode('play');
   })();
   </script>
 </body>
