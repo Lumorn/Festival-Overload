@@ -22,6 +22,10 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
 - Overload-Änderungen im Log und in den Overlays berücksichtigen die tatsächliche Deckelung bei 0/12.
+- Pool-Bonus wird deterministisch pro Camper verteilt (Reihenfolge ab Aufdecker, aktuelle Richtung), Logs zeigen Live→Camp und Pool→Camp pro Spieler.
+- Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und markieren min 0/Cap 12 inklusive Statuswerte.
+- Anti-Solo camped den letzten Spieler inkl. Pool-Bonus und Trostpunkt bei 0 Live; Stage Dive stapelt keinen „Muss bleiben“-Zwang.
+- Katastrophen-Checks und Countdown-Logs enthalten konsistente Overload/Pool-Hinweise.
 - Stage Dive wählt nie den Aufdecker selbst als Ziel; ungültige Bot-Anzahlen werden abgefangen.
 - Bot-Anzahl wird auf eine ganze Zahl gerundet, um inkonsistente Zustände zu vermeiden.
 - Selbsttests laufen nur noch bei `?selftest=1`, damit der normale Spielstart keine Test-Logs erzeugt.

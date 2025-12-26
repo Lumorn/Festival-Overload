@@ -895,11 +895,11 @@
               <div class="hint">
                 <b>Camp (nur mit Live):</b> Ohne mindestens <b>1 Live</b> gibt es keinen Cashout.
                 <br>
-                <b>Pool-Bonus:</b> Beim Campen (mit Live) gibt es <b>+1</b> aus dem Pool (falls vorhanden) und bei Overload <b>8+</b> noch <b>+1</b>.
+                <b>Pool-Bonus:</b> Beim Campen (mit Live) nimmst du sofort <b>poolTake = min(Pool, 1 + Gefahr)</b>, wobei Gefahr bei Overload <b>8+</b> aktiv ist.
                 <br>
                 <b>Wichtig:</b> Maßgeblich ist der <b>Overload nach dem Event</b> (inkl. Countdown/Checks), direkt vor der Camp-Entscheidung.
                 <br>
-                <b>Verteilung (gleichzeitig campen):</b> Uhrzeigersinn ab Aufdecker – erst bekommt jeder berechtigte Camper <b>1</b>, dann (bei Overload 8+) in einem zweiten Durchlauf ggf. noch <b>1</b>.
+                <b>Verteilung (gleichzeitig campen):</b> Feste Reihenfolge: beginnend beim Aufdecker, dann in aktueller Richtung. Jeder Camper nimmt seinen Pool-Bonus sofort.
               </div>
             </details>
           </div>
@@ -912,7 +912,7 @@
                 <div class="poolCard"></div>
                 <div class="poolCard"></div>
               </div>
-              <div class="mini" id="poolHint">Camp-Bonus: +1 (bei Overload 8+ +1)</div>
+              <div class="mini" id="poolHint">Camp-Bonus: min(Pool, 1 + Gefahr)</div>
             </div>
 
             <div class="tableau">
@@ -1104,7 +1104,7 @@
         <ul class="ruleList mini">
           <li><b>Nach jedem Event</b>: Alle aktiven Spieler entscheiden simultan Bleib oder Camp.</li>
           <li><b>Camp</b> ist nur mit mindestens 1 Live möglich.</li>
-          <li><b>Pool-Bonus</b>: +1, bei Overload 8+ zusätzlich +1 (solange Pool vorhanden).</li>
+          <li><b>Pool-Bonus</b>: poolTake = min(Pool, 1 + Gefahr), Gefahr aktiv bei Overload 8+.</li>
           <li><b>Overload 12</b>: Katastrophen-Check – Push bedeutet Knall.</li>
         </ul>
       </div>
@@ -1115,7 +1115,13 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.29';
+    var VERSION = 'v0.31';
+    var OVERLOAD_RESET_AFTER_CHECK = 10;
+    var STAGE_DIVE_REPLACEMENT = 'overload';
+    var STABILIZE_CARDS = [
+      { name:'Atem holen', value:2, count:8 },
+      { name:'Security greift ein', value:3, count:6 }
+    ];
 
     // Bot-Limits für die UI-Anpassung
     var MIN_BOTS = 1;
@@ -1157,6 +1163,27 @@
         items: [
           'Fix: Fehlende Spieler werden in EndRound/Entscheidung sicher per Neustart abgefangen.',
           'Fix: Bot-Autopump ignoriert leere Spielerlisten.'
+        ]
+      },
+      {
+        ver: 'v0.31',
+        date: '2026-01-11',
+        items: [
+          'Fix: Log-Ausgaben enthalten konsistent Overload/Live/Camp/Pool-Änderungen.',
+          'Fix: Stabilisieren/Push/Countdown-Logs zeigen Vorzeichen, Cap/Min-0 und Basis/Modifier exakt.',
+          'Fix: Katastrophen-Check/Anti-Solo/Stage-Dive-Logs folgen einheitlichem Format.'
+        ]
+      },
+      {
+        ver: 'v0.30',
+        date: '2026-01-10',
+        items: [
+          'Fix: Pool-Bonus wird deterministisch pro Camper verteilt (Reihenfolge ab Aufdecker, aktuelle Richtung).',
+          'Fix: Camp-Logs zeigen Live→Camp und Pool→Camp pro Spieler inkl. Camp/Pool-Delta.',
+          'Fix: Stabilisieren- und Push-Logs nutzen feste Kartenwerte, zeigen Vorzeichen korrekt und beachten min 0/Cap 12.',
+          'Fix: Katastrophen-Check loggt Check-Karte klar und setzt Overload bei Safe auf 10.',
+          'Fix: Anti-Solo camped den letzten Spieler inkl. Pool-Bonus und Trostpunkt bei 0 Live.',
+          'Fix: Stage Dive stapelt kein „Muss bleiben“ mehr; Ersatz-Effekt greift stattdessen.'
         ]
       },
       {
@@ -1321,7 +1348,7 @@
         decideCamp: function(ctx){
           var p = ctx.player;
           if (p.roundState !== 'active') return 'stay';
-          if (p.forcedStayNext) return 'stay';
+          if (p.forcedStay) return 'stay';
           if (p.live <= 0) return 'stay';
           if (p.camp + p.live >= WIN_CAMP) return 'camp';
           if (ctx.overload >= 10 && p.live >= 2) return 'camp';
@@ -1446,7 +1473,7 @@
     function buildPlayers(botCount){
       // Spieler-Setup neu aufbauen (nur vor Spielstart anpassen).
       var list = [
-        { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false }
+        { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false }
       ];
 
       for (var i=0;i<botCount;i++){
@@ -1455,7 +1482,7 @@
           camp: 0,
           live: 0,
           roundState: 'active',
-          forcedStayNext: false,
+          forcedStay: false,
           botId: state.botProfileId
         });
       }
@@ -1585,11 +1612,24 @@
       return -1;
     }
 
-    function clockwiseOrderFrom(startIdx){
+    function orderFrom(startIdx, step){
       var n = state.players.length;
       var out = [];
-      for (var k=0;k<n;k++) out.push((startIdx + k) % n);
+      for (var k=0;k<n;k++) out.push((startIdx + k * step + n * 1000) % n);
       return out;
+    }
+
+    function poolTakeFor(overload, pool){
+      var dangerBonus = (overload >= 8) ? 1 : 0;
+      return Math.min(pool, 1 + dangerBonus);
+    }
+
+    function describeOverloadCap(before, add, after){
+      return (before + add > MAX_OVERLOAD && after === MAX_OVERLOAD) ? ' (cap)' : '';
+    }
+
+    function describeOverloadFloor(before, sub, after){
+      return (before - sub < 0 && after === 0) ? ' (min 0)' : '';
     }
 
     function labelType(t){
@@ -2128,8 +2168,9 @@
       if (stageRule) stageRule.textContent = state.stageRule ? state.stageRule.name : '—';
       var poolHint = document.getElementById('poolHint');
       if (poolHint){
-        var bonus = (state.overload >= 8) ? 2 : 1;
-        poolHint.textContent = 'Camp-Bonus: +' + bonus + ' (Pool ' + (state.pool > 0 ? 'bereit' : 'leer') + ')';
+        var dangerBonus = (state.overload >= 8) ? 1 : 0;
+        var poolTake = poolTakeFor(state.overload, state.pool);
+        poolHint.textContent = 'Camp-Bonus: +' + poolTake + ' (Pool ' + state.pool + ', Gefahr +' + dangerBonus + ')';
       }
 
       var pill = document.getElementById('stateChip');
@@ -2276,7 +2317,7 @@
 
       var human = state.players[state.humanIndex];
       var isHumanActive = human.roundState === 'active';
-      var forced = !!human.forcedStayNext;
+      var forced = !!human.forcedStay;
       var campBlockedByZero = (human.live <= 0);
 
       var auto = isAutoAll();
@@ -2391,14 +2432,14 @@
       overlay.classList.toggle('show', state.awaitingDecision);
       overlay.setAttribute('aria-hidden', state.awaitingDecision ? 'false' : 'true');
 
-      var human = state.players[state.humanIndex] || { live:0, camp:0, roundState:'camped', forcedStayNext:false };
+      var human = state.players[state.humanIndex] || { live:0, camp:0, roundState:'camped', forcedStay:false };
       document.getElementById('decisionOverload').textContent = String(state.overload) + '/12';
       document.getElementById('decisionPool').textContent = String(state.pool);
       document.getElementById('decisionLive').textContent = String(human.live);
 
       var campHint = document.getElementById('campHint');
       if (human.live <= 0) campHint.textContent = 'Camp erst ab 1 Live';
-      else if (human.forcedStayNext) campHint.textContent = 'Zwang: Bleib';
+      else if (human.forcedStay) campHint.textContent = 'Zwang: Bleib';
       else campHint.textContent = 'Du sicherst dein Live';
 
       var preview = document.getElementById('decisionPreview');
@@ -2410,15 +2451,14 @@
         totalLine.textContent = '—';
       } else {
         preview.style.opacity = '1';
-        var bonusSlots = (state.overload >= 8 ? 2 : 1);
-        var poolBonus = Math.min(state.pool, bonusSlots);
+        var poolBonus = poolTakeFor(state.overload, state.pool);
         if (human.roundState !== 'active'){
           gainLine.textContent = 'Du beobachtest diese Runde.';
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
         } else if (human.live <= 0){
           gainLine.textContent = 'Camp nicht möglich (0 Live).';
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
-        } else if (human.forcedStayNext){
+        } else if (human.forcedStay){
           gainLine.textContent = 'Zwang: Bleib (Stage Dive).';
           totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
         } else {
@@ -2486,7 +2526,7 @@
         var camp = document.createElement('button');
         camp.className = 'decisionBotBtn warn';
         camp.textContent = 'Camp';
-        camp.disabled = p.live <= 0 || p.forcedStayNext;
+        camp.disabled = p.live <= 0 || p.forcedStay;
         camp.onclick = (function(idx){
           return function(){
             state.botChoices[String(idx)] = 'camp';
@@ -2522,7 +2562,7 @@
 
         var marks = [];
         if (!state.awaitingDecision && i === state.revealer && p.roundState === 'active') marks.push('<span class="playerMark">⬅️ Aufdecker</span>');
-        if (p.forcedStayNext && p.roundState === 'active') marks.push('<span class="playerMark warn">MUSS BLEIBEN</span>');
+        if (p.forcedStay && p.roundState === 'active') marks.push('<span class="playerMark warn">MUSS BLEIBEN</span>');
         if (state.awaitingDecision && i === state.humanIndex && state.humanLockedIn) marks.push('<span class="playerMark">✅ gewählt</span>');
 
         var cls = 'playerCard';
@@ -2632,14 +2672,23 @@
       for (i=0;i<6;i++) deck.push({ type:'push', name:'Bassdrop', delta:3, text:'Overload +3. Aufdecker +1 Live. +1 in Pool.' });
 
       // Stabilisieren (14) – Patch P2: Ertrag nur bei Overload 8+ (vor dem Senken)
-      for (i=0;i<8;i++) deck.push({ type:'stabilize', name:'Atem holen', delta:-2, text:'Overload −2. Wenn Overload vor dem Senken 8+ war: Aufdecker +1 Live (Vorrat).' });
-      for (i=0;i<6;i++) deck.push({ type:'stabilize', name:'Security greift ein', delta:-3, text:'Overload −3. Wenn Overload vor dem Senken 8+ war: Aufdecker +1 Live (Vorrat).' });
+      for (i=0;i<STABILIZE_CARDS.length;i++){
+        var sc = STABILIZE_CARDS[i];
+        for (var j=0;j<sc.count;j++){
+          deck.push({
+            type:'stabilize',
+            name: sc.name,
+            delta: -sc.value,
+            text:'Overload −' + sc.value + '. Wenn Overload vor dem Senken 8+ war: Aufdecker +1 Live (Vorrat).'
+          });
+        }
+      }
 
       // Twist (14)
       for (i=0;i<2;i++) deck.push({ type:'twist', name:'Richtungswechsel', fx:'flipDir', text:'Drehe die Aufdeck-Reihenfolge um.' });
       for (i=0;i<4;i++) deck.push({ type:'twist', name:'Feedback', fx:'feedback', stage:true, text:'Bühnenregel 🌀∞: Bis Rundenende gibt jede ⚡ zusätzlich +1 Overload.' });
       for (i=0;i<3;i++) deck.push({ type:'twist', name:'Pyro', fx:'pyro', text:'Overload +2.' });
-      for (i=0;i<3;i++) deck.push({ type:'twist', name:'Stage Dive', fx:'stageDive', text:'Wähle einen aktiven Spieler: Er muss 1 Live zahlen oder bleibt beim nächsten Camp-Entscheid automatisch drin.' });
+      for (i=0;i<3;i++) deck.push({ type:'twist', name:'Stage Dive', fx:'stageDive', text:'Wähle einen aktiven Spieler: Er zahlt 1 Live oder bleibt beim nächsten Camp-Entscheid automatisch drin. Ist er bereits betroffen: Overload +1 (cap 12).' });
       for (i=0;i<2;i++) deck.push({ type:'twist', name:'Setwechsel', fx:'setwechsel', text:'Der nächste Event wird vom gleichen Spieler aufgedeckt (noch einmal).' });
 
       // Encore (6)
@@ -2690,7 +2739,7 @@
       for (var i=0;i<state.players.length;i++){
         state.players[i].live = 0;
         state.players[i].roundState = 'active';
-        state.players[i].forcedStayNext = false;
+        state.players[i].forcedStay = false;
       }
 
       state.round += 1;
@@ -2724,7 +2773,7 @@
         }
       }
 
-      log('bad','<b>KNALL</b>: ' + esc(reason) + '. Alle aktiven Spieler verlieren ihr Live.' + (pfl ? ' <span class="t">(Pflaster aktiv: ' + (affected.length ? esc(affected.join(', ')) : 'niemand') + ')</span>' : ''));
+      log('bad','<b>KNALL</b>: ' + esc(reason) + '. Alle aktiven Spieler verlieren ihr Live (Live → 0).' + (pfl ? ' <span class="t">(Pflaster aktiv: ' + (affected.length ? esc(affected.join(', ')) : 'niemand') + ')</span>' : '') + ' Overload ' + state.overload + ' · Pool ' + state.pool + '.');
       screenFlash('bad');
       toast('KNALL!', 'Runde endet sofort.');
       setHeadline('KNALL! Runde endet', 1600);
@@ -2746,8 +2795,8 @@
       setHeadline('Katastrophen-Check!', 1200);
       var card = draw(1)[0] || null;
       if (!card){
-        log('warn','Katastrophen-Check: Keine Karte verfügbar → gerade noch gut gegangen. Overload 12 → 10.');
-        state.overload = 10;
+        log('warn','Check-Karte: keine verfügbar → Safe, Overload 12→' + OVERLOAD_RESET_AFTER_CHECK + ' · Pool ' + state.pool + ' · Live/Camp unverändert.');
+        state.overload = OVERLOAD_RESET_AFTER_CHECK;
         showPlayBanner('good', 'Gerade noch so!', 1200);
         updateUI();
         return;
@@ -2758,14 +2807,14 @@
       showPlayCheckCard(card);
 
       if (isPush){
-        log('bad','<b>Katastrophen-Check</b>: Aufgedeckte Karte ist <b>⚡ Push</b> → <b>Knall</b>.');
+        log('bad','Check-Karte: <b>Push</b> → <b>Knall</b>. Overload 12 bleibt bis zum Knall. Pool ' + state.pool + '.');
         showPlayBanner('bad', 'KNALL!', 1200);
         doKnall('Katastrophen-Check hat Push aufgedeckt');
         return;
       }
 
-      log('good','<b>Katastrophen-Check</b>: Keine Push-Karte → Check-Karte wird abgeworfen, Overload 12 → <b>10</b>.');
-      state.overload = 10;
+      log('good','Check-Karte: <b>' + esc(labelType(card.type).txt) + '</b> → Safe, Overload 12→<b>' + OVERLOAD_RESET_AFTER_CHECK + '</b> · Pool ' + state.pool + ' · Live/Camp unverändert.');
+      state.overload = OVERLOAD_RESET_AFTER_CHECK;
       showPlayBanner('good', 'Gerade noch so!', 1200);
       updateUI();
     }
@@ -2773,7 +2822,7 @@
     function onOverloadMayHit12(r, why){
       if (state.gameOver) return;
       if (r.reached12){
-        log('warn','Overload erreicht <b>12</b> (' + esc(why) + ') → <b>Katastrophen-Check</b>.');
+        log('warn','Overload erreicht <b>12</b> (' + esc(why) + ') → <b>Katastrophen-Check</b>. Pool ' + state.pool + ' · Live/Camp unverändert.');
         catastropheCheck();
       }
     }
@@ -2791,7 +2840,7 @@
         [
           { cls:'good', sym:'✅', text:'Bleib: Live bleibt im Risiko' },
           { cls:'warn', sym:'🏕️', text:'Camp: nur mit mindestens 1 Live' },
-          { cls:'blue', sym:'🎁', text:'Pool-Bonus: +1 (bei Overload 8+ noch +1)' }
+          { cls:'blue', sym:'🎁', text:'Pool-Bonus: poolTake = min(Pool, 1 + Gefahr)' }
         ],
         'Simultan, offen'
       );
@@ -2809,12 +2858,12 @@
       if (isAggCountdown() && state.pool >= 3) add += 1;
 
       var r = applyOverloadDelta(+add);
-      var deltaText = formatDelta(r.delta);
-      log('warn','<b>Countdown</b>: Nach dem Event steigt Overload automatisch um ' + deltaText + ' → ' + r.before + ' → <b>' + r.after + '</b>.');
+      var capNote = describeOverloadCap(r.before, add, r.after);
+      log('warn','<b>Countdown</b>: Nach dem Event steigt Overload automatisch um +' + add + ' → ' + r.before + ' + ' + add + ' = <b>' + r.after + '</b>' + capNote + ' · Pool ' + state.pool + ' · Live/Camp unverändert.');
 
       setSummary('Countdown',
         [
-          { cls:'warn', sym:'⏱️', text:'Overload ' + deltaText + ' → ' + r.after },
+          { cls:'warn', sym:'⏱️', text:'Overload +' + add + ' → ' + r.after + (capNote ? ' (cap)' : '') },
           (isAggCountdown() ? { cls:'blue', sym:'🎁', text:(state.pool >= 3 ? 'Pool ≥3: extra +1 aktiv' : 'Pool <3: kein Extra') } : { cls:'blue', sym:'⚙️', text:'Aggressiv: aus' })
         ],
         'Countdown ist aktiv, solange die Runde läuft'
@@ -2857,24 +2906,31 @@
 
     function applyPush(rev, card){
       var p = state.players[rev];
-      var add = card.delta || 1;
-      if (hasFeedbackRule()) add += 1;
-
-      var r = applyOverloadDelta(add);
-      var deltaText = formatDelta(r.delta);
+      var base = (typeof card.delta === 'number') ? card.delta : 1;
+      var mod = hasFeedbackRule() ? 1 : 0;
+      var total = base + mod;
+      var before = state.overload;
+      var liveBefore = p.live;
+      var campBefore = p.camp;
+      var poolBefore = state.pool;
+      var unclamped = before + total;
+      var after = Math.min(MAX_OVERLOAD, unclamped);
+      var capNote = describeOverloadCap(before, total, after);
+      state.overload = after;
+      var r = { before: before, after: after, delta: (after - before), reached12: (before < MAX_OVERLOAD && after === MAX_OVERLOAD) };
       p.live += 1;
       state.pool += 1;
 
       setSummary('⚡ Push – ' + card.name,
         [
-          { cls:'bad',  sym:'⚡', text:'Overload ' + deltaText + ' → ' + r.after },
+          { cls:'bad',  sym:'⚡', text:'Overload +' + total + ' → ' + r.after + (capNote ? ' (cap)' : '') },
           { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' },
           { cls:'warn', sym:'🎁', text:'Pool +1 (jetzt ' + state.pool + ')' }
         ],
         'Danach: Entscheidung Bleib/Camp'
       );
 
-      log('info','<b>' + esc(p.name) + '</b> deckt ⚡ <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' ' + deltaText + ' = <b>' + r.after + '</b>, ' + esc(p.name) + ' +1 Live (Live ' + p.live + '), Pool +1 (Pool ' + state.pool + ').');
+      log('info','<b>' + esc(p.name) + '</b> deckt ⚡ <b>' + esc(card.name) + '</b> auf → Overload ' + before + ' + (' + base + ' Karte +' + mod + ' Feedback) = <b>' + after + '</b>' + capNote + ' · Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + ' · Pool ' + poolBefore + '→' + state.pool + '.');
       updateUI();
       onOverloadMayHit12(r, 'Push');
     }
@@ -2882,24 +2938,30 @@
     function applyStabilize(rev, card){
       var p = state.players[rev];
       var beforeOver = state.overload;
-      var r = applyOverloadDelta(typeof card.delta === 'number' ? card.delta : -2);
-      var deltaText = formatDelta(r.delta);
+      var liveBefore = p.live;
+      var campBefore = p.camp;
+      var poolBefore = state.pool;
+      var valueAbs = Math.abs((typeof card.delta === 'number') ? card.delta : -2);
+      var unclamped = beforeOver - valueAbs;
+      var afterOver = Math.max(0, unclamped);
+      var floorNote = describeOverloadFloor(beforeOver, valueAbs, afterOver);
+      state.overload = afterOver;
 
-      log('good','<b>' + esc(p.name) + '</b> deckt 🛠️ <b>' + esc(card.name) + '</b> auf → Overload ' + beforeOver + ' ' + deltaText + ' = <b>' + r.after + '</b>.');
+      log('good','<b>' + esc(p.name) + '</b> deckt 🛠️ <b>' + esc(card.name) + '</b> auf → Overload ' + beforeOver + ' −' + valueAbs + ' = <b>' + afterOver + '</b>' + floorNote + ' · Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + ' · Pool ' + poolBefore + '→' + state.pool + '.');
 
       // Patch P2: Ertrag nur wenn Overload VOR dem Senken 8+ war
       var got = 0;
       if (beforeOver >= 8){
         p.live += 1;
         got = 1;
-        log('good','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (8+) → ' + esc(p.name) + ' erhält <b>+1 Live</b> (Vorrat). (Live jetzt ' + p.live + ')');
+        log('good','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (8+) → ' + esc(p.name) + ' erhält <b>+1 Live</b> (Vorrat). Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + ' · Pool ' + poolBefore + '→' + state.pool + ' · Overload ' + state.overload + '.');
       } else {
-        log('info','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (&lt;8) → kein Ertrag.');
+        log('info','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (&lt;8) → kein Ertrag. Live ' + liveBefore + '→' + p.live + ' · Camp ' + campBefore + ' · Pool ' + poolBefore + '→' + state.pool + ' · Overload ' + state.overload + '.');
       }
 
       setSummary('🛠️ Stabilisieren – ' + card.name,
         [
-          { cls:'good', sym:'🛠️', text:'Overload ' + deltaText + ' → ' + r.after },
+          { cls:'good', sym:'🛠️', text:'Overload −' + valueAbs + ' → ' + afterOver },
           (got ? { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' } : { cls:'blue', sym:'—', text:'Kein Live-Ertrag (Overload vor dem Senken <8)' })
         ],
         'Danach: Entscheidung Bleib/Camp'
@@ -2934,8 +2996,8 @@
 
       if (card.fx === 'pyro'){
         var r = applyOverloadDelta(+2);
-        var deltaText = formatDelta(r.delta);
-        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' ' + deltaText + ' = <b>' + r.after + '</b>.');
+        var capNote = describeOverloadCap(r.before, 2, r.after);
+        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' +2 = <b>' + r.after + '</b>' + capNote + ' · Pool ' + state.pool + ' · Live/Camp unverändert.');
         updateUI();
         onOverloadMayHit12(r, 'Pyro');
         doneCb();
@@ -3048,23 +3110,39 @@
       log('warn','<b>' + esc(revP.name) + '</b> löst 🌀 <b>Stage Dive</b> aus auf <b>' + esc(tP.name) + '</b>.');
       updateUI();
 
+      if (tP.forcedStay){
+        if (STAGE_DIVE_REPLACEMENT === 'overload'){
+          var before = state.overload;
+          var r = applyOverloadDelta(1);
+          var capNote = describeOverloadCap(before, 1, r.after);
+          log('warn','Stage Dive auf <b>' + esc(tP.name) + '</b>: bereits aktiv → Ersatz-Effekt Overload ' + before + ' +1 = <b>' + r.after + '</b>' + capNote + ' · Pool ' + state.pool + ' · Live/Camp unverändert.');
+          onOverloadMayHit12(r, 'Stage Dive Ersatz');
+        } else {
+          state.pool += 1;
+          log('warn','Stage Dive auf <b>' + esc(tP.name) + '</b>: bereits aktiv → Ersatz-Effekt Pool +1 (Pool ' + state.pool + ') · Overload ' + state.overload + ' · Live/Camp unverändert.');
+        }
+        updateUI();
+        doneCb();
+        return;
+      }
+
       if (targetIdx === state.humanIndex){
         if (isAutoAll()){
           if (tP.live > 0 && botStageDivePay(targetIdx)){
             tP.live = Math.max(0, tP.live - 1);
-            log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. (Live jetzt ' + tP.live + ')');
+            log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
             doneCb();
             return;
           }
-          tP.forcedStayNext = true;
-          log('bad','Du zahlst nicht → du musst beim nächsten Camp-Entscheid <b>drin bleiben</b>.');
+          tP.forcedStay = true;
+          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
           doneCb();
           return;
         }
 
         if (tP.live <= 0){
-          tP.forcedStayNext = true;
-          log('bad','Du hast <b>0 Live</b> → du kannst nicht zahlen und musst beim nächsten Camp-Entscheid <b>drin bleiben</b>.');
+          tP.forcedStay = true;
+          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
           toast('Stage Dive', 'Du musst drin bleiben (kein Live zum Zahlen).');
           doneCb();
           return;
@@ -3078,11 +3156,11 @@
           function(use){
             if (use){
               tP.live = Math.max(0, tP.live - 1);
-              log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. (Live jetzt ' + tP.live + ')');
+              log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
               toast('Bezahlt', 'Stage Dive ignoriert.');
             } else {
-              tP.forcedStayNext = true;
-              log('bad','Du zahlst nicht → du musst beim nächsten Camp-Entscheid <b>drin bleiben</b>.');
+              tP.forcedStay = true;
+              log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
               toast('Stage Dive', 'Du musst drin bleiben.');
             }
             doneCb();
@@ -3093,8 +3171,8 @@
 
       if (areBotsManual()){
         if (tP.live <= 0){
-          tP.forcedStayNext = true;
-          log('bad', esc(tP.name) + ' hat <b>0 Live</b> → muss beim nächsten Camp-Entscheid drin bleiben.');
+          tP.forcedStay = true;
+          log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
           doneCb();
           return;
         }
@@ -3106,10 +3184,10 @@
           function(use){
             if (use){
               tP.live = Math.max(0, tP.live - 1);
-              log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. (Live jetzt ' + tP.live + ')');
+              log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
             } else {
-              tP.forcedStayNext = true;
-              log('bad', esc(tP.name) + ' zahlt nicht → muss beim nächsten Camp-Entscheid drin bleiben.');
+              tP.forcedStay = true;
+              log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
             }
             doneCb();
           }
@@ -3119,13 +3197,13 @@
 
       if (tP.live > 0 && botStageDivePay(targetIdx)){
         tP.live = Math.max(0, tP.live - 1);
-        log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. (Live jetzt ' + tP.live + ')');
+        log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. Live ' + (tP.live + 1) + '→' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
         doneCb();
         return;
       }
 
-      tP.forcedStayNext = true;
-      log('bad', esc(tP.name) + ' zahlt nicht → muss beim nächsten Camp-Entscheid drin bleiben.');
+      tP.forcedStay = true;
+      log('bad','Stage Dive: <b>' + esc(tP.name) + '</b> muss beim nächsten Entscheid <b>Bleib</b> wählen (sofern er noch aktiv ist). Live ' + tP.live + ' · Camp ' + tP.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
       doneCb();
     }
 
@@ -3296,30 +3374,22 @@
       done();
     }
 
-    function applyPoolDistribution(campersOrdered, overloadAtDecision){
-      var taken1 = 0;
-      for (var i=0;i<campersOrdered.length;i++){
-        if (state.pool <= 0) break;
-        if (!campersOrdered[i].eligible) continue;
-        var p = state.players[campersOrdered[i].idx];
-        state.pool -= 1;
-        p.camp += 1;
-        taken1 += 1;
-      }
-
-      var taken2 = 0;
-      if (overloadAtDecision >= 8){
-        for (var k=0;k<campersOrdered.length;k++){
-          if (state.pool <= 0) break;
-          if (!campersOrdered[k].eligible) continue;
-          var p2 = state.players[campersOrdered[k].idx];
-          state.pool -= 1;
-          p2.camp += 1;
-          taken2 += 1;
-        }
-      }
-
-      return { pass1:taken1, pass2:taken2 };
+    function applyCampTransfer(p, overloadAtDecision, extraCamp){
+      var liveBefore = p.live;
+      var campBefore = p.camp;
+      var poolBefore = state.pool;
+      var poolTake = poolTakeFor(overloadAtDecision, state.pool);
+      p.camp += liveBefore + poolTake + extraCamp;
+      p.live = 0;
+      state.pool = Math.max(0, state.pool - poolTake);
+      p.roundState = 'camped';
+      return {
+        liveBefore: liveBefore,
+        campBefore: campBefore,
+        poolBefore: poolBefore,
+        poolTake: poolTake,
+        extraCamp: extraCamp || 0
+      };
     }
 
     function forceCampLastActive(reason){
@@ -3330,26 +3400,10 @@
       log('warn','<b>Anti-Solo</b>: Nur noch <b>1</b> Spieler aktiv → Runde endet sofort.');
       setHeadline('Anti-Solo: letzter Spieler campt', 1600);
       showPlayBanner('warn', 'Anti-Solo: letzter Spieler campt', 1600);
-
-      var poolBefore = state.pool;
-
-      if (p.live >= 1){
-        var liveBefore = p.live;
-        p.camp += p.live;
-        p.live = 0;
-        p.roundState = 'camped';
-        log('warn','Letzter aktiver Spieler: <b>' + esc(p.name) + '</b> campt sofort: +' + liveBefore + ' Camp (aus Live) → Camp jetzt <b>' + p.camp + '</b>. <span class="t">(Kein Pool-Bonus)</span>');
-        toast('Runde endet', p.name + ' campt sofort (Anti-Solo).');
-      } else {
-        log('warn','Letzter aktiver Spieler: <b>' + esc(p.name) + '</b> hat <b>0 Live</b> → kein Camp-Gewinn. <span class="t">(Kein Pool-Bonus)</span>');
-        toast('Runde endet', 'Anti-Solo: letzter Spieler hatte 0 Live.');
-      }
-
-      // Patch P2: Rest-Pool wird verworfen
-      if (poolBefore > 0){
-        state.pool = 0;
-        log('info','Anti-Solo: Restlicher Pool wird verworfen. (Pool ' + poolBefore + ' → 0)');
-      }
+      var pity = (p.live === 0) ? 1 : 0;
+      var transfer = applyCampTransfer(p, state.overload, pity);
+      log('warn','Anti-Solo: letzter aktiver Spieler <b>' + esc(p.name) + '</b> campt sofort: +' + transfer.liveBefore + ' Live→Camp +' + transfer.poolTake + ' Pool→Camp +' + transfer.extraCamp + ' Trost => Camp ' + transfer.campBefore + '→' + p.camp + ', Pool ' + transfer.poolBefore + '→' + state.pool + ' · Overload ' + state.overload + ' · Live ' + transfer.liveBefore + '→0.');
+      toast('Runde endet', p.name + ' campt sofort (Anti-Solo).');
 
       if (checkWin()) { updateUI(); return; }
       endRound(reason || 'Anti-Solo');
@@ -3377,7 +3431,7 @@
         if (i === state.humanIndex){
           if (isAutoAll()){
             choice = botWantsToCamp(i) ? 'camp' : 'stay';
-          } else if (p.forcedStayNext) {
+          } else if (p.forcedStay) {
             choice = 'stay';
           } else {
             if (state.humanChoice === 'camp' && p.live <= 0) choice = 'stay';
@@ -3389,7 +3443,7 @@
           } else {
             choice = botWantsToCamp(i) ? 'camp' : 'stay';
           }
-          if (p.forcedStayNext) choice = 'stay';
+          if (p.forcedStay) choice = 'stay';
         }
 
         if (choice === 'camp' && p.live <= 0) choice = 'stay';
@@ -3400,18 +3454,17 @@
       for (var j=0;j<choices.length;j++){
         parts.push(state.players[choices[j].idx].name + ': ' + (choices[j].choice === 'camp' ? 'Camp' : 'Bleib'));
       }
-      log('info','<b>Entscheidung</b> (simultan): ' + esc(parts.join(' · ')));
+      log('info','<b>Entscheidung</b> (simultan): ' + esc(parts.join(' · ')) + ' · Overload ' + state.overload + ' · Pool ' + state.pool + '.');
 
       for (var x=0;x<choices.length;x++){
         var pl = state.players[choices[x].idx];
-        if (pl.forcedStayNext) pl.forcedStayNext = false;
+        if (pl.forcedStay) pl.forcedStay = false;
       }
 
-      var order = clockwiseOrderFrom(state.revealer);
+      var order = orderFrom(state.revealer, state.direction);
       var campersSet = {};
       for (var k=0;k<choices.length;k++) if (choices[k].choice === 'camp') campersSet[String(choices[k].idx)] = true;
 
-      var campersOrdered = [];
       var anySuccessfulCamp = false;
 
       for (var o=0;o<order.length;o++){
@@ -3421,30 +3474,15 @@
         if (p2.roundState !== 'active') continue;
 
         if (p2.live <= 0){
-          log('warn','<b>' + esc(p2.name) + '</b> wollte campen, hat aber 0 Live → bleibt drin.');
+          log('warn','<b>' + esc(p2.name) + '</b> wollte campen, hat aber 0 Live → bleibt drin. Live ' + p2.live + ' · Camp ' + p2.camp + ' · Pool ' + state.pool + ' · Overload ' + state.overload + '.');
           continue;
         }
 
-        var liveBefore = p2.live;
-        p2.camp += p2.live;
-        p2.live = 0;
-        p2.roundState = 'camped';
-
+        var transfer = applyCampTransfer(p2, state.overload, 0);
         anySuccessfulCamp = true;
-        campersOrdered.push({ idx: idx, eligible: true, liveBefore: liveBefore });
-
-        log('warn','<b>' + esc(p2.name) + '</b> campt: +' + liveBefore + ' Camp (aus Live) → Camp jetzt <b>' + p2.camp + '</b>.');
+        log('warn','<b>' + esc(p2.name) + '</b> campt: +' + transfer.liveBefore + ' (Live→Camp) +' + transfer.poolTake + ' (Pool→Camp) => Camp ' + transfer.campBefore + '→' + p2.camp + ', Pool ' + transfer.poolBefore + '→' + state.pool + ' · Overload ' + state.overload + ' · Live ' + transfer.liveBefore + '→0.');
       }
-
-      // Pool-Bonus (P2: Overload NACH Event/Countdown/Checks ist maßgeblich) – hier ist state.overload bereits "jetzt".
-      if (campersOrdered.length && state.pool > 0){
-        var overloadNow = state.overload;
-        var dist = applyPoolDistribution(campersOrdered, overloadNow);
-        if (dist.pass1 || dist.pass2){
-          log('info','Pool-Bonus: +' + dist.pass1 + ' (Grundbonus)' + (overloadNow >= 8 ? ' +'+dist.pass2+' (Gefahrenbonus)' : '') + ' verteilt. <span class="t">(Overload maßgeblich: ' + overloadNow + ')</span> Pool jetzt ' + state.pool + '.');
-        }
-      }
-      if (campersOrdered.length){
+      if (anySuccessfulCamp){
         showPlayBanner('good', 'Camp-Auflösung abgeschlossen', 1200);
       }
 
@@ -3503,7 +3541,7 @@
             if (state.askOpen) return;
 
             var h = state.players[state.humanIndex];
-            if (h && h.roundState === 'active' && !h.forcedStayNext && h.live > 0){
+            if (h && h.roundState === 'active' && !h.forcedStay && h.live > 0){
               state.humanChoice = botWantsToCamp(state.humanIndex) ? 'camp' : 'stay';
             } else {
               state.humanChoice = 'stay';
@@ -3647,8 +3685,8 @@
 
         // minimal players, damit doKnall/Logs nicht crashen
         state.players = [
-          { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false },
-          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStayNext:false }
+          { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStay:false }
         ];
 
         state.deck = [{ type:'stabilize', name:'X', delta:-2 }];
@@ -3656,7 +3694,7 @@
         state.overload = 12;
         state.gameOver = false;
         catastropheCheck();
-        ok('Katastrophen-Check non-push -> overload 10', state.overload === 10);
+        ok('Katastrophen-Check non-push -> overload 10', state.overload === OVERLOAD_RESET_AFTER_CHECK);
 
         // Katastrophen-Check discard pushed
         state.deck = [{ type:'push', name:'Y', delta:1 }];
@@ -3678,8 +3716,8 @@
         var oldOver = state.overload;
         var oldPlayers = state.players.slice();
         state.players = [
-          { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false },
-          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStayNext:false }
+          { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStay:false }
         ];
 
         state.overload = 7;
@@ -3694,23 +3732,27 @@
         state.players = oldPlayers;
       })();
 
-      // Anti-Solo: Rest-Pool wird verworfen
+      // Anti-Solo: letzter Spieler camped inkl. Pool-Bonus und Trostpunkt
       (function(){
         var oldPlayers = state.players.slice();
         var oldPool = state.pool;
+        var oldOver = state.overload;
         var oldGO = state.gameOver;
 
         state.players = [
-          { name:'Du', camp:0, live:2, roundState:'active', forcedStayNext:false },
-          { name:'Bot A', camp:0, live:0, roundState:'camped', forcedStayNext:false }
+          { name:'Du', camp:0, live:0, roundState:'active', forcedStay:false },
+          { name:'Bot A', camp:0, live:0, roundState:'camped', forcedStay:false }
         ];
         state.pool = 3;
+        state.overload = 8;
         state.gameOver = false;
         forceCampLastActive('Test');
-        ok('Anti-Solo: Pool wird verworfen', state.pool === 0);
+        ok('Anti-Solo: Pool-Take wird genommen', state.pool === 1);
+        ok('Anti-Solo: Trostpunkt greift', state.players[0].camp === 3);
 
         state.players = oldPlayers;
         state.pool = oldPool;
+        state.overload = oldOver;
         state.gameOver = oldGO;
       })();
 

@@ -165,8 +165,13 @@ Wenn du campst:
 
 Wenn du campst (nur mit mindestens 1 Live):
 
-* Du erhältst **immer +1 Karte** aus dem Bühnen-Pool (falls vorhanden).
-* Ist der Overload **8 oder höher**, erhältst du **zusätzlich +1 weitere** Pool-Karte (falls vorhanden).
+* **poolTake = min(Pool, 1 + dangerBonus)**
+* **dangerBonus = 1**, wenn Overload **8 oder höher** ist, sonst **0**.
+
+### Pool-Bonus bei simultanem Campen
+
+* **Reihenfolge:** beginnend beim **aktuellen Aufdecker**, dann in der **aktuellen Richtung**.
+* Jeder Camper nimmt seinen **Pool-Bonus sofort** gemäß `poolTake`.
 
 **Wichtig:** Maßgeblich ist der **Overload nach dem Event** (inkl. Countdown und Overload-Checks), **direkt vor der Camp-Entscheidung**.
 
@@ -243,10 +248,10 @@ Sobald nur noch **1 Spieler aktiv** ist:
 
 * Die Runde endet **sofort**.
 * Der letzte aktive Spieler **camped sofort** (Live → Camp).
-* Er erhält dabei **keinen Pool-Bonus**.
-* Alle verbleibenden Pool-Karten werden **verworfen** (Bühnen-Pool wird geleert).
+* Er nimmt **Pool-Bonus** gemäß `poolTake` (Regel aus Abschnitt 9).
+* Falls sein Live **0** ist, erhält er **+1 Trostpunkt** aus dem Vorrat.
 
-**Ziel:** Keine Solo-Downtime und keine „Rest-Pool-Geschenke“.
+**Ziel:** Keine Solo-Downtime und trotzdem ein fairer Abschluss ohne „0-Punkte“-Ende.
 
 ### Neustart
 
@@ -302,7 +307,7 @@ Sobald ein Spieler **8 Camp-Punkte** erreicht:
 * Richtungswechsel ×2 – 🌀 Drehe die Aufdeck-Reihenfolge um
 * Feedback ×4 – 🌀∞ Bis Rundenende: Jeder ⚡ gibt zusätzlich +1 Overload
 * Pyro ×3 – 🌀 Overload +2
-* Stage Dive ×3 – 🌀 Wähle einen aktiven Spieler: Er zahlt 1 Live oder bleibt beim nächsten Camp automatisch drin
+* Stage Dive ×3 – 🌀 Wähle einen aktiven Spieler: Er zahlt 1 Live oder bleibt beim nächsten Camp automatisch drin. Ist er bereits betroffen, greift ein Ersatz-Effekt (Overload +1, cap 12).
 * Setwechsel ×2 – 🌀 Der nächste Event wird vom gleichen Spieler aufgedeckt
 
 **Encore! (🎤) – 6**
@@ -344,4 +349,3 @@ Diese Version ersetzt frühere Verwaltungsmechaniken vollständig durch:
 * **Encore-Ketten**
 * Overload-Check bei 12 mit Rückstoß auf 10
 * Countdown nach erstem Camper
-
