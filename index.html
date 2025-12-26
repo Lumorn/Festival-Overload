@@ -1115,7 +1115,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.19';
+    var VERSION = 'v0.29';
 
     // Bot-Limits für die UI-Anpassung
     var MIN_BOTS = 1;
@@ -1123,6 +1123,80 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.29',
+        date: '2026-01-14',
+        items: [
+          'Fix: Zentrale UI-Labels werden nur aktualisiert, wenn die Elemente vorhanden sind.'
+        ]
+      },
+      {
+        ver: 'v0.28',
+        date: '2026-01-13',
+        items: [
+          'Fix: Status-Chips werden nur aktualisiert, wenn die UI-Elemente existieren.'
+        ]
+      },
+      {
+        ver: 'v0.27',
+        date: '2026-01-12',
+        items: [
+          'Fix: Event-Handler in den Einstellungen werden nur gebunden, wenn die Elemente existieren.'
+        ]
+      },
+      {
+        ver: 'v0.26',
+        date: '2026-01-11',
+        items: [
+          'Fix: Aufdecker-Index wird auch vor der Entscheidungsreihenfolge und im Bot-Autopump normalisiert.'
+        ]
+      },
+      {
+        ver: 'v0.25',
+        date: '2026-01-10',
+        items: [
+          'Fix: Fehlende Spieler werden in EndRound/Entscheidung sicher per Neustart abgefangen.',
+          'Fix: Bot-Autopump ignoriert leere Spielerlisten.'
+        ]
+      },
+      {
+        ver: 'v0.24',
+        date: '2026-01-09',
+        items: [
+          'Fix: Revealer-Index wird normalisiert, um inkonsistente Zustände beim Spielstart abzufangen.',
+          'Fix: Fehlende Spielerliste führt zu einem sicheren Neustart statt zu Folgefehlern.'
+        ]
+      },
+      {
+        ver: 'v0.23',
+        date: '2026-01-08',
+        items: [
+          'Fix: Selbsttests laufen nur noch bei ?selftest=1, um Logs/UI im normalen Spielstart nicht zu beeinflussen.'
+        ]
+      },
+      {
+        ver: 'v0.22',
+        date: '2026-01-07',
+        items: [
+          'Fix: Bot-Anzahl wird auf eine ganze Zahl gerundet, um inkonsistente Zustände zu vermeiden.'
+        ]
+      },
+      {
+        ver: 'v0.21',
+        date: '2026-01-06',
+        items: [
+          'Fix: Stage-Dive-Ziel kann nicht mehr der Aufdecker selbst sein.',
+          'Fix: Bot-Anzahl-Input wird robuster gegen ungültige Werte geprüft.'
+        ]
+      },
+      {
+        ver: 'v0.20',
+        date: '2026-01-05',
+        items: [
+          'Fix: Overload-Delta in Log/Overlay nutzt jetzt den tatsächlich angewendeten (gecappten) Wert.',
+          'Fix: Countdown/Push/Stabilisieren/Pyro zeigen konsistente Overload-Änderungen an.'
+        ]
+      },
       {
         ver: 'v0.19',
         date: '2026-01-04',
@@ -1339,10 +1413,28 @@
       return n + (n === 1 ? ' Karte' : ' Karten');
     }
 
+    function formatDelta(delta){
+      return (delta >= 0 ? '+' : '') + delta;
+    }
+
+    function normalizeRevealerIndex(){
+      var n = state.players.length;
+      if (!n) return -1;
+      var idx = Number(state.revealer);
+      if (!isFinite(idx)) idx = 0;
+      idx = Math.floor(idx);
+      if (idx < 0 || idx >= n) idx = 0;
+      return idx;
+    }
+
     function clampBotCount(count){
-      if (count < MIN_BOTS) return MIN_BOTS;
-      if (count > MAX_BOTS) return MAX_BOTS;
-      return count;
+      var safeCount = Number(count);
+      if (!isFinite(safeCount)) safeCount = MIN_BOTS;
+      // Bot-Anzahl muss ganzzahlig bleiben, sonst entstehen inkonsistente Zustände.
+      safeCount = Math.round(safeCount);
+      if (safeCount < MIN_BOTS) return MIN_BOTS;
+      if (safeCount > MAX_BOTS) return MAX_BOTS;
+      return safeCount;
     }
 
     function botNameForIndex(idx){
@@ -1989,28 +2081,40 @@
         state.botCount = clampBotCount(Math.max(0, state.players.length - 1));
       }
 
-      document.getElementById('verText').textContent = VERSION;
+      var verText = document.getElementById('verText');
+      if (verText) verText.textContent = VERSION;
       var playVer = document.getElementById('playVersion');
       if (playVer) playVer.textContent = VERSION;
-      document.getElementById('roundNo').textContent = String(state.round);
-      document.getElementById('eventNo').textContent = String(state.turnId);
-      document.getElementById('overloadValue').textContent = String(state.overload);
-      document.getElementById('poolValue').textContent = String(state.pool);
-      document.getElementById('poolValueSide').textContent = String(state.pool);
+      var roundNo = document.getElementById('roundNo');
+      if (roundNo) roundNo.textContent = String(state.round);
+      var eventNo = document.getElementById('eventNo');
+      if (eventNo) eventNo.textContent = String(state.turnId);
+      var overloadValue = document.getElementById('overloadValue');
+      if (overloadValue) overloadValue.textContent = String(state.overload);
+      var poolValue = document.getElementById('poolValue');
+      if (poolValue) poolValue.textContent = String(state.pool);
+      var poolValueSide = document.getElementById('poolValueSide');
+      if (poolValueSide) poolValueSide.textContent = String(state.pool);
       var poolPlay = document.getElementById('poolValuePlay');
       if (poolPlay) poolPlay.textContent = String(state.pool);
-      document.getElementById('deckCount').textContent = String(state.deck.length);
-      document.getElementById('discardCount').textContent = String(state.discard.length);
-      document.getElementById('deckCountMini').textContent = cardCountLabel(state.deck.length);
-      document.getElementById('discardCountMini').textContent = cardCountLabel(state.discard.length);
+      var deckCount = document.getElementById('deckCount');
+      if (deckCount) deckCount.textContent = String(state.deck.length);
+      var discardCount = document.getElementById('discardCount');
+      if (discardCount) discardCount.textContent = String(state.discard.length);
+      var deckCountMini = document.getElementById('deckCountMini');
+      if (deckCountMini) deckCountMini.textContent = cardCountLabel(state.deck.length);
+      var discardCountMini = document.getElementById('discardCountMini');
+      if (discardCountMini) discardCountMini.textContent = cardCountLabel(state.discard.length);
 
       var deckStack = document.getElementById('deckStack');
       var discardStack = document.getElementById('discardStack');
       if (deckStack) deckStack.classList.toggle('empty', state.deck.length === 0);
       if (discardStack) discardStack.classList.toggle('empty', state.discard.length === 0);
 
-      document.getElementById('countdown').textContent = state.countdownActive ? 'an' : 'aus';
-      document.getElementById('countdownHint').textContent = state.countdownActive ? 'aktiv' : 'inaktiv';
+      var countdown = document.getElementById('countdown');
+      if (countdown) countdown.textContent = state.countdownActive ? 'an' : 'aus';
+      var countdownHint = document.getElementById('countdownHint');
+      if (countdownHint) countdownHint.textContent = state.countdownActive ? 'aktiv' : 'inaktiv';
       var playCountdownHint = document.getElementById('playCountdownHint');
       if (playCountdownHint) playCountdownHint.textContent = state.countdownActive ? 'aktiv' : 'inaktiv';
       var playCountdownBadge = document.getElementById('playCountdownBadge');
@@ -2020,7 +2124,8 @@
         state.decisionTimer.enabled = !!timerOpt.checked;
         state.decisionTimer.seconds = 20;
       }
-      document.getElementById('stageRule').textContent = state.stageRule ? state.stageRule.name : '—';
+      var stageRule = document.getElementById('stageRule');
+      if (stageRule) stageRule.textContent = state.stageRule ? state.stageRule.name : '—';
       var poolHint = document.getElementById('poolHint');
       if (poolHint){
         var bonus = (state.overload >= 8) ? 2 : 1;
@@ -2028,16 +2133,20 @@
       }
 
       var pill = document.getElementById('stateChip');
-      var label = 'Normal';
-      var cls = 'stageChip';
-      if (state.overload >= 10) { label = 'Gefährlich'; cls += ' bad'; }
-      else if (state.overload <= 4) { label = 'Sicher'; cls += ' good'; }
-      pill.className = cls;
-      pill.innerHTML = '<b>Status</b>: ' + label;
+      if (pill){
+        var label = 'Normal';
+        var cls = 'stageChip';
+        if (state.overload >= 10) { label = 'Gefährlich'; cls += ' bad'; }
+        else if (state.overload <= 4) { label = 'Sicher'; cls += ' good'; }
+        pill.className = cls;
+        pill.innerHTML = '<b>Status</b>: ' + label;
+      }
 
       var countdownChip = document.getElementById('countdownChip');
-      countdownChip.className = 'stageChip warn';
-      countdownChip.innerHTML = '<b>Countdown</b>: ' + (state.countdownActive ? 'an' : 'aus');
+      if (countdownChip){
+        countdownChip.className = 'stageChip warn';
+        countdownChip.innerHTML = '<b>Countdown</b>: ' + (state.countdownActive ? 'an' : 'aus');
+      }
 
       var countdownStatus = document.getElementById('countdownStatus');
       if (countdownStatus){
@@ -2557,6 +2666,11 @@
 
     function endRound(reason){
       if (state.gameOver) return;
+      if (!state.players.length){
+        log('bad','Keine Spieler gefunden → Neustart.');
+        restart();
+        return;
+      }
       stopDecisionTimer();
 
       // stage rule to discard
@@ -2584,7 +2698,6 @@
       state.revealer = state.startPlayer;
       state.awaitingDecision = false;
       state.humanChoice = 'stay';
-      state.humanLockedIn = false;
       state.humanLockedIn = false;
       state.lastEvent = null;
 
@@ -2623,9 +2736,10 @@
 
     function applyOverloadDelta(delta){
       var before = state.overload;
-      state.overload = clampOverload(state.overload + delta);
-      var reached = (before < 12 && state.overload === 12);
-      return { before: before, after: state.overload, reached12: reached };
+      var after = clampOverload(state.overload + delta);
+      state.overload = after;
+      var reached = (before < 12 && after === 12);
+      return { before: before, after: after, delta: (after - before), reached12: reached };
     }
 
     function catastropheCheck(){
@@ -2695,11 +2809,12 @@
       if (isAggCountdown() && state.pool >= 3) add += 1;
 
       var r = applyOverloadDelta(+add);
-      log('warn','<b>Countdown</b>: Nach dem Event steigt Overload automatisch um +' + add + ' → ' + r.before + ' → <b>' + r.after + '</b>.');
+      var deltaText = formatDelta(r.delta);
+      log('warn','<b>Countdown</b>: Nach dem Event steigt Overload automatisch um ' + deltaText + ' → ' + r.before + ' → <b>' + r.after + '</b>.');
 
       setSummary('Countdown',
         [
-          { cls:'warn', sym:'⏱️', text:'Overload +' + add + ' → ' + r.after },
+          { cls:'warn', sym:'⏱️', text:'Overload ' + deltaText + ' → ' + r.after },
           (isAggCountdown() ? { cls:'blue', sym:'🎁', text:(state.pool >= 3 ? 'Pool ≥3: extra +1 aktiv' : 'Pool <3: kein Extra') } : { cls:'blue', sym:'⚙️', text:'Aggressiv: aus' })
         ],
         'Countdown ist aktiv, solange die Runde läuft'
@@ -2746,19 +2861,20 @@
       if (hasFeedbackRule()) add += 1;
 
       var r = applyOverloadDelta(add);
+      var deltaText = formatDelta(r.delta);
       p.live += 1;
       state.pool += 1;
 
       setSummary('⚡ Push – ' + card.name,
         [
-          { cls:'bad',  sym:'⚡', text:'Overload +' + add + ' → ' + r.after },
+          { cls:'bad',  sym:'⚡', text:'Overload ' + deltaText + ' → ' + r.after },
           { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' },
           { cls:'warn', sym:'🎁', text:'Pool +1 (jetzt ' + state.pool + ')' }
         ],
         'Danach: Entscheidung Bleib/Camp'
       );
 
-      log('info','<b>' + esc(p.name) + '</b> deckt ⚡ <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' +' + add + ' = <b>' + r.after + '</b>, ' + esc(p.name) + ' +1 Live (Live ' + p.live + '), Pool +1 (Pool ' + state.pool + ').');
+      log('info','<b>' + esc(p.name) + '</b> deckt ⚡ <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' ' + deltaText + ' = <b>' + r.after + '</b>, ' + esc(p.name) + ' +1 Live (Live ' + p.live + '), Pool +1 (Pool ' + state.pool + ').');
       updateUI();
       onOverloadMayHit12(r, 'Push');
     }
@@ -2767,8 +2883,9 @@
       var p = state.players[rev];
       var beforeOver = state.overload;
       var r = applyOverloadDelta(typeof card.delta === 'number' ? card.delta : -2);
+      var deltaText = formatDelta(r.delta);
 
-      log('good','<b>' + esc(p.name) + '</b> deckt 🛠️ <b>' + esc(card.name) + '</b> auf → Overload ' + beforeOver + ' ' + (card.delta) + ' = <b>' + r.after + '</b>.');
+      log('good','<b>' + esc(p.name) + '</b> deckt 🛠️ <b>' + esc(card.name) + '</b> auf → Overload ' + beforeOver + ' ' + deltaText + ' = <b>' + r.after + '</b>.');
 
       // Patch P2: Ertrag nur wenn Overload VOR dem Senken 8+ war
       var got = 0;
@@ -2782,7 +2899,7 @@
 
       setSummary('🛠️ Stabilisieren – ' + card.name,
         [
-          { cls:'good', sym:'🛠️', text:'Overload ' + (card.delta) + ' → ' + r.after },
+          { cls:'good', sym:'🛠️', text:'Overload ' + deltaText + ' → ' + r.after },
           (got ? { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' } : { cls:'blue', sym:'—', text:'Kein Live-Ertrag (Overload vor dem Senken <8)' })
         ],
         'Danach: Entscheidung Bleib/Camp'
@@ -2817,7 +2934,8 @@
 
       if (card.fx === 'pyro'){
         var r = applyOverloadDelta(+2);
-        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' +2 = <b>' + r.after + '</b>.');
+        var deltaText = formatDelta(r.delta);
+        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' ' + deltaText + ' = <b>' + r.after + '</b>.');
         updateUI();
         onOverloadMayHit12(r, 'Pyro');
         doneCb();
@@ -2913,6 +3031,13 @@
     function resolveStageDiveTarget(rev, targetIdx, doneCb){
       var revP = state.players[rev];
       var tP = state.players[targetIdx];
+
+      // Stage Dive darf nie den Aufdecker selbst treffen.
+      if (targetIdx === rev){
+        log('warn','Stage Dive: Kein anderes aktives Ziel → Effekt verpufft.');
+        doneCb();
+        return;
+      }
 
       if (!tP || tP.roundState !== 'active'){
         log('warn','Stage Dive: Ziel ist nicht aktiv → Effekt verpufft.');
@@ -3074,9 +3199,15 @@
     function revealEvent(){
       if (state.gameOver) return;
       if (state.awaitingDecision) return;
+      if (!state.players.length){
+        log('bad','Keine Spieler gefunden → Neustart nötig.');
+        restart();
+        return;
+      }
       if (!anyActive()) { endRound('Alle gecampt'); return; }
 
-      var rev = state.revealer;
+      var rev = normalizeRevealerIndex();
+      state.revealer = rev;
       var revP = state.players[rev];
       if (!revP || revP.roundState !== 'active'){
         var nxt0 = nextActiveFrom(state.revealer, state.direction);
@@ -3228,6 +3359,13 @@
       setPhase('event');
       if (state.gameOver) return;
       if (!state.awaitingDecision) return;
+      if (!state.players.length){
+        log('bad','Keine Spieler gefunden → Neustart.');
+        restart();
+        return;
+      }
+      // Aufdecker-Index absichern, bevor die Reihenfolge bestimmt wird.
+      state.revealer = normalizeRevealerIndex();
       stopDecisionTimer();
 
       var choices = [];
@@ -3352,6 +3490,8 @@
     // ---------- bots automation ----------
     function pumpBots(){
       if (state.gameOver) return;
+      if (!state.players.length) return;
+      state.revealer = normalizeRevealerIndex();
 
       if (isAutoAll()){
         if (state.askOpen) return;
@@ -3485,6 +3625,11 @@
     }
 
     // ---------- self tests ----------
+    function shouldRunSelfTests(){
+      // Selbsttests nur explizit per URL aktivieren, damit Logs/UI nicht im Normalbetrieb beeinflusst werden.
+      return window.location.search.indexOf('selftest=1') !== -1;
+    }
+
     function runSelfTests(){
       var results = [];
       function ok(name, cond){ results.push({ name:name, pass:!!cond }); }
@@ -3653,26 +3798,41 @@
       }
     });
 
-    document.getElementById('btnModePlay').onclick = function(){ setUiMode('play'); };
-    document.getElementById('btnModeDev').onclick = function(){ setUiMode('dev'); };
-    document.getElementById('btnPlayPreview').onclick = function(){ setUiMode('play'); };
+    var btnModePlay = document.getElementById('btnModePlay');
+    if (btnModePlay) btnModePlay.onclick = function(){ setUiMode('play'); };
+    var btnModeDev = document.getElementById('btnModeDev');
+    if (btnModeDev) btnModeDev.onclick = function(){ setUiMode('dev'); };
+    var btnPlayPreview = document.getElementById('btnPlayPreview');
+    if (btnPlayPreview) btnPlayPreview.onclick = function(){ setUiMode('play'); };
 
-    document.getElementById('btnReveal').onclick = function(){ revealEvent(); };
-    document.getElementById('btnRevealPlay').onclick = function(){ revealEvent(); };
-    document.getElementById('btnRestart').onclick = function(){ restart(); };
-    document.getElementById('btnLog').onclick = function(){
-      if (window.matchMedia('(max-width:1150px)').matches){
-        document.body.classList.toggle('logOpen');
-      } else {
-        document.body.classList.toggle('logHidden');
-      }
-    };
-    document.getElementById('btnCopyLog').onclick = copyLog;
-    document.getElementById('btnPlayLog').onclick = function(){ togglePlayLog(); };
-    document.getElementById('btnPlayLogClose').onclick = function(){ togglePlayLog(false); };
-    document.getElementById('btnPlayRules').onclick = openRules;
-    document.getElementById('rulesClose').onclick = closeRules;
-    document.getElementById('rulesBack').addEventListener('click', function(e){ if (e.target.id === 'rulesBack') closeRules(); });
+    var btnReveal = document.getElementById('btnReveal');
+    if (btnReveal) btnReveal.onclick = function(){ revealEvent(); };
+    var btnRevealPlay = document.getElementById('btnRevealPlay');
+    if (btnRevealPlay) btnRevealPlay.onclick = function(){ revealEvent(); };
+    var btnRestart = document.getElementById('btnRestart');
+    if (btnRestart) btnRestart.onclick = function(){ restart(); };
+    var btnLog = document.getElementById('btnLog');
+    if (btnLog){
+      btnLog.onclick = function(){
+        if (window.matchMedia('(max-width:1150px)').matches){
+          document.body.classList.toggle('logOpen');
+        } else {
+          document.body.classList.toggle('logHidden');
+        }
+      };
+    }
+    var btnCopyLog = document.getElementById('btnCopyLog');
+    if (btnCopyLog) btnCopyLog.onclick = copyLog;
+    var btnPlayLog = document.getElementById('btnPlayLog');
+    if (btnPlayLog) btnPlayLog.onclick = function(){ togglePlayLog(); };
+    var btnPlayLogClose = document.getElementById('btnPlayLogClose');
+    if (btnPlayLogClose) btnPlayLogClose.onclick = function(){ togglePlayLog(false); };
+    var btnPlayRules = document.getElementById('btnPlayRules');
+    if (btnPlayRules) btnPlayRules.onclick = openRules;
+    var rulesClose = document.getElementById('rulesClose');
+    if (rulesClose) rulesClose.onclick = closeRules;
+    var rulesBack = document.getElementById('rulesBack');
+    if (rulesBack) rulesBack.addEventListener('click', function(e){ if (e.target.id === 'rulesBack') closeRules(); });
 
     var botProfileSelect = document.getElementById('optBotProfile');
     if (botProfileSelect){
@@ -3690,22 +3850,35 @@
       };
     }
 
-    document.getElementById('optControlMode').onchange = function(){ updateUI(); pumpBots(); };
-    document.getElementById('optSpeed').onchange = function(){ pumpBots(); };
-    document.getElementById('optAggCountdown').onchange = function(){ updateUI(); };
-    document.getElementById('optDecisionTimer').onchange = function(){
-      updateUI();
-      if (state.awaitingDecision) startDecisionTimer();
-    };
-    document.getElementById('btnAddBot').onclick = addBot;
-    document.getElementById('btnRemoveBot').onclick = removeBot;
+    var optControlMode = document.getElementById('optControlMode');
+    if (optControlMode) optControlMode.onchange = function(){ updateUI(); pumpBots(); };
+    var optSpeed = document.getElementById('optSpeed');
+    if (optSpeed) optSpeed.onchange = function(){ pumpBots(); };
+    var optAggCountdown = document.getElementById('optAggCountdown');
+    if (optAggCountdown) optAggCountdown.onchange = function(){ updateUI(); };
+    var optDecisionTimer = document.getElementById('optDecisionTimer');
+    if (optDecisionTimer){
+      optDecisionTimer.onchange = function(){
+        updateUI();
+        if (state.awaitingDecision) startDecisionTimer();
+      };
+    }
+    var btnAddBot = document.getElementById('btnAddBot');
+    if (btnAddBot) btnAddBot.onclick = addBot;
+    var btnRemoveBot = document.getElementById('btnRemoveBot');
+    if (btnRemoveBot) btnRemoveBot.onclick = removeBot;
 
-    document.getElementById('btnStay').onclick = function(){ state.humanChoice = 'stay'; state.humanLockedIn = true; updateUI(); };
-    document.getElementById('btnCamp').onclick = function(){ state.humanChoice = 'camp'; state.humanLockedIn = true; updateUI(); };
-    document.getElementById('btnResolve').onclick = function(){ resolveDecisions(); };
+    var btnStay = document.getElementById('btnStay');
+    if (btnStay) btnStay.onclick = function(){ state.humanChoice = 'stay'; state.humanLockedIn = true; updateUI(); };
+    var btnCamp = document.getElementById('btnCamp');
+    if (btnCamp) btnCamp.onclick = function(){ state.humanChoice = 'camp'; state.humanLockedIn = true; updateUI(); };
+    var btnResolve = document.getElementById('btnResolve');
+    if (btnResolve) btnResolve.onclick = function(){ resolveDecisions(); };
 
     // init
-    runSelfTests();
+    if (shouldRunSelfTests()){
+      runSelfTests();
+    }
     restart();
     setUiMode('play');
   })();

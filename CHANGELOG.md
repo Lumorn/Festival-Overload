@@ -1,6 +1,17 @@
 # Changelog
 
 ## Unreleased
+- Overload-Delta in Log/Overlay nutzt den tatsächlich angewendeten (gecappten) Wert.
+- Stage Dive kann den Aufdecker nicht mehr als Ziel wählen.
+- Bot-Anzahl wird gegen ungültige Eingaben abgesichert.
+- Bot-Anzahl wird auf ganze Zahlen gerundet, um inkonsistente Zustände zu vermeiden.
+- Selbsttests laufen nur noch bei `?selftest=1`, um den normalen Spielstart nicht zu beeinflussen.
+- Revealer-Index wird vor dem Event normalisiert; fehlende Spielerliste führt zu einem sicheren Neustart.
+- Leere Spielerliste wird bei Rundenende/Entscheidung abgefangen, Bot-Autopump ignoriert sie.
+- Revealer-Index wird auch vor der Entscheidungsreihenfolge und im Bot-Autopump normalisiert.
+- Event-Handler in den Einstellungen werden nur gebunden, wenn die Elemente existieren.
+- Status-Chips werden nur aktualisiert, wenn die UI-Elemente vorhanden sind.
+- Zentrale UI-Labels werden nur aktualisiert, wenn die Elemente vorhanden sind.
 - Bot-Anzahl vor Spielstart per UI anpassbar (Hinzufügen/Entfernen).
 - Steuerungsmodi für Bots ergänzt (Bots automatisch, Bots manuell, alles automatisch inkl. Spieler).
 - Modulares Bot-Profil-System vorbereitet und Auswahl im UI ergänzt.
