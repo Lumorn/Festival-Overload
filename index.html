@@ -1,0 +1,2252 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Festival Overload – spielbarer Prototyp (Simultan Camp/Bleib)</title>
+  <style>
+    :root{
+      --bg1:#050812; --bg2:#0b1020; --bg3:#060812;
+      --panel:rgba(20,27,42,.92);
+      --panel2:rgba(11,15,23,.55);
+      --stroke:rgba(148,163,184,.16);
+      --stroke2:rgba(148,163,184,.22);
+      --muted:#9aa8c1;
+      --text:#e8edf7;
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --chip:rgba(31,42,68,.92);
+      --shadow:0 12px 38px rgba(0,0,0,.45);
+      --blue:#60a5fa;
+    }
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    body{margin:0;color:var(--text);background:
+      radial-gradient(900px 380px at 10% 0%, rgba(99,102,241,.20), transparent 55%),
+      radial-gradient(700px 320px at 80% 8%, rgba(34,197,94,.18), transparent 55%),
+      radial-gradient(800px 360px at 30% 90%, rgba(245,158,11,.14), transparent 55%),
+      linear-gradient(180deg,var(--bg1), var(--bg2) 45%, var(--bg3));
+    }
+
+    .wrap{max-width:1180px;margin:0 auto;padding:18px}
+
+    .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px}
+    .topLeft{display:flex;flex-direction:column;gap:6px}
+    .titleRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    h1{margin:0;font-size:20px;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:13px;max-width:920px;line-height:1.35}
+
+    .ver{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:14px;
+      background:rgba(31,42,68,.55);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      cursor:pointer;
+      user-select:none;
+      transition:.12s transform,.12s border-color,.12s filter;
+    }
+    .ver:hover{transform:translateY(-1px);border-color:rgba(226,232,240,.35);filter:brightness(1.03)}
+    .ver b{font-weight:900}
+
+    .grid{display:grid;grid-template-columns:1.35fr .95fr;gap:12px}
+    .card{background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:12px;box-shadow:var(--shadow)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+    .pill{background:var(--chip);border:1px solid var(--stroke2);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--text);position:relative}
+    .pill b{font-weight:800}
+    .pill.good{border-color:rgba(34,197,94,.35)}
+    .pill.warn{border-color:rgba(245,158,11,.35)}
+    .pill.bad{border-color:rgba(239,68,68,.35)}
+    .pill.blue{border-color:rgba(96,165,250,.35)}
+    .big{font-size:14px}
+
+    .bar{height:12px;background:rgba(148,163,184,.14);border-radius:999px;overflow:hidden;border:1px solid var(--stroke2);position:relative}
+    .bar > div{height:100%;background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444);width:0%;transition:width .18s ease}
+    .bar:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+
+    .hint{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.35}
+    .mini{font-size:11px;color:var(--muted);line-height:1.35}
+    .sep{height:1px;background:rgba(148,163,184,.14);margin:10px 0}
+
+    .players{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .p{background:var(--panel2);border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:10px}
+    .p .name{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:10px}
+    .tag{font-size:11px;color:var(--muted)}
+    .turn{color:#fff;background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.35);padding:2px 8px;border-radius:999px;font-size:11px;white-space:nowrap}
+    .camped{color:#fff;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.35);padding:2px 8px;border-radius:999px;font-size:11px;white-space:nowrap}
+
+    .eventWrap{
+      margin-top:10px;
+      padding:12px;
+      background:rgba(11,15,23,.35);
+      border:1px solid rgba(148,163,184,.12);
+      border-radius:16px;
+    }
+
+    .eventCard{
+      position:relative;
+      border-radius:18px;
+      padding:12px 12px 14px;
+      border:1px solid rgba(148,163,184,.22);
+      box-shadow:0 14px 34px rgba(0,0,0,.38);
+      background:
+        radial-gradient(180px 110px at 18% 16%, rgba(255,255,255,.10), transparent 60%),
+        radial-gradient(220px 120px at 90% 10%, rgba(99,102,241,.18), transparent 62%),
+        radial-gradient(240px 140px at 20% 110%, rgba(34,197,94,.10), transparent 62%),
+        rgba(31,42,68,.75);
+      min-height:118px;
+      overflow:hidden;
+    }
+    .eventCard:before{
+      content:"";
+      position:absolute;inset:0;
+      background:
+        linear-gradient(120deg, rgba(255,255,255,.10), transparent 35%, rgba(255,255,255,.06) 55%, transparent 72%),
+        radial-gradient(420px 180px at 20% 0%, rgba(255,255,255,.07), transparent 55%);
+      opacity:.75;
+      pointer-events:none;
+    }
+    .eventCard:after{
+      content:"";
+      position:absolute;inset:7px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      pointer-events:none;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
+    }
+    .stripe{position:absolute;left:0;top:0;right:0;height:8px;background:rgba(148,163,184,.35);box-shadow:0 10px 24px rgba(0,0,0,.18)}
+    .eventCard[data-type="push"] .stripe{background:rgba(239,68,68,.85)}
+    .eventCard[data-type="stabilize"] .stripe{background:rgba(34,197,94,.85)}
+    .eventCard[data-type="twist"] .stripe{background:rgba(245,158,11,.85)}
+    .eventCard[data-type="encore"] .stripe{background:rgba(96,165,250,.85)}
+
+    .kTop{display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:10px;gap:10px;position:relative;z-index:2}
+    .kName{font-weight:950;letter-spacing:.2px}
+    .kType{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#d7deee;white-space:nowrap}
+    .dot{width:8px;height:8px;border-radius:999px;display:inline-block}
+    .kText{font-size:12px;color:#d6dbea;line-height:1.28;position:relative;z-index:2}
+
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .btn{background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:10px 12px;color:var(--text);cursor:pointer;transition:.12s transform,.12s border-color}
+    .btn:hover{transform:translateY(-1px);border-color:rgba(226,232,240,.35)}
+    .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .btn.warn{background:rgba(245,158,11,.16);border-color:rgba(245,158,11,.32)}
+    .btn.bad{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.32)}
+    .btn.good{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.32)}
+    .btn.blue{background:rgba(96,165,250,.14);border-color:rgba(96,165,250,.32)}
+    .btn.slim{padding:8px 10px;border-radius:12px;font-size:12px}
+
+    .decision{
+      margin-top:10px;
+      display:none;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(245,158,11,.10);
+      border:1px solid rgba(245,158,11,.25);
+    }
+    .decision b{font-weight:950}
+    .decisionRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+    .choice{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+    .logWrap{display:flex;flex-direction:column;gap:8px}
+    .logHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .logActions{display:flex;gap:8px;align-items:center}
+    .log{height:392px;overflow:auto;background:var(--panel2);border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:10px;font-size:12px;line-height:1.35}
+    .log .t{color:var(--muted)}
+    .log .evt{padding:6px 8px;border-radius:10px;border:1px solid rgba(148,163,184,.10);background:rgba(0,0,0,.12);margin-bottom:6px}
+    .log .evt.good{border-color:rgba(34,197,94,.22);background:rgba(34,197,94,.06)}
+    .log .evt.warn{border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.06)}
+    .log .evt.bad{border-color:rgba(239,68,68,.22);background:rgba(239,68,68,.06)}
+    .log .evt.info{border-color:rgba(99,102,241,.18);background:rgba(99,102,241,.05)}
+
+    .toggle{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;justify-content:flex-end}
+    input[type=checkbox]{transform:scale(1.08)}
+    select{background:rgba(148,163,184,.10);color:var(--text);border:1px solid rgba(148,163,184,.22);border-radius:10px;padding:6px 8px}
+
+    .toast{position:fixed;left:18px;bottom:18px;max-width:520px;padding:10px 12px;border-radius:14px;background:rgba(31,42,68,.92);border:1px solid rgba(148,163,184,.22);color:var(--text);box-shadow:var(--shadow);display:none;z-index:80}
+    .toast small{color:var(--muted)}
+
+    .modalBack{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:90;
+      padding:18px;
+    }
+    .modal{
+      width:min(720px, 100%);
+      background:rgba(20,27,42,.97);
+      border:1px solid rgba(148,163,184,.22);
+      border-radius:18px;
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .modalTop{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(148,163,184,.14);
+      background:rgba(11,15,23,.35);
+    }
+    .modalTop b{font-weight:950}
+    .modalBody{padding:12px 14px;max-height:62vh;overflow:auto}
+
+    .confirmText{color:#d6dbea;line-height:1.35}
+    .confirmBtns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+
+    .pickList{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+    .pickBtn{width:100%;text-align:left}
+
+    code{color:#d6dbea}
+
+    /* --- UX: Phase + Steps + Summary --- */
+    .steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .step{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(31,42,68,.45);border:1px solid rgba(148,163,184,.14);font-size:12px;color:var(--muted);user-select:none}
+    .step .n{width:18px;height:18px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:rgba(148,163,184,.16);border:1px solid rgba(148,163,184,.18);color:var(--text);font-weight:900;font-size:11px}
+    .step.active{color:var(--text);border-color:rgba(226,232,240,.28);background:rgba(31,42,68,.75)}
+    .step.active .n{background:rgba(99,102,241,.24);border-color:rgba(99,102,241,.36)}
+
+    .banner{display:none;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(148,163,184,.14);background:rgba(31,42,68,.35);box-shadow:0 10px 28px rgba(0,0,0,.25)}
+    .banner.show{display:block}
+    .banner.good{border-color:rgba(34,197,94,.30);background:rgba(34,197,94,.06)}
+    .banner.warn{border-color:rgba(245,158,11,.30);background:rgba(245,158,11,.06)}
+    .banner.bad{border-color:rgba(239,68,68,.30);background:rgba(239,68,68,.06)}
+    .banner b{font-weight:950}
+    .banner small{color:var(--muted)}
+
+    .eventSummary{margin-top:10px;padding:10px 12px;border-radius:14px;background:rgba(31,42,68,.45);border:1px solid rgba(148,163,184,.14)}
+    .sumTitle{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+    .sumRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .dChip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.10);border:1px solid rgba(148,163,184,.14);font-size:12px}
+    .dChip.good{border-color:rgba(34,197,94,.30)}
+    .dChip.warn{border-color:rgba(245,158,11,.30)}
+    .dChip.bad{border-color:rgba(239,68,68,.30)}
+    .dChip.blue{border-color:rgba(96,165,250,.30)}
+    .dChip .sym{opacity:.95}
+
+    .bar .tick{position:absolute;top:-22px;transform:translateX(-50%);font-size:11px;color:var(--muted);padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.16);border:1px solid rgba(148,163,184,.14)}
+    .bar .tick:after{content:"";position:absolute;left:50%;top:100%;width:1px;height:16px;background:rgba(148,163,184,.18)}
+    .bar .t8{left:66.6667%}
+    .bar .t12{left:100%}
+
+    .decide{color:#fff;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.35);padding:2px 8px;border-radius:999px;font-size:11px;white-space:nowrap}
+
+    .p.turnGlow{border-color:rgba(34,197,94,.35);box-shadow:0 0 0 1px rgba(34,197,94,.18), 0 12px 34px rgba(0,0,0,.25)}
+    .p.decideGlow{border-color:rgba(245,158,11,.35);box-shadow:0 0 0 1px rgba(245,158,11,.16), 0 12px 34px rgba(0,0,0,.22)}
+    .p.campedDim{opacity:.78}
+
+    /* --- Visual Clarity Patch: Feedback, Deltas, Impact --- */
+    .pill:focus{outline:none}
+
+    .deltaBadge{
+      position:absolute;right:-8px;top:-8px;
+      display:none;
+      align-items:center;justify-content:center;
+      padding:3px 7px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:950;
+      letter-spacing:.15px;
+      border:1px solid rgba(148,163,184,.22);
+      background:rgba(31,42,68,.92);
+      box-shadow:0 12px 34px rgba(0,0,0,.35);
+      transform:translateY(0) scale(.98);
+      opacity:0;
+      pointer-events:none;
+      z-index:5;
+    }
+
+    @keyframes popBadge{
+      0%{opacity:0;transform:translateY(4px) scale(.95)}
+      18%{opacity:1;transform:translateY(0) scale(1)}
+      100%{opacity:0;transform:translateY(-4px) scale(.98)}
+    }
+
+    @keyframes statPulse{
+      0%{box-shadow:0 0 0 0 rgba(255,255,255,0)}
+      40%{box-shadow:0 0 0 3px rgba(255,255,255,.06), 0 16px 46px rgba(0,0,0,.34)}
+      100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}
+    }
+
+    .flash-good{border-color:rgba(34,197,94,.45)!important;animation:statPulse .55s ease}
+    .flash-warn{border-color:rgba(245,158,11,.45)!important;animation:statPulse .55s ease}
+    .flash-bad{border-color:rgba(239,68,68,.50)!important;animation:statPulse .55s ease}
+    .flash-blue{border-color:rgba(96,165,250,.50)!important;animation:statPulse .55s ease}
+
+    .flash-good .deltaBadge{display:inline-flex;border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.14);animation:popBadge .75s ease}
+    .flash-warn .deltaBadge{display:inline-flex;border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.14);animation:popBadge .75s ease}
+    .flash-bad  .deltaBadge{display:inline-flex;border-color:rgba(239,68,68,.55);background:rgba(239,68,68,.12);animation:popBadge .75s ease}
+    .flash-blue .deltaBadge{display:inline-flex;border-color:rgba(96,165,250,.55);background:rgba(96,165,250,.12);animation:popBadge .75s ease}
+
+    /* Pool kleine Stapel-Optik */
+    #poolPill::after{
+      content:"";
+      position:absolute;right:10px;bottom:8px;
+      width:18px;height:14px;
+      border-radius:4px;
+      background:rgba(255,255,255,.05);
+      box-shadow:
+        -4px -3px 0 0 rgba(255,255,255,.03),
+        -8px -6px 0 0 rgba(255,255,255,.02);
+      border:1px solid rgba(148,163,184,.16);
+      opacity:.9;
+      pointer-events:none;
+    }
+
+    /* Event Impact Row */
+    .impact{display:flex;gap:8px;flex-wrap:wrap;margin:-2px 0 10px;position:relative;z-index:2}
+    .imp{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(0,0,0,.12);font-size:12px;color:#e8edf7}
+    .imp b{font-weight:950}
+    .imp.good{border-color:rgba(34,197,94,.28);background:rgba(34,197,94,.06)}
+    .imp.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.06)}
+    .imp.bad{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.06)}
+    .imp.blue{border-color:rgba(96,165,250,.28);background:rgba(96,165,250,.06)}
+
+    /* Spieler: deutlicher Live/Camp als Karten-Icons + Deltazeile */
+    .pPills{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pPill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.10);border:1px solid rgba(148,163,184,.14);font-size:12px}
+    .pPill b{font-weight:950}
+    .ci{width:12px;height:10px;border-radius:3px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);box-shadow:0 6px 18px rgba(0,0,0,.22)}
+    .ci.live{transform:rotate(-14deg)}
+    .deltaLine{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+    .dTag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(0,0,0,.10);font-size:11px;color:#d6dbea}
+    .dTag.good{border-color:rgba(34,197,94,.28);background:rgba(34,197,94,.05)}
+    .dTag.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.05)}
+    .dTag.bad{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.05)}
+    .dTag.blue{border-color:rgba(96,165,250,.28);background:rgba(96,165,250,.05)}
+
+    /* Bildschirm-Flash bei Knall/Sieg */
+    body.flashBad::before, body.flashGood::before{
+      content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
+      background:transparent;
+      animation:screenFlash .55s ease;
+    }
+    body.flashBad::before{background:rgba(239,68,68,.14)}
+    body.flashGood::before{background:rgba(34,197,94,.12)}
+    @keyframes screenFlash{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+
+    /* Event Card: kleine Reveal-Animation */
+    @keyframes cardPop{0%{transform:translateY(8px) scale(.985);filter:brightness(.96)}40%{transform:translateY(0) scale(1);filter:brightness(1.05)}100%{transform:translateY(0) scale(1);filter:brightness(1)}}
+    .eventCard.pop{animation:cardPop .32s ease}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="topLeft">
+        <div class="titleRow">
+          <div class="ver" id="verBtn" title="Patch Notes anzeigen">
+            <span>🎛️</span><b id="verText">v0.0</b><span class="mini">(klicken)</span>
+          </div>
+          <h1>Festival Overload – spielbarer Prototyp (Simultan Camp/Bleib)</h1>
+        </div>
+        <div class="sub">
+          Push-your-Luck mit simultanem <b>Bleib/Camp</b>, sichtbarem <b>Bühnen-Pool</b> und Overload-Check bei <b>12</b>.
+          Bots spielen automatisch, oder du schaust im <b>Autoplay</b>-Modus einfach zu.
+        </div>
+        <div class="steps" id="steps" aria-label="Phasen">
+          <div class="step" data-step="reveal" title="Der aktive Spieler deckt genau 1 Event auf"><span class="n">1</span>Aufdecken</div>
+          <div class="step" data-step="event" title="Event-Effekt wird ausgeführt (inkl. Encore-Ketten, Twist, Overload-Check)"><span class="n">2</span>Effekt</div>
+          <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (optional +2 bei Pool ≥3, falls aktiviert)"><span class="n">3</span>Countdown</div>
+          <div class="step" data-step="decision" title="Alle aktiven Spieler entscheiden gleichzeitig Bleib/Camp"><span class="n">4</span>Entscheidung</div>
+        </div>
+      </div>
+      <div class="toggle">
+        <label class="mini"><input id="optPflaster" type="checkbox" checked> Pflaster nach Knall: Aktiver Spieler rettet 1 Live als Camp</label>
+        <label class="mini"><input id="optAggCountdown" type="checkbox"> Countdown aggressiv: +1 extra wenn Pool ≥3</label>
+        <label class="mini"><input id="optAuto" type="checkbox"> Autoplay: Bots spielen automatisch (Zuschauermodus)</label>
+        <label class="mini">Tempo:
+          <select id="optSpeed">
+            <option value="250">schnell</option>
+            <option value="650" selected>normal</option>
+            <option value="1100">langsam</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row">
+          <div class="pill big" id="roundPill"><b>Runde</b>: <span id="roundNo">1</span></div>
+          <div class="pill big" id="overloadPill"><b>Overload</b>: <span id="overload">0</span> / 12</div>
+          <div class="pill big blue" title="Welche Phase gerade läuft"><b>Phase</b>: <span id="phase">Aufdecken</span></div>
+          <div class="pill big" id="statePill"><b>Status</b>: Normal</div>
+          <div class="pill big" id="countdownPill"><b>Countdown</b>: <span id="countdown">aus</span></div>
+          <div class="pill big" id="poolPill"><b>Bühnen-Pool</b>: <span id="pool">0</span></div>
+          <div class="pill big" id="deckPill"><b>Deck</b>: <span id="deckCount">0</span></div>
+          <div class="pill big" id="discardPill"><b>Ablage</b>: <span id="discardCount">0</span></div>
+        </div>
+        <div style="margin-top:10px" class="bar"><div id="barFill"></div><div class="tick t8" title="Ab 8 gibt es beim Campen +1 extra aus dem Pool (falls vorhanden)">8</div><div class="tick t12" title="Bei 12 wird sofort der Katastrophen-Check ausgelöst">12</div></div>
+        <div class="banner" id="banner"></div>
+        <div class="hint">
+          <b>Overload-Check</b>: Sobald Overload <b>12</b> erreicht, wird sofort eine Karte als <b>Katastrophen-Check</b> aufgedeckt (nur Typ prüfen).
+          <b>Push</b> = <b>Knall</b> (Runde endet sofort). Sonst: Check-Karte wird ohne Effekt abgeworfen und Overload geht auf <b>10</b> zurück.
+        </div>
+        <div class="sep"></div>
+
+        <div class="players" id="players"></div>
+
+        <div class="sep"></div>
+
+        <div class="row" style="justify-content:space-between;align-items:flex-start;gap:16px">
+          <div style="flex:1">
+            <div class="row" style="justify-content:space-between">
+              <div>
+                <b>Aktuelles Event</b>
+                <span class="mini">(aufgedeckt von: <b id="revealerName">—</b> · Richtung: <b id="dir">↻</b>)</span>
+              </div>
+              <div class="mini">Bühnenregel: <b id="stageRule">—</b></div>
+            </div>
+
+            <div class="eventWrap">
+              <div class="eventCard" id="eventCard" data-type="twist">
+                <div class="stripe"></div>
+                <div class="kTop">
+                  <div class="kName" id="eventName">Bereit</div>
+                  <div class="kType" id="eventType"><span class="dot" style="background:rgba(148,163,184,.6)"></span> ⏺️ Event</div>
+                </div>
+                <div class="impact" id="eventImpact">—</div>
+                <div class="kText" id="eventText">Klicke auf „Event aufdecken“, um zu starten.</div>
+              </div>
+
+              <div class="eventSummary" id="eventSummary">—</div>
+
+              <div class="decision" id="decisionBox">
+                <div class="decisionRow">
+                  <div>
+                    <div><b>Bleib oder Camp</b> <span class="mini">(simultan, offen)</span></div>
+                    <div class="mini" id="decisionHint">Wähle deine Entscheidung, dann löse die Phase aus.</div>
+                  </div>
+                  <div class="choice">
+                    <button class="btn good" id="btnStay">Bleib</button>
+                    <button class="btn warn" id="btnCamp">Camp</button>
+                    <button class="btn blue" id="btnResolve">Entscheidung ausführen</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="controls">
+                <button class="btn good" id="btnReveal">Event aufdecken</button>
+                <button class="btn bad" id="btnRestart">Neustart</button>
+              </div>
+
+              <div class="hint">
+                <b>Camp (nur mit Live):</b> Ohne mindestens <b>1 Live</b> gibt es keinen Cashout.
+                <br>
+                <b>Pool-Bonus:</b> Beim Campen (mit Live) gibt es <b>+1</b> aus dem Pool (falls vorhanden) und bei Overload <b>8+</b> noch <b>+1</b>.
+                <br>
+                <b>Wichtig:</b> Maßgeblich ist der <b>Overload nach dem Event</b> (inkl. Countdown/Checks), direkt vor der Camp-Entscheidung.
+                <br>
+                <b>Verteilung (gleichzeitig campen):</b> Uhrzeigersinn ab Aufdecker – erst bekommt jeder berechtigte Camper <b>1</b>, dann (bei Overload 8+) in einem zweiten Durchlauf ggf. noch <b>1</b>.
+              </div>
+            </div>
+          </div>
+
+          <div style="width:420px" class="logWrap">
+            <div class="logHead">
+              <b>Log</b>
+              <div class="logActions">
+                <button class="btn slim" id="btnCopyLog">Log kopieren</button>
+                <span class="mini">Tipp: Autoplay aktivieren, um eine komplette Partie durchlaufen zu lassen.</span>
+              </div>
+            </div>
+            <div class="log" id="log"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <b style="font-size:14px">Mini-Regelübersicht (Kurz)</b>
+        <div class="sep"></div>
+        <div class="mini">
+          <b>Ziel</b>: 8 Camp → sofortiger Sieg.
+          <br><br>
+          <b>Event</b>: aktueller aktiver Spieler deckt 1 Karte auf und führt sie aus. Danach entscheiden alle aktiven Spieler gleichzeitig <b>Bleib/Camp</b>.
+          <br><br>
+          <b>⚡ Push</b>: Overload +X (max 12), Aufdecker +1 Live, Pool +1.
+          <br>
+          <b>🛠️ Stabilisieren</b>: Overload −X (min 0). <b>Ertrag nur wenn es brenzlig ist</b>: Wenn Overload <b>vor</b> dem Senken 8+ war → Aufdecker +1 Live (aus dem Vorrat).
+          <br>
+          <b>🌀 Twist</b>: Chaos. <b>🌀∞ Bühnenregel</b> bleibt offen, es kann nur 1 gleichzeitig geben.
+          <br>
+          <b>🎤 Encore</b>: sofort noch ein Event, bevor jemand campen darf. Aufdecker kann 1 Live zahlen, um Encore zu stoppen.
+          <br><br>
+          <b>Camp</b>: nur mit <b>mindestens 1 Live</b>. Live wird zu Camp, dann Pool-Bonus.
+          <br>
+          <b>Overload-Check</b> bei 12: Katastrophen-Check. Push = <b>Knall</b>. Sonst Overload auf 10.
+          <br>
+          <b>Knall</b>: Runde endet sofort. Alle aktiven Spieler verlieren Live (Camp ist sicher).
+          <br>
+          <b>Countdown</b>: startet erst, wenn in der Runde zum ersten Mal jemand <b>erfolgreich</b> campt (mit Live). Danach Overload +1 nach jedem Event.
+          <br>
+          <b>Anti-Solo</b>: sobald nur noch 1 Spieler aktiv ist, endet die Runde sofort. Letzter Spieler campt Live→Camp, bekommt <b>keinen Pool-Bonus</b>, Pool wird verworfen.
+        </div>
+        <div class="sep"></div>
+        <b style="font-size:14px">Test-Deck (60 Karten)</b>
+        <div class="mini">
+          ⚡ Push 26 · 🛠️ Stabilisieren 14 · 🌀 Twist 14 · 🎤 Encore 6
+        </div>
+        <div class="sep"></div>
+        <div class="mini">
+          <b>Dev:</b> Browser-Konsole: <code>FestivalOverloadTests</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Patch Notes Modal -->
+  <div class="modalBack" id="pnBack" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Patch Notes">
+      <div class="modalTop">
+        <b>Patch Notes</b>
+        <button class="btn slim" id="pnClose">Schließen</button>
+      </div>
+      <div class="modalBody" id="pnBody"></div>
+    </div>
+  </div>
+
+  <!-- Generic Ask Modal -->
+  <div class="modalBack" id="askBack" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Aktion">
+      <div class="modalTop">
+        <b id="askTitle">Aktion</b>
+        <button class="btn slim" id="askX">Schließen</button>
+      </div>
+      <div class="modalBody">
+        <div class="confirmText" id="askText"></div>
+        <div class="pickList" id="askPick" style="display:none"></div>
+        <div class="confirmBtns" id="askBtns">
+          <button class="btn" id="askNo">Abbrechen</button>
+          <button class="btn good" id="askYes">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var VERSION = 'v0.12';
+
+    // Patch notes: newest first
+    var PATCH_NOTES = [
+      {
+        ver: 'v0.12',
+        date: '2025-12-26',
+        items: [
+          'Fix: JavaScript Syntaxfehler entfernt (Sieg-Log/Flash, Toast beim Knall, Klammerung bei Stabilisieren).',
+          'Neu: Zusätzliche Self-Tests für Stabilisieren-Ertrag und Anti-Solo-Pool-Verwurf.'
+        ]
+      },
+      {
+        ver: 'v0.11',
+        date: '2025-12-26',
+        items: [
+          'Patch P2: Stabilisieren-Ertrag nur noch im roten Bereich (Overload vor dem Senken 8+ → +1 Live, sonst kein Ertrag).',
+          'Patch P2: Pool-Bonus eindeutig – maßgeblich ist der Overload nach dem Event (inkl. Countdown/Checks) direkt vor der Entscheidung.',
+          'Patch P2: Anti-Solo-Downtime – letzter aktiver Spieler bekommt keinen Pool-Bonus, Rest-Pool wird verworfen.',
+          'Optional: Checkbox für aggressiven Countdown (+1 extra wenn Pool ≥3).'
+        ]
+      },
+      {
+        ver: 'v0.10',
+        date: '2025-12-26',
+        items: [
+          'Patch 0.7-PL-P1: Camp nur mit mindestens 1 Live (kein „Camp bei 0“).',
+          'Patch 0.7-PL-P1: Pool-Verteilung in Durchläufen (erst jeder 1, dann bei Overload 8+ ggf. jeder 1).',
+          'Patch 0.7-PL-P1: Countdown startet erst beim ersten erfolgreichen Camp (mit Live).',
+          'Patch 0.7-PL-P1: Stabilisieren buff – Aufdecker erhält immer 1 Live (Pool → sonst Vorrat).',
+          'Patch 0.7-PL-P1: Anti-Solo-Downtime – sobald nur noch 1 Spieler aktiv ist, endet die Runde sofort.'
+        ]
+      },
+      {
+        ver: 'v0.9',
+        date: '2025-12-26',
+        items: [
+          'Neu: Autoplay (Zuschauermodus) – Bots spielen automatisch weiter (Aufdecken + Entscheidungen), inkl. Auto-Entscheidungen für „Du“.',
+          'Neu: Tempo-Auswahl für Autoplay.'
+        ]
+      },
+      {
+        ver: 'v0.8',
+        date: '2025-12-26',
+        items: [
+          'Neu: Integrierte Push-your-Luck-Version ohne Handkarten: Event aufdecken → simultan Bleib/Camp.',
+          'Neu: Bühnen-Pool (Mitte) + Pool-Bonus beim Campen (1 oder 2 je nach Overload).',
+          'Neu: Encore als Ketten-Event (Aufdecker kann 1 Live zahlen, um zu stoppen).',
+          'Neu: Overload-Check bei 12 mit Katastrophen-Check (Push = Knall, sonst Rückstoß auf 10).',
+          'Neu: Countdown nach erstem Camper (+1 Overload nach jedem weiteren Event).'
+        ]
+      }
+    ];
+
+    var WIN_CAMP = 8;
+    var MAX_OVERLOAD = 12;
+
+    var state = {
+      round: 1,
+      overload: 0,
+      pool: 0,
+      stageRule: null, // { name, text, fx, _cardRef }
+      countdownActive: false,
+      direction: 1, // 1 clockwise, -1 counter
+      startPlayer: 0,
+      revealer: 0,
+      extraRevealSame: false,
+
+      deck: [],
+      discard: [],
+
+      players: [],
+      humanIndex: 0,
+
+      awaitingDecision: false,
+      humanChoice: 'stay', // 'stay' | 'camp'
+      lastEvent: null,
+      gameOver: false,
+
+      turnId: 0,
+      askOpen: false,
+
+      autoTimer: null,
+
+      phase: 'reveal',
+      banner: null,
+      lastSummary: null
+    };
+
+    // ---------- helpers ----------
+    function esc(s){
+      return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+    }
+
+    function toast(msg, sub){
+      sub = sub || '';
+      var el = document.getElementById('toast');
+      el.innerHTML = '<div><b>' + esc(msg) + '</b></div>' + (sub ? '<small>' + esc(sub) + '</small>' : '');
+      el.style.display = 'block';
+      if (toast._t) clearTimeout(toast._t);
+      toast._t = setTimeout(function(){ el.style.display = 'none'; }, 2200);
+    }
+
+    function log(kind, msgHtml){
+      var el = document.getElementById('log');
+      var t = new Date();
+      var hh = String(t.getHours()); if (hh.length < 2) hh = '0'+hh;
+      var mm = String(t.getMinutes()); if (mm.length < 2) mm = '0'+mm;
+      var cls = kind || 'info';
+      el.innerHTML += '<div class="evt ' + cls + '"><span class="t">['+hh+':'+mm+']</span> <span class="t">(T'+state.turnId+')</span> ' + msgHtml + '</div>';
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function shuffle(a){
+      var arr = a.slice();
+      for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    function draw(n){
+      if (typeof n === 'undefined') n = 1;
+      var out = [];
+      for (var i=0;i<n;i++){
+        if (!state.deck.length){
+          if (state.discard.length){
+            state.deck = shuffle(state.discard);
+            state.discard = [];
+            log('warn','<b>Deck leer</b> – Ablage wird gemischt.');
+          } else {
+            log('bad','<b>Deck & Ablage leer</b> – keine Karte verfügbar.');
+            break;
+          }
+        }
+        out.push(state.deck.pop());
+      }
+      return out;
+    }
+
+    function clampOverload(x){ return Math.max(0, Math.min(MAX_OVERLOAD, x)); }
+
+    function isAuto(){
+      var el = document.getElementById('optAuto');
+      return !!(el && el.checked);
+    }
+
+    function isAggCountdown(){
+      var el = document.getElementById('optAggCountdown');
+      return !!(el && el.checked);
+    }
+
+    function getAutoDelay(){
+      var el = document.getElementById('optSpeed');
+      var v = el ? Number(el.value) : 650;
+      if (!isFinite(v) || v <= 0) v = 650;
+      return Math.max(60, Math.min(3000, v));
+    }
+
+    function scheduleAuto(fn){
+      if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
+      state.autoTimer = setTimeout(fn, getAutoDelay());
+    }
+
+    function stopAutoTimer(){
+      if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
+    }
+
+    function anyActive(){
+      for (var i=0;i<state.players.length;i++) if (state.players[i].roundState === 'active') return true;
+      return false;
+    }
+
+    function activeCount(){
+      var c=0;
+      for (var i=0;i<state.players.length;i++) if (state.players[i].roundState === 'active') c++;
+      return c;
+    }
+
+    function getLastActiveIndex(){
+      for (var i=0;i<state.players.length;i++) if (state.players[i].roundState === 'active') return i;
+      return -1;
+    }
+
+    function nextActiveFrom(startIdx, step){
+      var n = state.players.length;
+      for (var k=1;k<=n;k++){
+        var idx = (startIdx + k*step + n*1000) % n;
+        if (state.players[idx].roundState === 'active') return idx;
+      }
+      return -1;
+    }
+
+    function clockwiseOrderFrom(startIdx){
+      var n = state.players.length;
+      var out = [];
+      for (var k=0;k<n;k++) out.push((startIdx + k) % n);
+      return out;
+    }
+
+    function labelType(t){
+      if (t === 'push') return { txt:'Push', dot:'var(--bad)', icon:'⚡' };
+      if (t === 'stabilize') return { txt:'Stabilisieren', dot:'var(--good)', icon:'🛠️' };
+      if (t === 'twist') return { txt:'Twist', dot:'var(--warn)', icon:'🌀' };
+      if (t === 'encore') return { txt:'Encore', dot:'var(--blue)', icon:'🎤' };
+      return { txt:t, dot:'rgba(148,163,184,.6)', icon:'❔' };
+    }
+
+    function screenFlash(kind){
+      try{
+        document.body.classList.remove('flashBad','flashGood');
+        void document.body.offsetWidth;
+        if (kind === 'bad') document.body.classList.add('flashBad');
+        else if (kind === 'good') document.body.classList.add('flashGood');
+        setTimeout(function(){ document.body.classList.remove('flashBad','flashGood'); }, 650);
+      } catch(e){}
+    }
+
+    function flashStat(id, kind, deltaText){
+      var el = document.getElementById(id);
+      if (!el) return;
+      var cls = 'flash-' + (kind || 'warn');
+
+      // delta badge
+      var b = el.querySelector('.deltaBadge');
+      if (!b){
+        b = document.createElement('span');
+        b.className = 'deltaBadge';
+        el.appendChild(b);
+      }
+      b.textContent = deltaText || '';
+
+      el.classList.remove('flash-good','flash-warn','flash-bad','flash-blue');
+      void el.offsetWidth;
+      el.classList.add(cls);
+
+      setTimeout(function(){
+        el.classList.remove('flash-good','flash-warn','flash-bad','flash-blue');
+      }, 560);
+    }
+
+    function impactHTML(c){
+      if (!c) return '—';
+      var t = c.type;
+      var parts = [];
+
+      if (t === 'push'){
+        var add = (c.delta || 1) + (hasFeedbackRule() ? 1 : 0);
+        parts.push('<span class="imp bad">⚡ <b>Overload +' + add + '</b></span>');
+        parts.push('<span class="imp blue">🎟️ <b>Aufdecker +1 Live</b></span>');
+        parts.push('<span class="imp warn">🎁 <b>Pool +1</b></span>');
+        if (hasFeedbackRule()) parts.push('<span class="imp warn">🌀∞ <b>Feedback aktiv</b></span>');
+        parts.push('<span class="imp blue">👥 <b>Danach: Entscheidung</b></span>');
+      }
+      else if (t === 'stabilize'){
+        var d = (typeof c.delta === 'number' ? c.delta : -2);
+        parts.push('<span class="imp good">🛠️ <b>Overload ' + d + '</b></span>');
+        parts.push('<span class="imp blue">🎟️ <b>+1 Live nur bei 8+ vorher</b></span>');
+        parts.push('<span class="imp blue">👥 <b>Danach: Entscheidung</b></span>');
+      }
+      else if (t === 'twist'){
+        if (c.stage){
+          parts.push('<span class="imp warn">🌀∞ <b>Bühnenregel</b></span>');
+          parts.push('<span class="imp blue">⏳ <b>Gilt bis Rundenende</b></span>');
+        } else {
+          parts.push('<span class="imp warn">🌀 <b>Sofort-Twist</b></span>');
+        }
+        if (c.fx === 'pyro') parts.push('<span class="imp bad">🔥 <b>Overload +2</b></span>');
+        if (c.fx === 'flipDir') parts.push('<span class="imp warn">🔄 <b>Richtung dreht</b></span>');
+        if (c.fx === 'setwechsel') parts.push('<span class="imp warn">🎛️ <b>Aufdecker noch einmal</b></span>');
+        if (c.fx === 'stageDive') parts.push('<span class="imp bad">🪂 <b>Ziel: zahlen 1 Live oder muss bleiben</b></span>');
+        parts.push('<span class="imp blue">👥 <b>Danach: Entscheidung</b></span>');
+      }
+      else if (t === 'encore'){
+        parts.push('<span class="imp blue">🎤 <b>Encore-Kette</b></span>');
+        parts.push('<span class="imp warn">✋ <b>Stop: 1 Live (nur Aufdecker)</b></span>');
+        parts.push('<span class="imp bad">⛓️ <b>Kein Camp dazwischen</b></span>');
+      }
+      else {
+        parts.push('<span class="imp">Event</span>');
+      }
+
+      return parts.join('');
+    }
+
+    function setEventCard(card, extraText){
+      var c = card || { type:'twist', name:'Bereit', text:'Klicke auf „Event aufdecken“, um zu starten.' };
+      var meta = labelType(c.type);
+
+      var el = document.getElementById('eventCard');
+      el.setAttribute('data-type', c.type);
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+
+      document.getElementById('eventName').textContent = c.name;
+      document.getElementById('eventType').innerHTML = '<span class="dot" style="background:'+meta.dot+'"></span> '+meta.icon+' '+meta.txt;
+
+      var imp = document.getElementById('eventImpact');
+      if (imp) imp.innerHTML = impactHTML(card) + (extraText ? '<span class="imp blue">⛓️ <b>' + esc(extraText) + '</b></span>' : '');
+
+      document.getElementById('eventText').innerHTML = esc(c.text) + (extraText ? '<br><span class="mini">'+esc(extraText)+'</span>' : '');
+    }
+
+    // ---------- UX helpers (Phase / Banner / Summary) ----------
+    function phaseLabel(){
+      if (state.gameOver) return 'Spielende';
+      if (state.askOpen) return 'Auswahl';
+      if (state.awaitingDecision) return 'Entscheidung';
+      if (state.phase === 'event') return 'Effekt';
+      if (state.phase === 'countdown') return 'Countdown';
+      return 'Aufdecken';
+    }
+
+    function updatePhasePill(){
+      var el = document.getElementById('phase');
+      if (!el) return;
+      el.textContent = phaseLabel();
+    }
+
+    function renderSteps(){
+      var wrap = document.getElementById('steps');
+      if (!wrap) return;
+      var phase = (state.gameOver ? 'decision' : (state.awaitingDecision ? 'decision' : (state.phase || 'reveal')));
+      var steps = wrap.querySelectorAll('.step');
+      for (var i=0;i<steps.length;i++){
+        var s = steps[i];
+        var st = s.getAttribute('data-step');
+        var active = false;
+        if (phase === 'reveal') active = (st === 'reveal');
+        else if (phase === 'event') active = (st === 'event');
+        else if (phase === 'countdown') active = (st === 'countdown');
+        else if (phase === 'decision') active = (st === 'decision');
+        s.classList.toggle('active', active);
+      }
+    }
+
+    function showBanner(kind, title, sub){
+      var el = document.getElementById('banner');
+      if (!el) return;
+      var k = kind || 'info';
+      el.innerHTML = '<b>' + esc(title || '') + '</b>' + (sub ? '<br><small>' + esc(sub) + '</small>' : '');
+      el.className = 'banner show ' + ((k === 'good' || k === 'warn' || k === 'bad') ? k : '');
+    }
+
+    function clearBanner(){
+      var el = document.getElementById('banner');
+      if (!el) return;
+      el.innerHTML = '';
+      el.className = 'banner';
+    }
+
+    function setSummary(title, chips, foot){
+      state.lastSummary = { title:title || 'Wirkung', chips: chips || [], foot: foot || '' };
+      renderSummary();
+    }
+
+    function renderSummary(){
+      var el = document.getElementById('eventSummary');
+      if (!el) return;
+      if (!state.lastSummary){
+        el.innerHTML = '—';
+        return;
+      }
+      var s = state.lastSummary;
+      var h = '<div class="sumTitle"><b>' + esc(s.title) + '</b>' + (s.foot ? '<span class="mini">' + esc(s.foot) + '</span>' : '') + '</div><div class="sumRow">';
+      for (var i=0;i<s.chips.length;i++){
+        var c = s.chips[i];
+        var cls = c.cls ? (' ' + c.cls) : '';
+        h += '<span class="dChip' + cls + '"><span class="sym">' + esc(c.sym || '•') + '</span><span>' + esc(c.text || '') + '</span></span>';
+      }
+      h += '</div>';
+      el.innerHTML = h;
+    }
+
+    function setPhase(p){
+      state.phase = p || 'reveal';
+      updatePhasePill();
+      renderSteps();
+    }
+
+    // ---------- modal helpers ----------
+    function askYesNo(title, htmlText, yesLabel, noLabel, cb){
+      var back = document.getElementById('askBack');
+      var t = document.getElementById('askTitle');
+      var body = document.getElementById('askText');
+      var pick = document.getElementById('askPick');
+      var yes = document.getElementById('askYes');
+      var no = document.getElementById('askNo');
+      var x = document.getElementById('askX');
+      var btns = document.getElementById('askBtns');
+
+      function close(val){
+        if (!state.askOpen) return;
+        state.askOpen = false;
+        back.style.display = 'none';
+        back.setAttribute('aria-hidden','true');
+        yes.onclick = null; no.onclick = null; x.onclick = null; back.onclick = null;
+        cb(!!val);
+      }
+
+      state.askOpen = true;
+      t.textContent = title || 'Aktion';
+      body.innerHTML = htmlText || '';
+      pick.style.display = 'none';
+      pick.innerHTML = '';
+      btns.style.display = 'flex';
+      yes.textContent = yesLabel || 'OK';
+      no.textContent = noLabel || 'Abbrechen';
+
+      yes.onclick = function(){ close(true); };
+      no.onclick = function(){ close(false); };
+      x.onclick = function(){ close(false); };
+      back.onclick = function(e){ if (e.target && e.target.id === 'askBack') close(false); };
+
+      back.style.display = 'flex';
+      back.setAttribute('aria-hidden','false');
+    }
+
+    function askPickOne(title, htmlText, options, cb){
+      // options: [{ label, value }]
+      var back = document.getElementById('askBack');
+      var t = document.getElementById('askTitle');
+      var body = document.getElementById('askText');
+      var pick = document.getElementById('askPick');
+      var no = document.getElementById('askNo');
+      var x = document.getElementById('askX');
+      var btns = document.getElementById('askBtns');
+
+      function close(val){
+        if (!state.askOpen) return;
+        state.askOpen = false;
+        back.style.display = 'none';
+        back.setAttribute('aria-hidden','true');
+        no.onclick = null; x.onclick = null; back.onclick = null;
+        cb(val);
+      }
+
+      state.askOpen = true;
+      t.textContent = title || 'Auswahl';
+      body.innerHTML = htmlText || '';
+      pick.style.display = 'flex';
+      pick.innerHTML = '';
+      btns.style.display = 'none';
+
+      for (var i=0;i<options.length;i++){
+        (function(opt){
+          var b = document.createElement('button');
+          b.className = 'btn blue pickBtn';
+          b.textContent = opt.label;
+          b.onclick = function(){ close(opt.value); };
+          pick.appendChild(b);
+        })(options[i]);
+      }
+
+      no.onclick = function(){ close(null); };
+      x.onclick = function(){ close(null); };
+      back.onclick = function(e){ if (e.target && e.target.id === 'askBack') close(null); };
+
+      back.style.display = 'flex';
+      back.setAttribute('aria-hidden','false');
+    }
+
+    // ---------- UI ----------
+    function updateUI(){
+      // prev snapshot
+      var prev = state._uiPrev || null;
+
+      document.getElementById('verText').textContent = VERSION;
+      document.getElementById('roundNo').textContent = String(state.round);
+      document.getElementById('overload').textContent = String(state.overload);
+      document.getElementById('pool').textContent = String(state.pool);
+      document.getElementById('deckCount').textContent = String(state.deck.length);
+      document.getElementById('discardCount').textContent = String(state.discard.length);
+
+      var pct = (state.overload / MAX_OVERLOAD) * 100;
+      document.getElementById('barFill').style.width = pct + '%';
+
+      document.getElementById('countdown').textContent = state.countdownActive ? 'an' : 'aus';
+      document.getElementById('stageRule').textContent = state.stageRule ? state.stageRule.name : '—';
+
+      var pill = document.getElementById('statePill');
+      var label = 'Normal';
+      var cls = 'pill big';
+      if (state.overload >= 10) { label = 'Gefährlich'; cls += ' warn'; }
+      else if (state.overload <= 4) { label = 'Sicher'; cls += ' good'; }
+      pill.className = cls;
+      pill.innerHTML = '<b>Status</b>: ' + label;
+
+      document.getElementById('revealerName').textContent = state.players[state.revealer] ? state.players[state.revealer].name : '—';
+      document.getElementById('dir').textContent = (state.direction === 1) ? '↻' : '↺';
+
+      // Stat flashes (optisch "was ist passiert")
+      if (prev){
+        if (prev.round !== state.round){
+          flashStat('roundPill','good','Runde ' + state.round);
+        }
+        if (prev.overload !== state.overload){
+          var dO = state.overload - prev.overload;
+          var kindO = (dO > 0) ? (state.overload >= 10 ? 'bad' : 'warn') : 'good';
+          flashStat('overloadPill', kindO, (dO>0?'+':'') + dO);
+        }
+        if (prev.pool !== state.pool){
+          var dP = state.pool - prev.pool;
+          flashStat('poolPill', (dP>0?'blue':'warn'), (dP>0?'+':'') + dP);
+        }
+        if (prev.deck !== state.deck.length){
+          var dD = state.deck.length - prev.deck;
+          flashStat('deckPill', (dD<0?'warn':'blue'), (dD>0?'+':'') + dD);
+        }
+        if (prev.discard !== state.discard.length){
+          var dDi = state.discard.length - prev.discard;
+          flashStat('discardPill', (dDi>0?'blue':'warn'), (dDi>0?'+':'') + dDi);
+        }
+        if (prev.countdownActive !== state.countdownActive){
+          flashStat('countdownPill', state.countdownActive ? 'warn' : 'good', state.countdownActive ? 'an' : 'aus');
+        }
+      }
+
+      // phase + steps + summary
+      updatePhasePill();
+      renderSteps();
+      renderSummary();
+
+      // context banner
+      clearBanner();
+      if (state.gameOver){
+        showBanner('good','Spielende','Neustart starten, um erneut zu spielen.');
+      } else if (state.askOpen){
+        showBanner('warn','Auswahl offen','Triff eine Auswahl, um fortzufahren.');
+      } else if (state.awaitingDecision){
+        var hp = state.players[state.humanIndex];
+        if (hp && hp.roundState === 'active'){
+          var extra = (isAggCountdown() && state.countdownActive && state.pool >= 3) ? ' (Achtung: Countdown ist aggressiv, Pool ≥3)' : '';
+          showBanner('warn','Entscheidung: Bleib oder Camp','Camp ist nur mit mindestens 1 Live möglich.' + extra);
+        } else {
+          showBanner('good','Du bist gecampt','Du beobachtest diese Runde.');
+        }
+      } else if (state.overload >= 10){
+        showBanner('bad','Gefahr hoch','Bei Overload 12 kommt sofort der Katastrophen-Check.');
+      } else if (state.overload >= 8){
+        showBanner('warn','Overload 8+','Beim Campen gibt es +1 extra aus dem Pool (falls vorhanden).');
+      }
+
+      renderPlayers();
+
+      // store snapshot
+      state._uiPrev = {
+        round: state.round,
+        overload: state.overload,
+        pool: state.pool,
+        deck: state.deck.length,
+        discard: state.discard.length,
+        countdownActive: state.countdownActive
+      };
+
+      // decision box
+      var dec = document.getElementById('decisionBox');
+      dec.style.display = state.awaitingDecision ? 'block' : 'none';
+
+      var human = state.players[state.humanIndex];
+      var isHumanActive = human.roundState === 'active';
+      var forced = !!human.forcedStayNext;
+      var campBlockedByZero = (human.live <= 0);
+
+      var auto = isAuto();
+      document.getElementById('btnStay').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || auto;
+      document.getElementById('btnCamp').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || forced || campBlockedByZero || auto;
+      document.getElementById('btnResolve').disabled = !state.awaitingDecision || state.gameOver || auto;
+
+      // reveal
+      var canReveal = !state.gameOver && !state.awaitingDecision && state.revealer === state.humanIndex && isHumanActive;
+      document.getElementById('btnReveal').disabled = !canReveal || auto;
+
+      // hint
+      var h = document.getElementById('decisionHint');
+      if (!state.awaitingDecision) {
+        h.textContent = '—';
+      } else if (!isHumanActive) {
+        h.textContent = 'Du bist in dieser Runde gecampt.';
+      } else if (forced) {
+        h.innerHTML = 'Du bist durch <b>Stage Dive</b> gezwungen, diese Phase <b>drin zu bleiben</b>.';
+      } else if (campBlockedByZero) {
+        h.innerHTML = 'Du hast <b>0 Live</b> → du darfst nicht campen.';
+      } else {
+        if (auto) h.textContent = 'Autoplay ist aktiv – Entscheidungen werden automatisch aufgelöst.';
+        else h.textContent = 'Wähle Bleib oder Camp (Camp nur mit Live). Dann wird simultan aufgelöst.';
+      }
+
+      // highlight choice
+      var stay = document.getElementById('btnStay');
+      var camp = document.getElementById('btnCamp');
+      stay.classList.toggle('good', state.humanChoice === 'stay');
+      camp.classList.toggle('warn', state.humanChoice === 'camp');
+    }
+
+    function renderPlayers(){
+      var el = document.getElementById('players');
+      el.innerHTML = '';
+
+      var prev = state._uiPrevPlayers || null;
+      var nextPrev = {};
+
+      for (var i=0;i<state.players.length;i++){
+        var p = state.players[i];
+
+        var status = '';
+        if (state.awaitingDecision){
+          status = (p.roundState === 'active')
+            ? '<span class="decide">entscheidet</span>'
+            : '<span class="camped">gecampt</span>';
+        } else {
+          status = (i === state.revealer && p.roundState === 'active')
+            ? '<span class="turn">deckt auf</span>'
+            : (p.roundState === 'camped'
+              ? '<span class="camped">gecampt</span>'
+              : '<span class="tag">aktiv</span>');
+        }
+
+        var extra = '';
+        if (p.forcedStayNext && p.roundState === 'active') extra = ' · <span class="tag">Stage Dive: muss bleiben</span>';
+
+        var cls = 'p';
+        if (p.roundState === 'camped') cls += ' campedDim';
+        if (!state.awaitingDecision && i === state.revealer && p.roundState === 'active') cls += ' turnGlow';
+        if (state.awaitingDecision && p.roundState === 'active') cls += ' decideGlow';
+
+        // delta detection
+        var dLive = 0, dCamp = 0;
+        if (prev && prev[String(i)]){
+          dLive = p.live - prev[String(i)].live;
+          dCamp = p.camp - prev[String(i)].camp;
+        }
+
+        var deltaHtml = '';
+        if ((dLive !== 0 || dCamp !== 0) && prev){
+          var chunks = [];
+          if (dCamp !== 0) chunks.push('<span class="dTag good">🏕️ Camp ' + (dCamp>0?'+':'') + dCamp + '</span>');
+          if (dLive !== 0) chunks.push('<span class="dTag blue">🎟️ Live ' + (dLive>0?'+':'') + dLive + '</span>');
+          deltaHtml = '<div class="deltaLine">' + chunks.join('') + '</div>';
+        }
+
+        nextPrev[String(i)] = { live:p.live, camp:p.camp, roundState:p.roundState };
+
+        var div = document.createElement('div');
+        div.className = cls;
+        div.id = 'p' + i;
+
+        div.innerHTML =
+          '<div class="name">' +
+            '<div><b>' + esc(p.name) + '</b> <span class="tag">'+(p.name==='Du'?'Du':'Bot')+'</span>'+extra+'</div>' +
+            '<div>' + status + '</div>' +
+          '</div>' +
+          '<div class="pPills">' +
+            '<div class="pPill" title="Sicher, permanent"><span class="ci"></span><b>Camp</b>: ' + p.camp + '</div>' +
+            '<div class="pPill" title="Nur diese Runde, riskant"><span class="ci live"></span><b>Live</b>: ' + p.live + '</div>' +
+          '</div>' +
+          deltaHtml;
+
+        el.appendChild(div);
+      }
+
+      state._uiPrevPlayers = nextPrev;
+    }
+
+    // ---------- deck -----------------
+    function mkDeck(){
+      var deck = [];
+      var i;
+
+      // Push (26)
+      for (i=0;i<10;i++) deck.push({ type:'push', name:'Soundcheck', delta:1, text:'Overload +1. Aufdecker +1 Live. +1 in Pool.' });
+      for (i=0;i<10;i++) deck.push({ type:'push', name:'Crowd Surf', delta:2, text:'Overload +2. Aufdecker +1 Live. +1 in Pool.' });
+      for (i=0;i<6;i++) deck.push({ type:'push', name:'Bassdrop', delta:3, text:'Overload +3. Aufdecker +1 Live. +1 in Pool.' });
+
+      // Stabilisieren (14) – Patch P2: Ertrag nur bei Overload 8+ (vor dem Senken)
+      for (i=0;i<8;i++) deck.push({ type:'stabilize', name:'Atem holen', delta:-2, text:'Overload −2. Wenn Overload vor dem Senken 8+ war: Aufdecker +1 Live (Vorrat).' });
+      for (i=0;i<6;i++) deck.push({ type:'stabilize', name:'Security greift ein', delta:-3, text:'Overload −3. Wenn Overload vor dem Senken 8+ war: Aufdecker +1 Live (Vorrat).' });
+
+      // Twist (14)
+      for (i=0;i<2;i++) deck.push({ type:'twist', name:'Richtungswechsel', fx:'flipDir', text:'Drehe die Aufdeck-Reihenfolge um.' });
+      for (i=0;i<4;i++) deck.push({ type:'twist', name:'Feedback', fx:'feedback', stage:true, text:'Bühnenregel 🌀∞: Bis Rundenende gibt jede ⚡ zusätzlich +1 Overload.' });
+      for (i=0;i<3;i++) deck.push({ type:'twist', name:'Pyro', fx:'pyro', text:'Overload +2.' });
+      for (i=0;i<3;i++) deck.push({ type:'twist', name:'Stage Dive', fx:'stageDive', text:'Wähle einen aktiven Spieler: Er muss 1 Live zahlen oder bleibt beim nächsten Camp-Entscheid automatisch drin.' });
+      for (i=0;i<2;i++) deck.push({ type:'twist', name:'Setwechsel', fx:'setwechsel', text:'Der nächste Event wird vom gleichen Spieler aufgedeckt (noch einmal).' });
+
+      // Encore (6)
+      for (i=0;i<6;i++) deck.push({ type:'encore', name:'Encore!', fx:'encore', text:'Ketten-Event: Aufdecker kann 1 Live zahlen, um zu stoppen. Sonst sofort nächstes Event.' });
+
+      return shuffle(deck);
+    }
+
+    // ---------- rules ----------
+    function checkWin(){
+      for (var i=0;i<state.players.length;i++){
+        if (state.players[i].camp >= WIN_CAMP){
+          if (!state.gameOver){
+            state.gameOver = true;
+            log('good','<b>' + esc(state.players[i].name) + ' gewinnt!</b> (' + state.players[i].camp + ' Camp)');
+            screenFlash('good');
+            toast('Spiel beendet', state.players[i].name + ' gewinnt mit ' + state.players[i].camp + ' Camp.');
+          }
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function endRound(reason){
+      if (state.gameOver) return;
+
+      // stage rule to discard
+      if (state.stageRule && state.stageRule._cardRef){
+        state.discard.push(state.stageRule._cardRef);
+      }
+
+      // pool resets
+      state.pool = 0;
+      state.stageRule = null;
+      state.countdownActive = false;
+      state.direction = 1;
+      state.extraRevealSame = false;
+      state.overload = 0;
+
+      for (var i=0;i<state.players.length;i++){
+        state.players[i].live = 0;
+        state.players[i].roundState = 'active';
+        state.players[i].forcedStayNext = false;
+      }
+
+      state.round += 1;
+      state.startPlayer = (state.startPlayer + 1) % state.players.length;
+      state.revealer = state.startPlayer;
+      state.awaitingDecision = false;
+      state.humanChoice = 'stay';
+      state.lastEvent = null;
+
+      log('good','<b>Neue Runde ' + state.round + '</b> – Overload=0, Pool leer, Bühnenregel entfernt. ' + (reason ? '('+esc(reason)+')' : ''));
+      setEventCard(null);
+      updateUI();
+      setPhase('reveal');
+      pumpBots();
+    }
+
+    function doKnall(reason){
+      // all active players lose live, camped safe
+      var pfl = !!document.getElementById('optPflaster').checked;
+      var affected = [];
+
+      for (var i=0;i<state.players.length;i++){
+        var p = state.players[i];
+        if (p.roundState === 'active'){
+          if (pfl && p.live > 0){
+            p.camp += 1;
+            affected.push(p.name + ' rettet 1');
+          }
+          p.live = 0;
+        }
+      }
+
+      log('bad','<b>KNALL</b>: ' + esc(reason) + '. Alle aktiven Spieler verlieren ihr Live.' + (pfl ? ' <span class="t">(Pflaster aktiv: ' + (affected.length ? esc(affected.join(', ')) : 'niemand') + ')</span>' : ''));
+      screenFlash('bad');
+      toast('KNALL!', 'Runde endet sofort.');
+
+      if (checkWin()) { updateUI(); return; }
+      endRound('Knall');
+    }
+
+    function applyOverloadDelta(delta){
+      var before = state.overload;
+      state.overload = clampOverload(state.overload + delta);
+      var reached = (before < 12 && state.overload === 12);
+      return { before: before, after: state.overload, reached12: reached };
+    }
+
+    function catastropheCheck(){
+      var card = draw(1)[0] || null;
+      if (!card){
+        log('warn','Katastrophen-Check: Keine Karte verfügbar → gerade noch gut gegangen. Overload 12 → 10.');
+        state.overload = 10;
+        updateUI();
+        return;
+      }
+
+      var isPush = (card.type === 'push');
+      state.discard.push(card);
+
+      if (isPush){
+        log('bad','<b>Katastrophen-Check</b>: Aufgedeckte Karte ist <b>⚡ Push</b> → <b>Knall</b>.');
+        doKnall('Katastrophen-Check hat Push aufgedeckt');
+        return;
+      }
+
+      log('good','<b>Katastrophen-Check</b>: Keine Push-Karte → Check-Karte wird abgeworfen, Overload 12 → <b>10</b>.');
+      state.overload = 10;
+      updateUI();
+    }
+
+    function onOverloadMayHit12(r, why){
+      if (state.gameOver) return;
+      if (r.reached12){
+        log('warn','Overload erreicht <b>12</b> (' + esc(why) + ') → <b>Katastrophen-Check</b>.');
+        catastropheCheck();
+      }
+    }
+
+    function ensureDecisionPhase(){
+      if (state.gameOver) return;
+      state.awaitingDecision = true;
+      state.humanChoice = 'stay';
+      setPhase('decision');
+
+      setSummary('Entscheidung',
+        [
+          { cls:'good', sym:'✅', text:'Bleib: Live bleibt im Risiko' },
+          { cls:'warn', sym:'🏕️', text:'Camp: nur mit mindestens 1 Live' },
+          { cls:'blue', sym:'🎁', text:'Pool-Bonus: +1 (bei Overload 8+ noch +1)' }
+        ],
+        'Simultan, offen'
+      );
+
+      updateUI();
+    }
+
+    function resolveCountdownTick(){
+      if (!state.countdownActive) return;
+      if (state.gameOver) return;
+      setPhase('countdown');
+
+      var add = 1;
+      if (isAggCountdown() && state.pool >= 3) add += 1;
+
+      var r = applyOverloadDelta(+add);
+      log('warn','<b>Countdown</b>: Nach dem Event steigt Overload automatisch um +' + add + ' → ' + r.before + ' → <b>' + r.after + '</b>.');
+
+      setSummary('Countdown',
+        [
+          { cls:'warn', sym:'⏱️', text:'Overload +' + add + ' → ' + r.after },
+          (isAggCountdown() ? { cls:'blue', sym:'🎁', text:(state.pool >= 3 ? 'Pool ≥3: extra +1 aktiv' : 'Pool <3: kein Extra') } : { cls:'blue', sym:'⚙️', text:'Aggressiv: aus' })
+        ],
+        'Countdown ist aktiv, solange die Runde läuft'
+      );
+
+      updateUI();
+      onOverloadMayHit12(r, 'Countdown');
+    }
+
+    // ---------- bot heuristics ----------
+    function botWantsToCamp(pi){
+      var p = state.players[pi];
+      if (p.roundState !== 'active') return false;
+      if (p.forcedStayNext) return false;
+      if (p.live <= 0) return false; // Camp nur mit Live
+
+      if (p.camp + p.live >= WIN_CAMP) return true;
+
+      if (state.overload >= 10 && p.live >= 2) return true;
+      if (p.live >= 3) return true;
+
+      if (p.live >= 1 && state.pool >= 2 && state.overload >= 8) return (Math.random() < 0.65);
+
+      return (Math.random() < 0.20);
+    }
+
+    function botEncoreStop(pi){
+      var p = state.players[pi];
+      if (p.live <= 0) return false;
+      if (state.overload >= 10) return true;
+      if (p.live >= 2 && Math.random() < 0.7) return true;
+      return (Math.random() < 0.25);
+    }
+
+    function botStageDivePay(pi){
+      var p = state.players[pi];
+      if (p.live <= 0) return false;
+      if (state.overload >= 8) return true;
+      if (p.camp + p.live >= WIN_CAMP - 1) return true;
+      return (Math.random() < 0.45);
+    }
+
+    function botPickStageDiveTarget(revealer){
+      var best = -1;
+      var bestLive = -1;
+      for (var i=0;i<state.players.length;i++){
+        if (i === revealer) continue;
+        var p = state.players[i];
+        if (p.roundState !== 'active') continue;
+        if (p.live > bestLive){ bestLive = p.live; best = i; }
+      }
+      if (best === -1) best = revealer;
+      return best;
+    }
+
+    // ---------- event effects ----------
+    function hasFeedbackRule(){
+      return !!(state.stageRule && state.stageRule.fx === 'feedback');
+    }
+
+    function applyPush(rev, card){
+      var p = state.players[rev];
+      var add = card.delta || 1;
+      if (hasFeedbackRule()) add += 1;
+
+      var r = applyOverloadDelta(add);
+      p.live += 1;
+      state.pool += 1;
+
+      setSummary('⚡ Push – ' + card.name,
+        [
+          { cls:'bad',  sym:'⚡', text:'Overload +' + add + ' → ' + r.after },
+          { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' },
+          { cls:'warn', sym:'🎁', text:'Pool +1 (jetzt ' + state.pool + ')' }
+        ],
+        'Danach: Entscheidung Bleib/Camp'
+      );
+
+      log('info','<b>' + esc(p.name) + '</b> deckt ⚡ <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' +' + add + ' = <b>' + r.after + '</b>, ' + esc(p.name) + ' +1 Live (Live ' + p.live + '), Pool +1 (Pool ' + state.pool + ').');
+      updateUI();
+      onOverloadMayHit12(r, 'Push');
+    }
+
+    function applyStabilize(rev, card){
+      var p = state.players[rev];
+      var beforeOver = state.overload;
+      var r = applyOverloadDelta(typeof card.delta === 'number' ? card.delta : -2);
+
+      log('good','<b>' + esc(p.name) + '</b> deckt 🛠️ <b>' + esc(card.name) + '</b> auf → Overload ' + beforeOver + ' ' + (card.delta) + ' = <b>' + r.after + '</b>.');
+
+      // Patch P2: Ertrag nur wenn Overload VOR dem Senken 8+ war
+      var got = 0;
+      if (beforeOver >= 8){
+        p.live += 1;
+        got = 1;
+        log('good','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (8+) → ' + esc(p.name) + ' erhält <b>+1 Live</b> (Vorrat). (Live jetzt ' + p.live + ')');
+      } else {
+        log('info','Stabilisieren-Ertrag: Overload vor dem Senken war <b>' + beforeOver + '</b> (&lt;8) → kein Ertrag.');
+      }
+
+      setSummary('🛠️ Stabilisieren – ' + card.name,
+        [
+          { cls:'good', sym:'🛠️', text:'Overload ' + (card.delta) + ' → ' + r.after },
+          (got ? { cls:'blue', sym:'🎟️', text:p.name + ' Live +1 (jetzt ' + p.live + ')' } : { cls:'blue', sym:'—', text:'Kein Live-Ertrag (Overload vor dem Senken <8)' })
+        ],
+        'Danach: Entscheidung Bleib/Camp'
+      );
+
+      updateUI();
+    }
+
+    function applyTwist(rev, card, doneCb){
+      var p = state.players[rev];
+
+      if (card.stage){
+        if (state.stageRule && state.stageRule._cardRef){
+          state.discard.push(state.stageRule._cardRef);
+          log('warn','🌀∞ Bühnenregel wird ersetzt: <b>' + esc(state.stageRule.name) + '</b> → <b>' + esc(card.name) + '</b>.');
+        } else {
+          log('warn','🌀∞ Neue Bühnenregel: <b>' + esc(card.name) + '</b>.');
+        }
+        state.stageRule = { name: card.name, text: card.text, fx: card.fx, _cardRef: card };
+        updateUI();
+        doneCb();
+        return;
+      }
+
+      if (card.fx === 'flipDir'){
+        state.direction *= -1;
+        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Richtung dreht sich: ' + (state.direction === 1 ? '<b>↻</b>' : '<b>↺</b>') + '.');
+        updateUI();
+        doneCb();
+        return;
+      }
+
+      if (card.fx === 'pyro'){
+        var r = applyOverloadDelta(+2);
+        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Overload ' + r.before + ' +2 = <b>' + r.after + '</b>.');
+        updateUI();
+        onOverloadMayHit12(r, 'Pyro');
+        doneCb();
+        return;
+      }
+
+      if (card.fx === 'setwechsel'){
+        state.extraRevealSame = true;
+        log('warn','<b>' + esc(p.name) + '</b> deckt 🌀 <b>' + esc(card.name) + '</b> auf → Nächstes Event deckt der gleiche Spieler auf.');
+        updateUI();
+        doneCb();
+        return;
+      }
+
+      if (card.fx === 'stageDive'){
+        if (rev === state.humanIndex) {
+          if (isAuto()){
+            var aiTarget = botPickStageDiveTarget(rev);
+            if (aiTarget === rev){
+              log('warn','Stage Dive: Kein anderer aktiver Spieler → Effekt verpufft.');
+              doneCb();
+              return;
+            }
+            resolveStageDiveTarget(rev, aiTarget, doneCb);
+            return;
+          }
+
+          var opts = [];
+          for (var i=0;i<state.players.length;i++){
+            if (state.players[i].roundState !== 'active') continue;
+            if (i === rev) continue;
+            opts.push({ label: state.players[i].name + ' (Live ' + state.players[i].live + ')', value: i });
+          }
+          if (!opts.length){
+            log('warn','Stage Dive: Kein anderer aktiver Spieler → Effekt verpufft.');
+            doneCb();
+            return;
+          }
+
+          askPickOne(
+            'Stage Dive – Ziel wählen',
+            '<b>Stage Dive</b>: Wähle einen aktiven Spieler. Er zahlt 1 Live oder bleibt beim nächsten Camp-Entscheid automatisch drin.',
+            opts,
+            function(val){
+              if (val === null || typeof val !== 'number'){
+                log('warn','Stage Dive: Keine Auswahl → Effekt verpufft.');
+                doneCb();
+                return;
+              }
+              resolveStageDiveTarget(rev, val, doneCb);
+            }
+          );
+          return;
+        }
+
+        var targetIdx = botPickStageDiveTarget(rev);
+        resolveStageDiveTarget(rev, targetIdx, doneCb);
+        return;
+      }
+
+      log('info','Twist ohne Effekt: <b>' + esc(card.name) + '</b>.');
+      doneCb();
+    }
+
+    function resolveStageDiveTarget(rev, targetIdx, doneCb){
+      var revP = state.players[rev];
+      var tP = state.players[targetIdx];
+
+      if (!tP || tP.roundState !== 'active'){
+        log('warn','Stage Dive: Ziel ist nicht aktiv → Effekt verpufft.');
+        doneCb();
+        return;
+      }
+
+      log('warn','<b>' + esc(revP.name) + '</b> löst 🌀 <b>Stage Dive</b> aus auf <b>' + esc(tP.name) + '</b>.');
+      updateUI();
+
+      if (targetIdx === state.humanIndex){
+        if (isAuto()){
+          if (tP.live > 0 && botStageDivePay(targetIdx)){
+            tP.live = Math.max(0, tP.live - 1);
+            log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. (Live jetzt ' + tP.live + ')');
+            doneCb();
+            return;
+          }
+          tP.forcedStayNext = true;
+          log('bad','Du zahlst nicht → du musst beim nächsten Camp-Entscheid <b>drin bleiben</b>.');
+          doneCb();
+          return;
+        }
+
+        if (tP.live <= 0){
+          tP.forcedStayNext = true;
+          log('bad','Du hast <b>0 Live</b> → du kannst nicht zahlen und musst beim nächsten Camp-Entscheid <b>drin bleiben</b>.');
+          toast('Stage Dive', 'Du musst drin bleiben (kein Live zum Zahlen).');
+          doneCb();
+          return;
+        }
+
+        askYesNo(
+          'Stage Dive – Zahlen?',
+          '<b>Stage Dive</b> trifft dich.<br><br>Willst du <b>1 Live</b> zahlen, um nicht betroffen zu sein?',
+          '1 Live zahlen',
+          'Nicht zahlen',
+          function(use){
+            if (use){
+              tP.live = Math.max(0, tP.live - 1);
+              log('good','Du zahlst <b>1 Live</b> → Stage Dive ignoriert. (Live jetzt ' + tP.live + ')');
+              toast('Bezahlt', 'Stage Dive ignoriert.');
+            } else {
+              tP.forcedStayNext = true;
+              log('bad','Du zahlst nicht → du musst beim nächsten Camp-Entscheid <b>drin bleiben</b>.');
+              toast('Stage Dive', 'Du musst drin bleiben.');
+            }
+            doneCb();
+          }
+        );
+        return;
+      }
+
+      if (tP.live > 0 && botStageDivePay(targetIdx)){
+        tP.live = Math.max(0, tP.live - 1);
+        log('good', esc(tP.name) + ' zahlt 1 Live → ignoriert Stage Dive. (Live jetzt ' + tP.live + ')');
+        doneCb();
+        return;
+      }
+
+      tP.forcedStayNext = true;
+      log('bad', esc(tP.name) + ' zahlt nicht → muss beim nächsten Camp-Entscheid drin bleiben.');
+      doneCb();
+    }
+
+    function applyEncore(rev, card, cb){
+      var p = state.players[rev];
+      var canPay = p.live >= 1;
+
+      function proceed(stop){
+        if (stop){
+          p.live = Math.max(0, p.live - 1);
+          log('good','<b>' + esc(p.name) + '</b> stoppt 🎤 <b>Encore!</b> durch Zahlung von 1 Live. (Live jetzt ' + p.live + ')');
+          toast('Encore gestoppt', p.name + ' zahlt 1 Live.');
+          cb(false);
+          return;
+        }
+        log('warn','🎤 <b>Encore!</b> läuft → sofort noch ein Event (keine Camp-Entscheidung dazwischen).');
+        cb(true);
+      }
+
+      log('warn','<b>' + esc(p.name) + '</b> deckt 🎤 <b>Encore!</b> auf.');
+
+      if (rev === state.humanIndex){
+        if (isAuto()){
+          if (!canPay){
+            log('bad','Du hast <b>0 Live</b> → du kannst Encore nicht stoppen.');
+            proceed(false);
+            return;
+          }
+          proceed(!!botEncoreStop(rev));
+          return;
+        }
+
+        if (!canPay){
+          log('bad','Du hast <b>0 Live</b> → du kannst Encore nicht stoppen.');
+          proceed(false);
+          return;
+        }
+        askYesNo(
+          'Encore! – Stoppen?',
+          'Encore! würde ein weiteres Event auslösen.<br><br>Willst du <b>1 Live</b> zahlen, um Encore zu stoppen?',
+          'Stoppen (1 Live)',
+          'Weiterlaufen lassen',
+          function(use){ proceed(!!use); }
+        );
+        return;
+      }
+
+      if (canPay && botEncoreStop(rev)) proceed(true);
+      else proceed(false);
+    }
+
+    // ---------- main loop ----------
+    function revealEvent(){
+      if (state.gameOver) return;
+      if (state.awaitingDecision) return;
+      if (!anyActive()) { endRound('Alle gecampt'); return; }
+
+      var rev = state.revealer;
+      var revP = state.players[rev];
+      if (!revP || revP.roundState !== 'active'){
+        var nxt0 = nextActiveFrom(state.revealer, state.direction);
+        if (nxt0 === -1) { endRound('Alle gecampt'); return; }
+        state.revealer = nxt0;
+        rev = nxt0;
+        revP = state.players[rev];
+      }
+
+      state.turnId += 1;
+      setPhase('event');
+
+      var card = draw(1)[0] || null;
+      if (!card){
+        log('bad','Keine Karte verfügbar → Runde endet.');
+        endRound('Deck leer');
+        return;
+      }
+
+      state.lastEvent = card;
+      setEventCard(card);
+      updateUI();
+
+      log('info','<b>' + esc(revP.name) + '</b> deckt auf: <b>' + esc(card.name) + '</b>.');
+
+      resolveEventCard(rev, card, function(){
+        if (state.gameOver) { updateUI(); return; }
+
+        resolveCountdownTick();
+        if (state.gameOver) { updateUI(); return; }
+
+        ensureDecisionPhase();
+        pumpBots();
+      });
+    }
+
+    function resolveEventCard(rev, card, done){
+      var type = card.type;
+
+      if (type === 'push'){
+        applyPush(rev, card);
+        state.discard.push(card);
+        done();
+        return;
+      }
+
+      if (type === 'stabilize'){
+        applyStabilize(rev, card);
+        state.discard.push(card);
+        done();
+        return;
+      }
+
+      if (type === 'twist'){
+        applyTwist(rev, card, function(){
+          if (!card.stage) state.discard.push(card);
+          done();
+        });
+        return;
+      }
+
+      if (type === 'encore'){
+        state.discard.push(card);
+        applyEncore(rev, card, function(shouldChain){
+          if (!shouldChain){ done(); return; }
+          if (state.gameOver){ done(); return; }
+
+          var next = draw(1)[0] || null;
+          if (!next){
+            log('bad','Encore wollte ketten, aber keine Karte verfügbar.');
+            done();
+            return;
+          }
+
+          state.lastEvent = next;
+          setEventCard(next, 'Encore-Kette');
+          updateUI();
+          log('warn','Encore-Kette: <b>' + esc(state.players[rev].name) + '</b> deckt sofort noch auf: <b>' + esc(next.name) + '</b>.');
+
+          resolveEventCard(rev, next, done);
+        });
+        return;
+      }
+
+      state.discard.push(card);
+      done();
+    }
+
+    function applyPoolDistribution(campersOrdered, overloadAtDecision){
+      var taken1 = 0;
+      for (var i=0;i<campersOrdered.length;i++){
+        if (state.pool <= 0) break;
+        if (!campersOrdered[i].eligible) continue;
+        var p = state.players[campersOrdered[i].idx];
+        state.pool -= 1;
+        p.camp += 1;
+        taken1 += 1;
+      }
+
+      var taken2 = 0;
+      if (overloadAtDecision >= 8){
+        for (var k=0;k<campersOrdered.length;k++){
+          if (state.pool <= 0) break;
+          if (!campersOrdered[k].eligible) continue;
+          var p2 = state.players[campersOrdered[k].idx];
+          state.pool -= 1;
+          p2.camp += 1;
+          taken2 += 1;
+        }
+      }
+
+      return { pass1:taken1, pass2:taken2 };
+    }
+
+    function forceCampLastActive(reason){
+      var idx = getLastActiveIndex();
+      if (idx === -1) return;
+
+      var p = state.players[idx];
+      log('warn','<b>Anti-Solo</b>: Nur noch <b>1</b> Spieler aktiv → Runde endet sofort.');
+
+      var poolBefore = state.pool;
+
+      if (p.live >= 1){
+        var liveBefore = p.live;
+        p.camp += p.live;
+        p.live = 0;
+        p.roundState = 'camped';
+        log('warn','Letzter aktiver Spieler: <b>' + esc(p.name) + '</b> campt sofort: +' + liveBefore + ' Camp (aus Live) → Camp jetzt <b>' + p.camp + '</b>. <span class="t">(Kein Pool-Bonus)</span>');
+        toast('Runde endet', p.name + ' campt sofort (Anti-Solo).');
+      } else {
+        log('warn','Letzter aktiver Spieler: <b>' + esc(p.name) + '</b> hat <b>0 Live</b> → kein Camp-Gewinn. <span class="t">(Kein Pool-Bonus)</span>');
+        toast('Runde endet', 'Anti-Solo: letzter Spieler hatte 0 Live.');
+      }
+
+      // Patch P2: Rest-Pool wird verworfen
+      if (poolBefore > 0){
+        state.pool = 0;
+        log('info','Anti-Solo: Restlicher Pool wird verworfen. (Pool ' + poolBefore + ' → 0)');
+      }
+
+      if (checkWin()) { updateUI(); return; }
+      endRound(reason || 'Anti-Solo');
+    }
+
+    function resolveDecisions(){
+      setPhase('event');
+      if (state.gameOver) return;
+      if (!state.awaitingDecision) return;
+
+      var choices = [];
+      for (var i=0;i<state.players.length;i++){
+        var p = state.players[i];
+        if (p.roundState !== 'active') continue;
+
+        var choice = 'stay';
+        if (i === state.humanIndex){
+          if (p.forcedStayNext) choice = 'stay';
+          else {
+            if (state.humanChoice === 'camp' && p.live <= 0) choice = 'stay';
+            else choice = state.humanChoice;
+          }
+        } else {
+          choice = botWantsToCamp(i) ? 'camp' : 'stay';
+          if (p.forcedStayNext) choice = 'stay';
+        }
+
+        if (choice === 'camp' && p.live <= 0) choice = 'stay';
+        choices.push({ idx:i, choice:choice });
+      }
+
+      var parts = [];
+      for (var j=0;j<choices.length;j++){
+        parts.push(state.players[choices[j].idx].name + ': ' + (choices[j].choice === 'camp' ? 'Camp' : 'Bleib'));
+      }
+      log('info','<b>Entscheidung</b> (simultan): ' + esc(parts.join(' · ')));
+
+      for (var x=0;x<choices.length;x++){
+        var pl = state.players[choices[x].idx];
+        if (pl.forcedStayNext) pl.forcedStayNext = false;
+      }
+
+      var order = clockwiseOrderFrom(state.revealer);
+      var campersSet = {};
+      for (var k=0;k<choices.length;k++) if (choices[k].choice === 'camp') campersSet[String(choices[k].idx)] = true;
+
+      var campersOrdered = [];
+      var anySuccessfulCamp = false;
+
+      for (var o=0;o<order.length;o++){
+        var idx = order[o];
+        if (!campersSet[String(idx)]) continue;
+        var p2 = state.players[idx];
+        if (p2.roundState !== 'active') continue;
+
+        if (p2.live <= 0){
+          log('warn','<b>' + esc(p2.name) + '</b> wollte campen, hat aber 0 Live → bleibt drin.');
+          continue;
+        }
+
+        var liveBefore = p2.live;
+        p2.camp += p2.live;
+        p2.live = 0;
+        p2.roundState = 'camped';
+
+        anySuccessfulCamp = true;
+        campersOrdered.push({ idx: idx, eligible: true, liveBefore: liveBefore });
+
+        log('warn','<b>' + esc(p2.name) + '</b> campt: +' + liveBefore + ' Camp (aus Live) → Camp jetzt <b>' + p2.camp + '</b>.');
+      }
+
+      // Pool-Bonus (P2: Overload NACH Event/Countdown/Checks ist maßgeblich) – hier ist state.overload bereits "jetzt".
+      if (campersOrdered.length && state.pool > 0){
+        var overloadNow = state.overload;
+        var dist = applyPoolDistribution(campersOrdered, overloadNow);
+        if (dist.pass1 || dist.pass2){
+          log('info','Pool-Bonus: +' + dist.pass1 + ' (Grundbonus)' + (overloadNow >= 8 ? ' +'+dist.pass2+' (Gefahrenbonus)' : '') + ' verteilt. <span class="t">(Overload maßgeblich: ' + overloadNow + ')</span> Pool jetzt ' + state.pool + '.');
+        }
+      }
+
+      if (!state.countdownActive && anySuccessfulCamp){
+        state.countdownActive = true;
+        log('warn','<b>Countdown aktiv</b>: Ab jetzt steigt Overload nach jedem Event automatisch um +1.' + (isAggCountdown() ? ' (Aggressiv möglich bei Pool ≥3)' : ''));
+      }
+
+      state.awaitingDecision = false;
+      state.humanChoice = 'stay';
+
+      if (checkWin()) { updateUI(); return; }
+
+      // Anti-Solo
+      if (activeCount() === 1){
+        updateUI();
+        forceCampLastActive('Anti-Solo');
+        return;
+      }
+
+      if (activeCount() === 0){
+        log('good','Alle Spieler sind gecampt → Runde endet.');
+        endRound('Alle gecampt');
+        return;
+      }
+
+      if (state.extraRevealSame){
+        state.extraRevealSame = false;
+        log('info','Setwechsel: <b>' + esc(state.players[state.revealer].name) + '</b> deckt noch einmal auf.');
+      } else {
+        var nxt = nextActiveFrom(state.revealer, state.direction);
+        if (nxt === -1){
+          endRound('Alle gecampt');
+          return;
+        }
+        state.revealer = nxt;
+      }
+
+      updateUI();
+      pumpBots();
+    }
+
+    // ---------- bots automation ----------
+    function pumpBots(){
+      if (state.gameOver) return;
+
+      if (isAuto()){
+        if (state.askOpen) return;
+
+        if (state.awaitingDecision){
+          scheduleAuto(function(){
+            if (state.gameOver) return;
+            if (!state.awaitingDecision) return;
+            if (state.askOpen) return;
+
+            var h = state.players[state.humanIndex];
+            if (h && h.roundState === 'active' && !h.forcedStayNext && h.live > 0){
+              state.humanChoice = botWantsToCamp(state.humanIndex) ? 'camp' : 'stay';
+            } else {
+              state.humanChoice = 'stay';
+            }
+
+            resolveDecisions();
+          });
+          return;
+        }
+
+        scheduleAuto(function(){
+          if (state.gameOver) return;
+          if (state.awaitingDecision) return;
+          if (state.askOpen) return;
+          revealEvent();
+        });
+        return;
+      }
+
+      stopAutoTimer();
+
+      // Manual: Bot-Züge laufen automatisch.
+      if (!state.awaitingDecision && state.revealer !== state.humanIndex){
+        var r = state.revealer;
+        if (state.players[r].roundState !== 'active'){
+          var nxt = nextActiveFrom(r, state.direction);
+          if (nxt === -1){ endRound('Alle gecampt'); return; }
+          state.revealer = nxt;
+          updateUI();
+          r = nxt;
+        }
+
+        setTimeout(function(){
+          if (state.gameOver || state.awaitingDecision) return;
+          if (state.revealer === state.humanIndex) return;
+          revealEvent();
+        }, 650);
+        return;
+      }
+    }
+
+    // ---------- log copy ----------
+    function copyLog(){
+      var el = document.getElementById('log');
+      var text = (el.innerText || '').trim();
+      if (!text){ toast('Log leer', 'Nichts zu kopieren.'); return; }
+
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text)
+          .then(function(){ toast('Kopiert','Log wurde in die Zwischenablage kopiert.'); })
+          .catch(function(){ fallbackCopy(text); });
+        return;
+      }
+      fallbackCopy(text);
+    }
+
+    function fallbackCopy(text){
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); toast('Kopiert','Log wurde in die Zwischenablage kopiert.'); }
+      catch(e){ toast('Copy fehlgeschlagen','Browser erlaubt keinen Zugriff auf Zwischenablage.'); }
+      document.body.removeChild(ta);
+    }
+
+    // ---------- patch notes modal ----------
+    function openPatchNotes(){
+      var back = document.getElementById('pnBack');
+      var body = document.getElementById('pnBody');
+
+      var html = '';
+      for (var i=0;i<PATCH_NOTES.length;i++){
+        var p = PATCH_NOTES[i];
+        var items = '';
+        for (var k=0;k<p.items.length;k++) items += '<li>' + esc(p.items[k]) + '</li>';
+
+        html +=
+          '<div style="margin-bottom:12px">' +
+            '<div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline">' +
+              '<b style="font-weight:950">' + esc(p.ver) + '</b>' +
+              '<small style="color:var(--muted)">' + esc(p.date) + '</small>' +
+            '</div>' +
+            '<ul style="margin:6px 0 0 18px;color:#d6dbea">' + items + '</ul>' +
+          '</div>';
+      }
+
+      body.innerHTML = html;
+      back.style.display = 'flex';
+      back.setAttribute('aria-hidden','false');
+    }
+
+    function closePatchNotes(){
+      var back = document.getElementById('pnBack');
+      back.style.display = 'none';
+      back.setAttribute('aria-hidden','true');
+    }
+
+    // ---------- self tests ----------
+    function runSelfTests(){
+      var results = [];
+      function ok(name, cond){ results.push({ name:name, pass:!!cond }); }
+
+      ok('DOM: #players existiert', !!document.getElementById('players'));
+      ok('Deck: mkDeck() hat 60 Karten', mkDeck().length === 60);
+
+      // Katastrophen-Check non-push -> overload 10
+      (function(){
+        var oldDeck = state.deck.slice();
+        var oldDiscard = state.discard.slice();
+        var oldOver = state.overload;
+        var oldPlayers = state.players.slice();
+        var oldGO = state.gameOver;
+
+        // minimal players, damit doKnall/Logs nicht crashen
+        state.players = [
+          { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false },
+          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStayNext:false }
+        ];
+
+        state.deck = [{ type:'stabilize', name:'X', delta:-2 }];
+        state.discard = [];
+        state.overload = 12;
+        state.gameOver = false;
+        catastropheCheck();
+        ok('Katastrophen-Check non-push -> overload 10', state.overload === 10);
+
+        // Katastrophen-Check discard pushed
+        state.deck = [{ type:'push', name:'Y', delta:1 }];
+        state.discard = [];
+        state.overload = 12;
+        state.gameOver = true; // verhindert endRound-Kaskade
+        catastropheCheck();
+        ok('Katastrophen-Check discard pushed', state.discard.length === 1);
+
+        state.deck = oldDeck;
+        state.discard = oldDiscard;
+        state.overload = oldOver;
+        state.players = oldPlayers;
+        state.gameOver = oldGO;
+      })();
+
+      // Stabilisieren-Ertrag nur bei 8+ vorher
+      (function(){
+        var oldOver = state.overload;
+        var oldPlayers = state.players.slice();
+        state.players = [
+          { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false },
+          { name:'Bot A', camp:0, live:0, roundState:'active', forcedStayNext:false }
+        ];
+
+        state.overload = 7;
+        applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
+        ok('Stabilisieren: bei Overload 7 vorher kein Live-Ertrag', state.players[0].live === 0);
+
+        state.overload = 8;
+        applyStabilize(0, { type:'stabilize', name:'Test', delta:-2, text:'' });
+        ok('Stabilisieren: bei Overload 8 vorher +1 Live-Ertrag', state.players[0].live === 1);
+
+        state.overload = oldOver;
+        state.players = oldPlayers;
+      })();
+
+      // Anti-Solo: Rest-Pool wird verworfen
+      (function(){
+        var oldPlayers = state.players.slice();
+        var oldPool = state.pool;
+        var oldGO = state.gameOver;
+
+        state.players = [
+          { name:'Du', camp:0, live:2, roundState:'active', forcedStayNext:false },
+          { name:'Bot A', camp:0, live:0, roundState:'camped', forcedStayNext:false }
+        ];
+        state.pool = 3;
+        state.gameOver = false;
+        forceCampLastActive('Test');
+        ok('Anti-Solo: Pool wird verworfen', state.pool === 0);
+
+        state.players = oldPlayers;
+        state.pool = oldPool;
+        state.gameOver = oldGO;
+      })();
+
+      window.FestivalOverloadTests = results;
+      try {
+        var failed = 0;
+        for (var i=0;i<results.length;i++) if (!results[i].pass) failed++;
+        if (failed) console.warn('FestivalOverloadTests: FAIL', results);
+        else console.log('FestivalOverloadTests: OK', results);
+      } catch(e){}
+    }
+
+    // ---------- init / restart ----------
+    function restart(){
+      state.round = 1;
+      state.overload = 0;
+      state.pool = 0;
+      state.stageRule = null;
+      state.countdownActive = false;
+      state.direction = 1;
+      state.startPlayer = 0;
+      state.revealer = 0;
+      state.extraRevealSame = false;
+
+      state.deck = mkDeck();
+      state.discard = [];
+
+      state.players = [
+        { name:'Du', camp:0, live:0, roundState:'active', forcedStayNext:false },
+        { name:'Bot A', camp:0, live:0, roundState:'active', forcedStayNext:false },
+        { name:'Bot B', camp:0, live:0, roundState:'active', forcedStayNext:false },
+        { name:'Bot C', camp:0, live:0, roundState:'active', forcedStayNext:false }
+      ];
+
+      state.awaitingDecision = false;
+      state.humanChoice = 'stay';
+      state.lastEvent = null;
+      state.gameOver = false;
+      state.turnId = 0;
+
+      state.phase = 'reveal';
+      state.lastSummary = null;
+
+      document.getElementById('log').innerHTML = '';
+      setEventCard(null);
+      setSummary('Bereit',
+        [
+          { cls:'blue', sym:'▶', text:'Klicke auf „Event aufdecken“, um zu starten' },
+          { cls:'warn', sym:'🏁', text:'Ziel: ' + WIN_CAMP + ' Camp' },
+          { cls:'good', sym:'🛠️', text:'Stabilisieren gibt Ertrag nur bei Overload 8+ (vor dem Senken)' }
+        ],
+        'Runde 1 beginnt'
+      );
+      log('info','Prototyp gestartet. Ziel: <b>' + WIN_CAMP + '</b> Camp. Runde 1 – Startspieler: <b>' + esc(state.players[state.startPlayer].name) + '</b>.');
+      setPhase('reveal');
+      updateUI();
+      pumpBots();
+    }
+
+    // ---------- wiring ----------
+    document.getElementById('verText').textContent = VERSION;
+    document.getElementById('verBtn').onclick = openPatchNotes;
+    document.getElementById('pnClose').onclick = closePatchNotes;
+    document.getElementById('pnBack').addEventListener('click', function(e){ if (e.target.id === 'pnBack') closePatchNotes(); });
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape'){
+        closePatchNotes();
+        if (state.askOpen){
+          var back = document.getElementById('askBack');
+          back.style.display = 'none';
+          back.setAttribute('aria-hidden','true');
+          state.askOpen = false;
+        }
+      }
+    });
+
+    document.getElementById('btnReveal').onclick = function(){ revealEvent(); };
+    document.getElementById('btnRestart').onclick = function(){ restart(); };
+    document.getElementById('btnCopyLog').onclick = copyLog;
+
+    document.getElementById('optAuto').onchange = function(){ updateUI(); pumpBots(); };
+    document.getElementById('optSpeed').onchange = function(){ pumpBots(); };
+    document.getElementById('optAggCountdown').onchange = function(){ updateUI(); };
+
+    document.getElementById('btnStay').onclick = function(){ state.humanChoice = 'stay'; updateUI(); };
+    document.getElementById('btnCamp').onclick = function(){ state.humanChoice = 'camp'; updateUI(); };
+    document.getElementById('btnResolve').onclick = function(){ resolveDecisions(); };
+
+    // init
+    runSelfTests();
+    restart();
+  })();
+  </script>
+</body>
+</html>

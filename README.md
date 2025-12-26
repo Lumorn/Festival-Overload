@@ -1,1 +1,12 @@
 # Festival-Overload
+
+## GitHub Pages Hosting
+
+Dieses Repository ist so vorbereitet, dass GitHub Pages das Spiel direkt aus dem Repository-Root ausliefert.
+
+1. In GitHub unter **Settings → Pages** gehen.
+2. **Source** auf **Deploy from a branch** setzen.
+3. Branch **main** (oder **master**) auswählen und den Ordner **/(root)** wählen.
+4. Speichern und die angezeigte URL öffnen.
+
+Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
