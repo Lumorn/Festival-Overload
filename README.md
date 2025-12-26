@@ -13,10 +13,11 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 
 ## UI-Highlights
 
-- Visualisierte Kartenbereiche für Deck, Ablage und die zuletzt aufgedeckte Karte, damit der Spielablauf schneller erfassbar ist.
-- Kompakte Aktionsleiste und straffes Layout, damit die Bedienung ohne Seiten-Scrollen möglich bleibt (Log/Regeln sind intern scrollbar).
-- Klarere Lesbarkeit durch stärkeren Kontrast, größere Hinweis-/Log-Schrift und visuell stärker markierte Hauptaktion.
-- Mini-Regelübersicht in strukturierte Abschnitte und Listen gegliedert, damit Regeln schneller scanbar sind.
+- „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
+- Overload-Track als 0–12 Pills mit deutlicher Markierung von Gefahrenschwellen sowie Status-Chips (Countdown, Bühnenregel, Encore).
+- Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.
+- Simultane Bleib/Camp-Entscheidung als Vollbild-Overlay inkl. Vorschau auf Pool-Bonus und Gesamtstand.
+- Log als Drawer (per Button) und Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
 
 ## Feste Pflege-Regeln
 

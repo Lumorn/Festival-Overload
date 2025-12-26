@@ -31,11 +31,37 @@
       overflow:hidden;
     }
 
-    .wrap{max-width:1220px;margin:0 auto;padding:14px;height:100%;display:flex;flex-direction:column;gap:12px}
+    .wrap{max-width:1400px;margin:0 auto;padding:14px;height:100%;display:flex;flex-direction:column;gap:12px}
 
-    .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:6px}
-    .topLeft{display:flex;flex-direction:column;gap:6px}
-    .titleRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .topBar{
+      display:grid;
+      grid-template-columns:1fr auto 1fr;
+      align-items:center;
+      gap:12px;
+      padding:10px 14px;
+      border-radius:16px;
+      background:rgba(11,15,23,.55);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      min-height:64px;
+    }
+    .topLeft{display:flex;align-items:center;gap:12px}
+    .topCenter{text-align:center}
+    .topRight{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap}
+    .gameTitle{display:flex;flex-direction:column;gap:2px}
+    .gameTitle b{font-size:16px;letter-spacing:.2px}
+    .gameTitle span{font-size:12px;color:var(--mutedStrong)}
+    .roundEvent{font-size:16px;font-weight:900;letter-spacing:.2px}
+    .roundEvent small{display:block;font-size:12px;color:var(--mutedStrong);font-weight:500}
+    .roundBadge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;background:rgba(31,42,68,.7);border:1px solid rgba(148,163,184,.18);font-size:12px;position:relative}
+    .goalChip{padding:6px 10px;border-radius:999px;background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.38);font-size:12px;font-weight:700}
+    .statusIcons{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .statusChip{display:none;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(148,163,184,.18);background:rgba(31,42,68,.6);font-size:12px}
+    .statusChip.active{display:inline-flex}
+    .statusChip.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
+    .statusChip.blue{border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.12)}
+    .statusChip.bad{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.12)}
+
     h1{margin:0;font-size:20px;letter-spacing:.2px}
     .sub{color:var(--mutedStrong);font-size:14px;max-width:920px;line-height:1.45}
 
@@ -351,7 +377,7 @@
     .flash-blue .deltaBadge{display:inline-flex;border-color:rgba(96,165,250,.55);background:rgba(96,165,250,.12);animation:popBadge .75s ease}
 
     /* Pool kleine Stapel-Optik */
-    #poolPill::after{
+    #poolChip::after{
       content:"";
       position:absolute;right:10px;bottom:8px;
       width:18px;height:14px;
@@ -447,8 +473,114 @@
     details.fold summary::-webkit-details-marker{display:none}
     details.fold .hint{margin-top:8px}
 
+    /* --- Scorett Layout --- */
+    .mainGrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.9fr) minmax(0,1fr);gap:12px;flex:1;min-height:0}
+    .stageCard{display:flex;flex-direction:column;gap:12px}
+    .stageTop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .stageMeta{display:flex;gap:8px;flex-wrap:wrap}
+    .stageChip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(31,42,68,.65);border:1px solid rgba(148,163,184,.18);font-size:12px;position:relative}
+    .stageChip b{font-weight:900}
+    .stageChip.blue{border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.12)}
+    .stageChip.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
+    .stageChip.bad{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.12)}
+
+    .overloadTrack{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
+    .overloadTrackHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .overloadPills{display:grid;grid-template-columns:repeat(13, minmax(0,1fr));gap:6px}
+    .overloadPill{display:flex;align-items:center;justify-content:center;padding:6px 0;border-radius:999px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.6);font-size:11px;color:var(--muted)}
+    .overloadPill.mark{border-color:rgba(245,158,11,.4);color:#fff}
+    .overloadPill.danger{border-color:rgba(239,68,68,.45);color:#fff}
+    .overloadPill.active{box-shadow:0 0 0 2px rgba(255,255,255,.12), 0 0 16px rgba(99,102,241,.25);background:rgba(99,102,241,.28);color:#fff;font-weight:900}
+    .overloadHint{font-size:12px;color:var(--mutedStrong)}
+    .overloadHint .chip{padding:4px 8px;border-radius:999px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);font-size:11px}
+
+    .stageGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:12px;min-height:0}
+    .currentCard{min-height:360px;border-radius:20px;padding:16px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.75);box-shadow:0 18px 38px rgba(0,0,0,.45);position:relative;overflow:hidden}
+    .currentCard .kName{font-size:18px}
+    .currentCard .kText{font-size:14px}
+    .currentCard .impact{margin-top:8px}
+
+    .poolPanel{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
+    .poolChip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(96,165,250,.16);border:1px solid rgba(96,165,250,.38);font-size:14px;font-weight:900}
+    .poolStack{display:flex;gap:8px;align-items:center}
+    .poolCards{display:flex;gap:6px}
+    .poolCard{width:36px;height:48px;border-radius:8px;border:1px solid rgba(148,163,184,.22);background:linear-gradient(135deg, rgba(99,102,241,.2), rgba(15,23,42,.85));box-shadow:0 10px 24px rgba(0,0,0,.35)}
+    .poolCard:nth-child(2){transform:translateY(4px);opacity:.8}
+    .poolCard:nth-child(3){transform:translateY(8px);opacity:.6}
+
+    .actionRow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:14px;background:rgba(31,42,68,.35);border:1px solid rgba(148,163,184,.14)}
+    .actionRow .controls{margin:0}
+
+    .playersCard{display:flex;flex-direction:column;gap:12px;min-height:0}
+    .playersHeader{display:flex;justify-content:space-between;align-items:center}
+    .playersList{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0}
+    .playerCard{padding:12px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.16);display:flex;flex-direction:column;gap:10px}
+    .playerHeader{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .playerName{font-weight:900;font-size:14px;display:flex;align-items:center;gap:8px}
+    .playerAvatar{width:32px;height:32px;border-radius:10px;background:rgba(99,102,241,.25);display:flex;align-items:center;justify-content:center;font-weight:900}
+    .playerBadge{padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.2px}
+    .badgeActive{background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.35);color:#fff}
+    .badgeCamp{background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.35);color:#fff}
+    .playerStats{display:flex;gap:8px;flex-wrap:wrap}
+    .playerStat{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.18);border:1px solid rgba(148,163,184,.18);font-size:12px}
+    .playerStat b{font-weight:900}
+    .playerActions{display:flex;gap:6px;flex-wrap:wrap}
+    .playerMark{padding:4px 8px;border-radius:999px;font-size:11px;background:rgba(96,165,250,.14);border:1px solid rgba(96,165,250,.3)}
+    .playerMark.warn{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.3)}
+    .playerCard.turnGlow{border-color:rgba(34,197,94,.35);box-shadow:0 0 0 1px rgba(34,197,94,.18), 0 12px 34px rgba(0,0,0,.25)}
+    .playerCard.decideGlow{border-color:rgba(245,158,11,.35);box-shadow:0 0 0 1px rgba(245,158,11,.16), 0 12px 34px rgba(0,0,0,.22)}
+    .playerCard.campedDim{opacity:.78}
+
+    .rightPanel{display:flex;flex-direction:column;gap:12px;min-height:0}
+    .rightPanel .sideSection{background:rgba(11,15,23,.45)}
+    .rightPanel .log{min-height:200px}
+
+    .decisionOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:120;background:rgba(3,6,12,.78);backdrop-filter:blur(6px)}
+    .decisionOverlay.show{display:flex}
+    .decisionModal{width:min(820px, 100%);background:rgba(20,27,42,.97);border:1px solid rgba(148,163,184,.22);border-radius:20px;box-shadow:0 22px 70px rgba(0,0,0,.6);padding:18px;display:flex;flex-direction:column;gap:14px}
+    .decisionHeader{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .decisionTitle{font-size:20px;font-weight:900}
+    .decisionStats{display:flex;gap:8px;flex-wrap:wrap}
+    .decisionStat{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.2);border:1px solid rgba(148,163,184,.16);font-size:12px}
+    .decisionMain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .decisionBtn{padding:16px;border-radius:16px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.6);display:flex;flex-direction:column;gap:6px;align-items:flex-start;cursor:pointer}
+    .decisionBtn strong{font-size:18px}
+    .decisionBtn small{color:var(--mutedStrong)}
+    .decisionBtn.good{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.12)}
+    .decisionBtn.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
+    .decisionBtn:disabled{opacity:.5;cursor:not-allowed}
+    .decisionBtn.selected{box-shadow:0 0 0 2px rgba(255,255,255,.14), 0 12px 28px rgba(0,0,0,.25);transform:translateY(-1px)}
+    .decisionPreview{padding:10px 12px;border-radius:14px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.16);display:flex;flex-direction:column;gap:6px}
+    .decisionPlayers{display:flex;gap:8px;flex-wrap:wrap}
+    .decisionPlayer{width:28px;height:28px;border-radius:10px;background:rgba(148,163,184,.18);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--muted)}
+    .decisionPlayer.done{background:rgba(34,197,94,.22);color:#fff}
+    .decisionTimer{width:44px;height:44px;border-radius:999px;border:2px solid rgba(96,165,250,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+
+    .logDrawer{display:block}
+    body.logHidden .logDrawer{display:none}
+    body.logOpen .logDrawer{display:block}
+    body.logOpen .logDrawer .sideSection{max-height:60vh}
+
     @media (max-width:1150px){
       .mainColumns{grid-template-columns:1fr}
+      .mainGrid{grid-template-columns:1fr}
+      .topBar{grid-template-columns:1fr;gap:8px}
+      .topCenter{text-align:left}
+      .playersList{max-height:240px}
+      .rightPanel{order:3}
+      .playersCard{order:2}
+      .stageCard{order:1}
+      .stageGrid{grid-template-columns:1fr}
+      .decisionMain{grid-template-columns:1fr}
+      .logDrawer{display:none}
+      body.logOpen .logDrawer{
+        display:block;
+        position:fixed;
+        inset:auto 12px 12px 12px;
+        z-index:130;
+        border-radius:18px;
+        box-shadow:0 20px 60px rgba(0,0,0,.6);
+      }
     }
     @media (max-height:900px){
       body{overflow:auto}
@@ -458,190 +590,244 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="top">
+    <div class="topBar">
       <div class="topLeft">
-        <div class="titleRow">
-          <div class="ver" id="verBtn" title="Patch Notes anzeigen">
-            <span>🎛️</span><b id="verText">v0.0</b><span class="mini">(klicken)</span>
+        <div class="ver" id="verBtn" title="Patch Notes anzeigen">
+          <span>🎛️</span><b id="verText">v0.0</b><span class="mini">(klicken)</span>
+        </div>
+        <div class="gameTitle">
+          <b>Festival Overload</b>
+          <span>Scorett UI · Prototyp</span>
+        </div>
+      </div>
+      <div class="topCenter">
+        <div class="roundEvent">
+          Runde <span class="roundBadge" id="roundBadge"><span id="roundNo">1</span></span>
+          · Event <span class="roundBadge" id="eventBadge"><span id="eventNo">0</span></span>
+        </div>
+        <small class="mini">Ein Blick: Overload · Pool · Karte · Aktivität</small>
+      </div>
+      <div class="topRight">
+        <div class="goalChip">Ziel: 8 Camp</div>
+        <div class="statusIcons">
+          <span class="statusChip warn" id="countdownStatus">🔥 Countdown aktiv</span>
+          <span class="statusChip blue" id="stageRuleChip">🌀 Bühnenregel</span>
+          <span class="statusChip bad" id="encoreChip">🎤 Encore-Kette</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mainGrid">
+      <section class="card stageCard">
+        <div class="stageTop">
+          <div class="stageMeta">
+            <div class="stageChip" id="overloadChip"><b>Overload</b> <span id="overloadValue">0</span> / 12</div>
+            <div class="stageChip blue" id="poolChip"><b>Pool</b> <span id="poolValue">0</span></div>
+            <div class="stageChip" id="deckChip"><b>Deck</b> <span id="deckCount">0</span></div>
+            <div class="stageChip" id="discardChip"><b>Ablage</b> <span id="discardCount">0</span></div>
           </div>
-          <h1>Festival Overload – spielbarer Prototyp (Simultan Camp/Bleib)</h1>
+          <div class="stageMeta">
+            <div class="stageChip" id="stateChip"><b>Status</b>: Normal</div>
+            <div class="stageChip warn" id="countdownChip"><b>Countdown</b>: <span id="countdown">aus</span></div>
+            <div class="stageChip blue"><b>Phase</b>: <span id="phase">Aufdecken</span></div>
+          </div>
         </div>
-        <div class="sub">
-          Push-your-Luck mit simultanem <b>Bleib/Camp</b>, sichtbarem <b>Bühnen-Pool</b> und Overload-Check bei <b>12</b>.
-          Bots spielen automatisch, oder du schaust im <b>Autoplay</b>-Modus einfach zu.
+
+        <div class="overloadTrack" aria-label="Overload-Track">
+          <div class="overloadTrackHeader">
+            <div><b>Overload-Track</b> <span class="mini">0–12</span></div>
+            <div class="overloadHint"><span class="chip">⏱️ Countdown +1</span> <span class="mini" id="countdownHint">inaktiv</span></div>
+          </div>
+          <div class="overloadPills" id="overloadPills"></div>
         </div>
+
         <div class="steps" id="steps" aria-label="Phasen">
           <div class="step" data-step="reveal" title="Der aktive Spieler deckt genau 1 Event auf"><span class="n">1</span>Aufdecken</div>
           <div class="step" data-step="event" title="Event-Effekt wird ausgeführt (inkl. Encore-Ketten, Twist, Overload-Check)"><span class="n">2</span>Effekt</div>
           <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (optional +2 bei Pool ≥3, falls aktiviert)"><span class="n">3</span>Countdown</div>
           <div class="step" data-step="decision" title="Alle aktiven Spieler entscheiden gleichzeitig Bleib/Camp"><span class="n">4</span>Entscheidung</div>
         </div>
-      </div>
-      <div class="toggle">
-        <label class="mini"><input id="optPflaster" type="checkbox" checked> Pflaster nach Knall: Aktiver Spieler rettet 1 Live als Camp</label>
-        <label class="mini"><input id="optAggCountdown" type="checkbox"> Countdown aggressiv: +1 extra wenn Pool ≥3</label>
-        <label class="mini"><input id="optAuto" type="checkbox"> Autoplay: Bots spielen automatisch (Zuschauermodus)</label>
-        <label class="mini">Tempo:
-          <select id="optSpeed">
-            <option value="250">schnell</option>
-            <option value="650" selected>normal</option>
-            <option value="1100">langsam</option>
-          </select>
-        </label>
-      </div>
-    </div>
 
-    <div class="grid">
-      <div class="card">
-        <div class="row">
-          <div class="pill big" id="roundPill"><b>Runde</b>: <span id="roundNo">1</span></div>
-          <div class="pill big" id="overloadPill"><b>Overload</b>: <span id="overload">0</span> / 12</div>
-          <div class="pill big blue" title="Welche Phase gerade läuft"><b>Phase</b>: <span id="phase">Aufdecken</span></div>
-          <div class="pill big" id="statePill"><b>Status</b>: Normal</div>
-          <div class="pill big" id="countdownPill"><b>Countdown</b>: <span id="countdown">aus</span></div>
-          <div class="pill big" id="poolPill"><b>Bühnen-Pool</b>: <span id="pool">0</span></div>
-          <div class="pill big" id="deckPill"><b>Deck</b>: <span id="deckCount">0</span></div>
-          <div class="pill big" id="discardPill"><b>Ablage</b>: <span id="discardCount">0</span></div>
-        </div>
-        <div class="tableau">
-          <div class="stack">
-            <div class="stackTitle"><b>Deck</b><span id="deckCountMini">0 Karten</span></div>
-            <div class="cardStack" id="deckStack">
-              <div class="cardBack layer3"></div>
-              <div class="cardBack layer2"></div>
-              <div class="cardBack"></div>
-            </div>
-          </div>
-          <div class="stack">
-            <div class="stackTitle"><b>Aufgedeckte Karte</b><span id="revealMeta">—</span></div>
-            <div class="cardFace" id="revealCard" data-type="empty">
-              <div class="rTop">
-                <span class="rName" id="revealName">Noch keine Karte</span>
-                <span class="rType" id="revealType">—</span>
-              </div>
-              <div class="rText" id="revealText">Klicke auf „Event aufdecken“, um den ersten Draw zu sehen.</div>
-            </div>
-          </div>
-          <div class="stack">
-            <div class="stackTitle"><b>Ablage</b><span id="discardCountMini">0 Karten</span></div>
-            <div class="cardStack" id="discardStack">
-              <div class="cardBack discard layer3"></div>
-              <div class="cardBack discard layer2"></div>
-              <div class="cardBack discard"></div>
-            </div>
-          </div>
-        </div>
-        <div style="margin-top:10px" class="bar"><div id="barFill"></div><div class="tick t8" title="Ab 8 gibt es beim Campen +1 extra aus dem Pool (falls vorhanden)">8</div><div class="tick t12" title="Bei 12 wird sofort der Katastrophen-Check ausgelöst">12</div></div>
-        <div class="banner" id="banner"></div>
-        <div class="hint">
-          <b>Overload-Check</b>: Sobald Overload <b>12</b> erreicht, wird sofort eine Karte als <b>Katastrophen-Check</b> aufgedeckt (nur Typ prüfen).
-          <b>Push</b> = <b>Knall</b> (Runde endet sofort). Sonst: Check-Karte wird ohne Effekt abgeworfen und Overload geht auf <b>10</b> zurück.
-        </div>
-        <div class="sep"></div>
-
-        <div class="players" id="players"></div>
-
-        <div class="sep"></div>
-
-        <div class="mainColumns">
-          <div style="flex:1">
+        <div class="stageGrid">
+          <div>
             <div class="row" style="justify-content:space-between">
               <div>
-                <b>Aktuelles Event</b>
+                <b>Aktuelle Karte</b>
                 <span class="mini">(aufgedeckt von: <b id="revealerName">—</b> · Richtung: <b id="dir">↻</b>)</span>
               </div>
               <div class="mini">Bühnenregel: <b id="stageRule">—</b></div>
             </div>
 
-            <div class="eventWrap">
-              <div class="eventCard" id="eventCard" data-type="twist">
-                <div class="stripe"></div>
-                <div class="kTop">
-                  <div class="kName" id="eventName">Bereit</div>
-                  <div class="kType" id="eventType"><span class="dot" style="background:rgba(148,163,184,.6)"></span> ⏺️ Event</div>
-                </div>
-                <div class="impact" id="eventImpact">—</div>
-                <div class="kText" id="eventText">Klicke auf „Event aufdecken“, um zu starten.</div>
+            <div class="eventCard currentCard" id="eventCard" data-type="twist">
+              <div class="stripe"></div>
+              <div class="kTop">
+                <div class="kName" id="eventName">Bereit</div>
+                <div class="kType" id="eventType"><span class="dot" style="background:rgba(148,163,184,.6)"></span> ⏺️ Event</div>
               </div>
-
-              <div class="eventSummary" id="eventSummary">—</div>
-
-              <div class="actionDock">
-                <div class="decision" id="decisionBox">
-                  <div class="decisionRow">
-                    <div>
-                      <div><b>Bleib oder Camp</b> <span class="mini">(simultan, offen)</span></div>
-                      <div class="mini" id="decisionHint">Wähle deine Entscheidung, dann löse die Phase aus.</div>
-                    </div>
-                    <div class="choice">
-                      <button class="btn good" id="btnStay">Bleib</button>
-                      <button class="btn warn" id="btnCamp">Camp</button>
-                      <button class="btn blue" id="btnResolve">Entscheidung ausführen</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="controls">
-                  <button class="btn good primary" id="btnReveal">Event aufdecken</button>
-                  <button class="btn bad" id="btnRestart">Neustart</button>
-                </div>
-              </div>
-
-              <details class="fold">
-                <summary>Regelhilfe & Pool-Bonus</summary>
-                <div class="hint">
-                  <b>Camp (nur mit Live):</b> Ohne mindestens <b>1 Live</b> gibt es keinen Cashout.
-                  <br>
-                  <b>Pool-Bonus:</b> Beim Campen (mit Live) gibt es <b>+1</b> aus dem Pool (falls vorhanden) und bei Overload <b>8+</b> noch <b>+1</b>.
-                  <br>
-                  <b>Wichtig:</b> Maßgeblich ist der <b>Overload nach dem Event</b> (inkl. Countdown/Checks), direkt vor der Camp-Entscheidung.
-                  <br>
-                  <b>Verteilung (gleichzeitig campen):</b> Uhrzeigersinn ab Aufdecker – erst bekommt jeder berechtigte Camper <b>1</b>, dann (bei Overload 8+) in einem zweiten Durchlauf ggf. noch <b>1</b>.
-                </div>
-              </details>
+              <div class="impact" id="eventImpact">—</div>
+              <div class="kText" id="eventText">Klicke auf „Event aufdecken“, um zu starten.</div>
             </div>
+
+            <div class="eventSummary" id="eventSummary">—</div>
+
+            <div class="actionRow">
+              <div class="mini">Simultane Entscheidung erscheint als Overlay nach Eventende.</div>
+              <div class="controls">
+                <button class="btn good primary" id="btnReveal">Aufdecken</button>
+                <button class="btn blue" id="btnLog">Log</button>
+              </div>
+            </div>
+
+            <details class="fold">
+              <summary>Regelhilfe & Pool-Bonus</summary>
+              <div class="hint">
+                <b>Camp (nur mit Live):</b> Ohne mindestens <b>1 Live</b> gibt es keinen Cashout.
+                <br>
+                <b>Pool-Bonus:</b> Beim Campen (mit Live) gibt es <b>+1</b> aus dem Pool (falls vorhanden) und bei Overload <b>8+</b> noch <b>+1</b>.
+                <br>
+                <b>Wichtig:</b> Maßgeblich ist der <b>Overload nach dem Event</b> (inkl. Countdown/Checks), direkt vor der Camp-Entscheidung.
+                <br>
+                <b>Verteilung (gleichzeitig campen):</b> Uhrzeigersinn ab Aufdecker – erst bekommt jeder berechtigte Camper <b>1</b>, dann (bei Overload 8+) in einem zweiten Durchlauf ggf. noch <b>1</b>.
+              </div>
+            </details>
           </div>
 
-          <div class="logWrap">
-            <div class="logHead">
-              <b>Log</b>
-              <div class="logActions">
-                <button class="btn slim" id="btnCopyLog">Log kopieren</button>
-                <span class="mini">Tipp: Autoplay aktivieren, um eine komplette Partie durchlaufen zu lassen.</span>
+          <div class="poolPanel">
+            <div class="poolChip">Pool: <span id="poolValueSide">0</span></div>
+            <div class="poolStack">
+              <div class="poolCards">
+                <div class="poolCard"></div>
+                <div class="poolCard"></div>
+                <div class="poolCard"></div>
+              </div>
+              <div class="mini" id="poolHint">Camp-Bonus: +1 (bei Overload 8+ +1)</div>
+            </div>
+
+            <div class="tableau">
+              <div class="stack">
+                <div class="stackTitle"><b>Deck</b><span id="deckCountMini">0 Karten</span></div>
+                <div class="cardStack" id="deckStack">
+                  <div class="cardBack layer3"></div>
+                  <div class="cardBack layer2"></div>
+                  <div class="cardBack"></div>
+                </div>
+              </div>
+              <div class="stack">
+                <div class="stackTitle"><b>Aufgedeckt</b><span id="revealMeta">—</span></div>
+                <div class="cardFace" id="revealCard" data-type="empty">
+                  <div class="rTop">
+                    <span class="rName" id="revealName">Noch keine Karte</span>
+                    <span class="rType" id="revealType">—</span>
+                  </div>
+                  <div class="rText" id="revealText">Klicke auf „Aufdecken“, um den ersten Draw zu sehen.</div>
+                </div>
+              </div>
+              <div class="stack">
+                <div class="stackTitle"><b>Ablage</b><span id="discardCountMini">0 Karten</span></div>
+                <div class="cardStack" id="discardStack">
+                  <div class="cardBack discard layer3"></div>
+                  <div class="cardBack discard layer2"></div>
+                  <div class="cardBack discard"></div>
+                </div>
               </div>
             </div>
-            <div class="log" id="log"></div>
           </div>
         </div>
+
+        <div class="banner" id="banner"></div>
+      </section>
+
+      <section class="card playersCard">
+        <div class="playersHeader">
+          <b>Spielerleisten</b>
+          <span class="mini">Reihenfolge & Status</span>
+        </div>
+        <div class="playersList" id="players"></div>
+      </section>
+
+      <section class="card rightPanel">
+        <div class="sideSection">
+          <div class="sideTitle">Regelerinnerung</div>
+          <ul class="ruleList mini">
+            <li><b>Nach jedem Event</b>: Bleib oder Camp.</li>
+            <li><b>Camp</b>: nur mit mindestens 1 Live.</li>
+            <li><b>Bei 12</b>: Katastrophen-Check.</li>
+          </ul>
+        </div>
+        <div class="sideSection logDrawer">
+          <div class="logHead">
+            <b>Log</b>
+            <div class="logActions">
+              <button class="btn slim" id="btnCopyLog">Log kopieren</button>
+            </div>
+          </div>
+          <div class="log" id="log"></div>
+        </div>
+        <div class="sideSection">
+          <div class="sideTitle">Einstellungen</div>
+          <div class="toggle">
+            <label class="mini"><input id="optPflaster" type="checkbox" checked> Pflaster nach Knall: Aktiver Spieler rettet 1 Live als Camp</label>
+            <label class="mini"><input id="optAggCountdown" type="checkbox"> Countdown aggressiv: +1 extra wenn Pool ≥3</label>
+            <label class="mini"><input id="optAuto" type="checkbox"> Autoplay: Bots spielen automatisch (Zuschauermodus)</label>
+            <label class="mini">Tempo:
+              <select id="optSpeed">
+                <option value="250">schnell</option>
+                <option value="650" selected>normal</option>
+                <option value="1100">langsam</option>
+              </select>
+            </label>
+            <button class="btn bad" id="btnRestart">Neustart</button>
+          </div>
+        </div>
+        <div class="sideSection">
+          <div class="sideTitle">Test-Deck (60 Karten)</div>
+          <div class="mini">⚡ Push 26 · 🛠️ Stabilisieren 14 · 🌀 Twist 14 · 🎤 Encore 6</div>
+        </div>
+        <div class="sideSection mini">
+          <b>Dev:</b> Browser-Konsole: <code>FestivalOverloadTests</code>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="decisionOverlay" id="decisionOverlay" aria-hidden="true">
+    <div class="decisionModal" role="dialog" aria-modal="true" aria-label="Entscheidung">
+      <div class="decisionHeader">
+        <div>
+          <div class="decisionTitle">Entscheidung!</div>
+          <div class="decisionStats">
+            <div class="decisionStat">Overload: <b id="decisionOverload">0</b></div>
+            <div class="decisionStat">Pool: <b id="decisionPool">0</b></div>
+            <div class="decisionStat">Live: <b id="decisionLive">0</b></div>
+          </div>
+        </div>
+        <div class="decisionTimer" id="decisionTimer">15s</div>
       </div>
 
-      <div class="card sideCard">
-        <div class="sideScroll">
-          <div class="sideSection">
-            <div class="sideTitle">Mini-Regelübersicht (Kurz)</div>
-            <div class="mini">Kurzfassung für die wichtigsten Regeln im schnellen Überblick.</div>
-            <ul class="ruleList mini">
-              <li><b>Ziel</b>: 8 Camp → sofortiger Sieg.</li>
-              <li><b>Event</b>: Aktiver Spieler deckt 1 Karte auf und führt sie aus. Danach entscheiden alle aktiven Spieler gleichzeitig <b>Bleib/Camp</b>.</li>
-              <li><b>⚡ Push</b>: Overload +X (max 12), Aufdecker +1 Live, Pool +1.</li>
-              <li><b>🛠️ Stabilisieren</b>: Overload −X (min 0). <b>Ertrag nur wenn es brenzlig ist</b>: Wenn Overload <b>vor</b> dem Senken 8+ war → Aufdecker +1 Live (aus dem Vorrat).</li>
-              <li><b>🌀 Twist</b>: Chaos. <b>🌀∞ Bühnenregel</b> bleibt offen, es kann nur 1 gleichzeitig geben.</li>
-              <li><b>🎤 Encore</b>: sofort noch ein Event, bevor jemand campen darf. Aufdecker kann 1 Live zahlen, um Encore zu stoppen.</li>
-              <li><b>Camp</b>: nur mit <b>mindestens 1 Live</b>. Live wird zu Camp, dann Pool-Bonus.</li>
-              <li><b>Overload-Check</b> bei 12: Katastrophen-Check. Push = <b>Knall</b>. Sonst Overload auf 10.</li>
-              <li><b>Knall</b>: Runde endet sofort. Alle aktiven Spieler verlieren Live (Camp ist sicher).</li>
-              <li><b>Countdown</b>: startet erst, wenn in der Runde zum ersten Mal jemand <b>erfolgreich</b> campt (mit Live). Danach Overload +1 nach jedem Event.</li>
-              <li><b>Anti-Solo</b>: Sobald nur noch 1 Spieler aktiv ist, endet die Runde sofort. Letzter Spieler campt Live→Camp, bekommt <b>keinen Pool-Bonus</b>, Pool wird verworfen.</li>
-            </ul>
-          </div>
-          <div class="sideSection">
-            <div class="sideTitle">Test-Deck (60 Karten)</div>
-            <div class="mini">⚡ Push 26 · 🛠️ Stabilisieren 14 · 🌀 Twist 14 · 🎤 Encore 6</div>
-          </div>
-          <div class="sideSection mini">
-            <b>Dev:</b> Browser-Konsole: <code>FestivalOverloadTests</code>
-          </div>
-        </div>
+      <div class="decisionMain">
+        <button class="decisionBtn good" id="btnStay">
+          <strong>BLEIB</strong>
+          <small>Live bleibt riskant</small>
+        </button>
+        <button class="decisionBtn warn" id="btnCamp">
+          <strong>CAMP</strong>
+          <small id="campHint">Du sicherst dein Live</small>
+        </button>
+      </div>
+
+      <div class="decisionPreview" id="decisionPreview">
+        <div class="mini" id="decisionHint">Wähle Bleib oder Camp. Danach wird simultan aufgelöst.</div>
+        <div class="mini" id="decisionGain">—</div>
+        <div class="mini" id="decisionTotal">—</div>
+      </div>
+
+      <div>
+        <div class="mini">Wer hat schon gewählt?</div>
+        <div class="decisionPlayers" id="decisionPlayers"></div>
+      </div>
+
+      <div class="controls" style="justify-content:flex-end">
+        <button class="btn blue" id="btnResolve">Entscheidung ausführen</button>
       </div>
     </div>
   </div>
@@ -681,10 +867,21 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.15';
+    var VERSION = 'v0.16';
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.16',
+        date: '2025-12-30',
+        items: [
+          'UI: Neues „Scorett“-Layout mit Top-Bar, 3-Spalten-Bühne und klaren Chips für Overload/Pool/Deck/Ablage.',
+          'UI: Overload-Track als 0–12 Pills plus Status-Chips für Countdown, Bühnenregel und Encore.',
+          'UI: Spielerleisten als große Cards mit Live/Camp-Chips, Status-Badges und Wahlmarkern.',
+          'UI: Simultane Entscheidung als Vollbild-Overlay mit Vorschau und Spielerstatus.',
+          'UX: Log als Drawer (per Button), Einstellungen in die rechte Spalte verschoben.'
+        ]
+      },
       {
         ver: 'v0.15',
         date: '2025-12-29',
@@ -788,6 +985,8 @@
 
       turnId: 0,
       askOpen: false,
+      encoreChain: 0,
+      humanLockedIn: false,
 
       autoTimer: null,
 
@@ -1207,8 +1406,10 @@
 
       document.getElementById('verText').textContent = VERSION;
       document.getElementById('roundNo').textContent = String(state.round);
-      document.getElementById('overload').textContent = String(state.overload);
-      document.getElementById('pool').textContent = String(state.pool);
+      document.getElementById('eventNo').textContent = String(state.turnId);
+      document.getElementById('overloadValue').textContent = String(state.overload);
+      document.getElementById('poolValue').textContent = String(state.pool);
+      document.getElementById('poolValueSide').textContent = String(state.pool);
       document.getElementById('deckCount').textContent = String(state.deck.length);
       document.getElementById('discardCount').textContent = String(state.discard.length);
       document.getElementById('deckCountMini').textContent = cardCountLabel(state.deck.length);
@@ -1219,48 +1420,83 @@
       if (deckStack) deckStack.classList.toggle('empty', state.deck.length === 0);
       if (discardStack) discardStack.classList.toggle('empty', state.discard.length === 0);
 
-      var pct = (state.overload / MAX_OVERLOAD) * 100;
-      document.getElementById('barFill').style.width = pct + '%';
-
       document.getElementById('countdown').textContent = state.countdownActive ? 'an' : 'aus';
+      document.getElementById('countdownHint').textContent = state.countdownActive ? 'aktiv' : 'inaktiv';
       document.getElementById('stageRule').textContent = state.stageRule ? state.stageRule.name : '—';
+      var poolHint = document.getElementById('poolHint');
+      if (poolHint){
+        var bonus = (state.overload >= 8) ? 2 : 1;
+        poolHint.textContent = 'Camp-Bonus: +' + bonus + ' (Pool ' + (state.pool > 0 ? 'bereit' : 'leer') + ')';
+      }
 
-      var pill = document.getElementById('statePill');
+      var pill = document.getElementById('stateChip');
       var label = 'Normal';
-      var cls = 'pill big';
-      if (state.overload >= 10) { label = 'Gefährlich'; cls += ' warn'; }
+      var cls = 'stageChip';
+      if (state.overload >= 10) { label = 'Gefährlich'; cls += ' bad'; }
       else if (state.overload <= 4) { label = 'Sicher'; cls += ' good'; }
       pill.className = cls;
       pill.innerHTML = '<b>Status</b>: ' + label;
 
+      var countdownChip = document.getElementById('countdownChip');
+      countdownChip.className = 'stageChip warn';
+      countdownChip.innerHTML = '<b>Countdown</b>: ' + (state.countdownActive ? 'an' : 'aus');
+
+      var countdownStatus = document.getElementById('countdownStatus');
+      if (countdownStatus){
+        countdownStatus.classList.toggle('active', state.countdownActive);
+      }
+
+      var stageRuleChip = document.getElementById('stageRuleChip');
+      if (stageRuleChip){
+        if (state.stageRule){
+          stageRuleChip.textContent = '🌀 ' + state.stageRule.name;
+          stageRuleChip.classList.add('active');
+        } else {
+          stageRuleChip.textContent = '🌀 Bühnenregel';
+          stageRuleChip.classList.remove('active');
+        }
+      }
+
+      var encoreChip = document.getElementById('encoreChip');
+      if (encoreChip){
+        if (state.encoreChain > 0){
+          encoreChip.textContent = '🎤 Encore-Kette ' + state.encoreChain;
+          encoreChip.classList.add('active');
+        } else {
+          encoreChip.textContent = '🎤 Encore-Kette';
+          encoreChip.classList.remove('active');
+        }
+      }
+
       document.getElementById('revealerName').textContent = state.players[state.revealer] ? state.players[state.revealer].name : '—';
       document.getElementById('dir').textContent = (state.direction === 1) ? '↻' : '↺';
       updateRevealCard();
+      renderOverloadTrack();
 
       // Stat flashes (optisch "was ist passiert")
       if (prev){
         if (prev.round !== state.round){
-          flashStat('roundPill','good','Runde ' + state.round);
+          flashStat('roundBadge','good','Runde ' + state.round);
         }
         if (prev.overload !== state.overload){
           var dO = state.overload - prev.overload;
           var kindO = (dO > 0) ? (state.overload >= 10 ? 'bad' : 'warn') : 'good';
-          flashStat('overloadPill', kindO, (dO>0?'+':'') + dO);
+          flashStat('overloadChip', kindO, (dO>0?'+':'') + dO);
         }
         if (prev.pool !== state.pool){
           var dP = state.pool - prev.pool;
-          flashStat('poolPill', (dP>0?'blue':'warn'), (dP>0?'+':'') + dP);
+          flashStat('poolChip', (dP>0?'blue':'warn'), (dP>0?'+':'') + dP);
         }
         if (prev.deck !== state.deck.length){
           var dD = state.deck.length - prev.deck;
-          flashStat('deckPill', (dD<0?'warn':'blue'), (dD>0?'+':'') + dD);
+          flashStat('deckChip', (dD<0?'warn':'blue'), (dD>0?'+':'') + dD);
         }
         if (prev.discard !== state.discard.length){
           var dDi = state.discard.length - prev.discard;
-          flashStat('discardPill', (dDi>0?'blue':'warn'), (dDi>0?'+':'') + dDi);
+          flashStat('discardChip', (dDi>0?'blue':'warn'), (dDi>0?'+':'') + dDi);
         }
         if (prev.countdownActive !== state.countdownActive){
-          flashStat('countdownPill', state.countdownActive ? 'warn' : 'good', state.countdownActive ? 'an' : 'aus');
+          flashStat('countdownChip', state.countdownActive ? 'warn' : 'good', state.countdownActive ? 'an' : 'aus');
         }
       }
 
@@ -1290,6 +1526,7 @@
       }
 
       renderPlayers();
+      updateDecisionOverlay();
 
       // store snapshot
       state._uiPrev = {
@@ -1300,10 +1537,6 @@
         discard: state.discard.length,
         countdownActive: state.countdownActive
       };
-
-      // decision box
-      var dec = document.getElementById('decisionBox');
-      dec.style.display = state.awaitingDecision ? 'block' : 'none';
 
       var human = state.players[state.humanIndex];
       var isHumanActive = human.roundState === 'active';
@@ -1337,8 +1570,88 @@
       // highlight choice
       var stay = document.getElementById('btnStay');
       var camp = document.getElementById('btnCamp');
-      stay.classList.toggle('good', state.humanChoice === 'stay');
-      camp.classList.toggle('warn', state.humanChoice === 'camp');
+      stay.classList.toggle('selected', state.humanChoice === 'stay');
+      camp.classList.toggle('selected', state.humanChoice === 'camp');
+    }
+
+    function renderOverloadTrack(){
+      var wrap = document.getElementById('overloadPills');
+      if (!wrap) return;
+      if (!wrap.dataset.ready){
+        wrap.innerHTML = '';
+        for (var i=0;i<=MAX_OVERLOAD;i++){
+          var pill = document.createElement('span');
+          pill.className = 'overloadPill';
+          pill.textContent = String(i);
+          pill.dataset.val = String(i);
+          wrap.appendChild(pill);
+        }
+        wrap.dataset.ready = 'true';
+      }
+
+      var pills = wrap.querySelectorAll('.overloadPill');
+      for (var j=0;j<pills.length;j++){
+        var v = Number(pills[j].dataset.val || j);
+        pills[j].classList.toggle('active', v === state.overload);
+        pills[j].classList.toggle('mark', v === 8);
+        pills[j].classList.toggle('danger', v === 12);
+      }
+    }
+
+    function updateDecisionOverlay(){
+      var overlay = document.getElementById('decisionOverlay');
+      if (!overlay) return;
+      overlay.classList.toggle('show', state.awaitingDecision);
+      overlay.setAttribute('aria-hidden', state.awaitingDecision ? 'false' : 'true');
+
+      var human = state.players[state.humanIndex] || { live:0, camp:0, roundState:'camped', forcedStayNext:false };
+      document.getElementById('decisionOverload').textContent = String(state.overload);
+      document.getElementById('decisionPool').textContent = String(state.pool);
+      document.getElementById('decisionLive').textContent = String(human.live);
+
+      var campHint = document.getElementById('campHint');
+      if (human.live <= 0) campHint.textContent = 'Camp erst ab 1 Live';
+      else if (human.forcedStayNext) campHint.textContent = 'Zwang: Bleib';
+      else campHint.textContent = 'Du sicherst dein Live';
+
+      var preview = document.getElementById('decisionPreview');
+      var gainLine = document.getElementById('decisionGain');
+      var totalLine = document.getElementById('decisionTotal');
+      if (!state.awaitingDecision){
+        preview.style.opacity = '0.6';
+        gainLine.textContent = '—';
+        totalLine.textContent = '—';
+      } else {
+        preview.style.opacity = '1';
+        var bonusSlots = (state.overload >= 8 ? 2 : 1);
+        var poolBonus = Math.min(state.pool, bonusSlots);
+        if (human.roundState !== 'active'){
+          gainLine.textContent = 'Du beobachtest diese Runde.';
+          totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
+        } else if (human.live <= 0){
+          gainLine.textContent = 'Camp nicht möglich (0 Live).';
+          totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
+        } else if (human.forcedStayNext){
+          gainLine.textContent = 'Zwang: Bleib (Stage Dive).';
+          totalLine.textContent = 'Camp bleibt bei ' + human.camp + '.';
+        } else {
+          gainLine.textContent = 'Du sicherst: +' + human.live + ' Camp · Pool-Bonus +' + poolBonus;
+          totalLine.textContent = 'Gesamt jetzt: Camp ' + (human.camp + human.live + poolBonus);
+        }
+      }
+
+      var playersWrap = document.getElementById('decisionPlayers');
+      if (playersWrap){
+        playersWrap.innerHTML = '';
+        for (var i=0;i<state.players.length;i++){
+          var p = state.players[i];
+          var done = (p.roundState !== 'active') || (i === state.humanIndex && state.humanLockedIn);
+          var chip = document.createElement('div');
+          chip.className = 'decisionPlayer' + (done ? ' done' : '');
+          chip.textContent = p.name.substring(0,2).toUpperCase();
+          playersWrap.appendChild(chip);
+        }
+      }
     }
 
     function renderPlayers(){
@@ -1351,23 +1664,15 @@
       for (var i=0;i<state.players.length;i++){
         var p = state.players[i];
 
-        var status = '';
-        if (state.awaitingDecision){
-          status = (p.roundState === 'active')
-            ? '<span class="decide">entscheidet</span>'
-            : '<span class="camped">gecampt</span>';
-        } else {
-          status = (i === state.revealer && p.roundState === 'active')
-            ? '<span class="turn">deckt auf</span>'
-            : (p.roundState === 'camped'
-              ? '<span class="camped">gecampt</span>'
-              : '<span class="tag">aktiv</span>');
-        }
+        var statusLabel = (p.roundState === 'camped') ? 'GECAMPT' : 'AKTIV';
+        var statusClass = (p.roundState === 'camped') ? 'badgeCamp' : 'badgeActive';
 
-        var extra = '';
-        if (p.forcedStayNext && p.roundState === 'active') extra = ' · <span class="tag">Stage Dive: muss bleiben</span>';
+        var marks = [];
+        if (!state.awaitingDecision && i === state.revealer && p.roundState === 'active') marks.push('<span class="playerMark">⬅️ Aufdecker</span>');
+        if (p.forcedStayNext && p.roundState === 'active') marks.push('<span class="playerMark warn">MUSS BLEIBEN</span>');
+        if (state.awaitingDecision && i === state.humanIndex && state.humanLockedIn) marks.push('<span class="playerMark">✅ gewählt</span>');
 
-        var cls = 'p';
+        var cls = 'playerCard';
         if (p.roundState === 'camped') cls += ' campedDim';
         if (!state.awaitingDecision && i === state.revealer && p.roundState === 'active') cls += ' turnGlow';
         if (state.awaitingDecision && p.roundState === 'active') cls += ' decideGlow';
@@ -1394,14 +1699,15 @@
         div.id = 'p' + i;
 
         div.innerHTML =
-          '<div class="name">' +
-            '<div><b>' + esc(p.name) + '</b> <span class="tag">'+(p.name==='Du'?'Du':'Bot')+'</span>'+extra+'</div>' +
-            '<div>' + status + '</div>' +
+          '<div class="playerHeader">' +
+            '<div class="playerName"><span class="playerAvatar">' + esc(p.name.substring(0,1)) + '</span>' + esc(p.name) + ' <span class="tag">' + (p.name === 'Du' ? 'Du' : 'Bot') + '</span></div>' +
+            '<span class="playerBadge ' + statusClass + '">' + statusLabel + '</span>' +
           '</div>' +
-          '<div class="pPills">' +
-            '<div class="pPill" title="Sicher, permanent"><span class="ci"></span><b>Camp</b>: ' + p.camp + '</div>' +
-            '<div class="pPill" title="Nur diese Runde, riskant"><span class="ci live"></span><b>Live</b>: ' + p.live + '</div>' +
+          '<div class="playerStats">' +
+            '<div class="playerStat"><span>🎟️</span><b>Live</b> ' + p.live + '</div>' +
+            '<div class="playerStat"><span>⛺</span><b>Camp</b> ' + p.camp + '</div>' +
           '</div>' +
+          (marks.length ? '<div class="playerActions">' + marks.join('') + '</div>' : '') +
           deltaHtml;
 
         el.appendChild(div);
@@ -1468,6 +1774,7 @@
       state.direction = 1;
       state.extraRevealSame = false;
       state.overload = 0;
+      state.encoreChain = 0;
 
       for (var i=0;i<state.players.length;i++){
         state.players[i].live = 0;
@@ -1480,6 +1787,8 @@
       state.revealer = state.startPlayer;
       state.awaitingDecision = false;
       state.humanChoice = 'stay';
+      state.humanLockedIn = false;
+      state.humanLockedIn = false;
       state.lastEvent = null;
 
       log('good','<b>Neue Runde ' + state.round + '</b> – Overload=0, Pool leer, Bühnenregel entfernt. ' + (reason ? '('+esc(reason)+')' : ''));
@@ -1555,6 +1864,8 @@
       if (state.gameOver) return;
       state.awaitingDecision = true;
       state.humanChoice = 'stay';
+      state.humanLockedIn = false;
+      state.encoreChain = 0;
       setPhase('decision');
 
       setSummary('Entscheidung',
@@ -1862,10 +2173,12 @@
           p.live = Math.max(0, p.live - 1);
           log('good','<b>' + esc(p.name) + '</b> stoppt 🎤 <b>Encore!</b> durch Zahlung von 1 Live. (Live jetzt ' + p.live + ')');
           toast('Encore gestoppt', p.name + ' zahlt 1 Live.');
+          state.encoreChain = 0;
           cb(false);
           return;
         }
         log('warn','🎤 <b>Encore!</b> läuft → sofort noch ein Event (keine Camp-Entscheidung dazwischen).');
+        state.encoreChain = (state.encoreChain || 0) + 1;
         cb(true);
       }
 
@@ -2398,9 +2711,11 @@
 
       state.awaitingDecision = false;
       state.humanChoice = 'stay';
+      state.humanLockedIn = false;
       state.lastEvent = null;
       state.gameOver = false;
       state.turnId = 0;
+      state.encoreChain = 0;
 
       state.phase = 'reveal';
       state.lastSummary = null;
@@ -2441,14 +2756,21 @@
 
     document.getElementById('btnReveal').onclick = function(){ revealEvent(); };
     document.getElementById('btnRestart').onclick = function(){ restart(); };
+    document.getElementById('btnLog').onclick = function(){
+      if (window.matchMedia('(max-width:1150px)').matches){
+        document.body.classList.toggle('logOpen');
+      } else {
+        document.body.classList.toggle('logHidden');
+      }
+    };
     document.getElementById('btnCopyLog').onclick = copyLog;
 
     document.getElementById('optAuto').onchange = function(){ updateUI(); pumpBots(); };
     document.getElementById('optSpeed').onchange = function(){ pumpBots(); };
     document.getElementById('optAggCountdown').onchange = function(){ updateUI(); };
 
-    document.getElementById('btnStay').onclick = function(){ state.humanChoice = 'stay'; updateUI(); };
-    document.getElementById('btnCamp').onclick = function(){ state.humanChoice = 'camp'; updateUI(); };
+    document.getElementById('btnStay').onclick = function(){ state.humanChoice = 'stay'; state.humanLockedIn = true; updateUI(); };
+    document.getElementById('btnCamp').onclick = function(){ state.humanChoice = 'camp'; state.humanLockedIn = true; updateUI(); };
     document.getElementById('btnResolve').onclick = function(){ resolveDecisions(); };
 
     // init
