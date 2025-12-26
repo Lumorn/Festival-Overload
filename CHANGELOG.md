@@ -1,6 +1,14 @@
 # Changelog
 
 ## Unreleased
+- Logs zeigen jetzt konsistent Overload/Live/Camp/Pool bei Push/Stabilisieren/Countdown/Camp-Auflösung.
+- Stage-Dive-Logs vereinheitlicht (Ersatz-Effekt + „Bleib wählen“-Hinweis).
+- Pool-Bonus wird deterministisch pro Camper verteilt (Reihenfolge ab Aufdecker, aktuelle Richtung) und sauber geloggt.
+- Camp-Logs zeigen Live→Camp und Pool→Camp pro Spieler inklusive Camp/Pool-Delta.
+- Stabilisieren- und Push-Logs nutzen feste Kartenwerte, korrigieren Vorzeichen und markieren min 0/Cap 12.
+- Katastrophen-Check loggt Check-Karte klar und setzt Overload bei Safe auf 10.
+- Anti-Solo camped den letzten Spieler inkl. Pool-Bonus und Trostpunkt bei 0 Live.
+- Stage Dive stapelt keinen „Muss bleiben“-Zwang mehr; Ersatz-Effekt greift stattdessen.
 - Overload-Delta in Log/Overlay nutzt den tatsächlich angewendeten (gecappten) Wert.
 - Stage Dive kann den Aufdecker nicht mehr als Ziel wählen.
 - Bot-Anzahl wird gegen ungültige Eingaben abgesichert.
