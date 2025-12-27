@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Spielmodus-Eventkarte kompakter gestaltet und mit Kartenrahmen/Innen-Schatten veredelt.
 - UI: Eventkarten mit doppeltem Rahmen, feiner Papiertextur, Eckornamenten und abgerundeten Farbbändern verfeinert.
 - UI: Aktuelle Eventkarte kompakter gestaltet (geringere Höhe, kleinere Typo, dichterer Impact-Block).
 - UI: Entscheidungsfenster und Spielmodus-Layout skalieren dynamisch mit der Viewport-Größe, inklusive Scrollbarkeit auf kleinen Screens.
