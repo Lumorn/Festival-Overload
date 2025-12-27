@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Overload-Track als segmentierte Balkenleiste mit Pfeil/Glow-Marker und größeren Zahlen für die aktuelle Position gestaltet.
 - UI: Modus-Umschalter mit erklärendem Tooltip ergänzt und Hinweistext für nicht verfügbare Ansichten hinzugefügt.
 - UI: Grid-Layouts im Dev- und Spielmodus für breite Screens kompakter skaliert.
 - UI: Kartenflächen auf großen Viewports proportional verkleinert, damit mehr Luft im Layout entsteht.
