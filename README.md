@@ -34,6 +34,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielerleisten: kompakte Symbol-Legenden direkt im Bereich platziert, mit dezenteren Chips.
 - Spielmodus: Spielerleisten-Legende und Werte-Icons sind größer, farblich stärker differenziert und mit klaren Tooltipps/Labels versehen.
 - Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
+- Spielmodus: Spielerleisten erscheinen auf kleinen Screens als Drawer und lassen sich über den Play-Drawer öffnen/schließen.
+- Breite Screens: Grid-Layouts und Kartenflächen skalieren kompakter, damit mehr Luft im Layout bleibt.
 - Spielmodus: Primär-Buttons sind visuell stärker hervorgehoben und eindeutig beschriftet.
 - Buttons haben jetzt deutlichere Hover-Effekte und klarere Active-Zustände für bessere Interaktion.
 - Button-Zustände für „Warten…“, „Weiter“ und „Event aufdecken“ sind visuell klarer hervorgehoben und mit Tooltips ergänzt.

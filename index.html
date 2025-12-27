@@ -964,6 +964,19 @@
     body.playersHidden .playPlayers{display:none}
     body.playersHidden .playLayout{grid-template-columns:1fr}
 
+    @media (min-width:1400px){
+      /* Breite Screens: Grid-Spalten und Kartenflächen etwas kompakter skalieren. */
+      .mainGrid{grid-template-columns:minmax(0,1.35fr) minmax(0,.85fr) minmax(0,.9fr)}
+      .playLayout{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+      .stageCard{max-width:clamp(640px, 54vw, 900px);margin:0 auto}
+      .playersCard{max-width:clamp(360px, 28vw, 480px);margin:0 auto}
+      .rightPanel{max-width:clamp(320px, 26vw, 460px);margin:0 auto}
+      .playStage{max-width:clamp(640px, 54vw, 920px);margin:0 auto}
+      .playPlayers{max-width:clamp(320px, 30vw, 420px);margin:0 auto}
+      .playCard{min-height:clamp(185px, 21vh, 260px)}
+      .currentCard{min-height:clamp(175px, 21vh, 240px)}
+    }
+
     @media (max-width:1150px){
       .mainColumns{grid-template-columns:1fr}
       .mainGrid{grid-template-columns:1fr}
@@ -997,6 +1010,27 @@
         border-radius:18px;
         box-shadow:0 20px 60px rgba(0,0,0,.6);
       }
+    }
+    @media (max-width:980px){
+      /* Kleine Screens: Spielerleisten als ausfahrbarer Drawer statt feste Spalte. */
+      .playPlayers{
+        position:fixed;
+        top:88px;
+        right:12px;
+        bottom:12px;
+        width:min(420px, 92vw);
+        transform:translateX(120%);
+        opacity:0;
+        pointer-events:none;
+        transition:transform .2s ease, opacity .2s ease;
+        z-index:160;
+      }
+      body.playersDrawerOpen .playPlayers{
+        transform:translateX(0);
+        opacity:1;
+        pointer-events:auto;
+      }
+      .playDrawer{z-index:170}
     }
     @media (max-width:780px){
       /* Schmale Breiten: Buttons/Chips kompakter, damit weniger Zeilen umbrechen. */
@@ -1527,7 +1561,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.55';
+    var VERSION = 'v0.56';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1560,6 +1594,15 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.56',
+        date: '2026-06-18',
+        items: [
+          'UI: Grid-Layouts im Dev- und Spielmodus für breite Screens kompakter skaliert.',
+          'UI: Kartenflächen auf großen Viewports proportional verkleinert, damit mehr Luft entsteht.',
+          'UI: Spielerleisten auf kleinen Screens als ausfahrbarer Drawer umgesetzt.'
+        ]
+      },
       {
         ver: 'v0.55',
         date: '2026-06-11',
@@ -5860,13 +5903,36 @@
       drawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
     }
 
-    function togglePlayersPanel(forceHide){
+    // Spielerleisten je nach Viewport als Drawer oder als versteckbare Spalte steuern.
+    function isPlayersDrawerMode(){
+      return window.matchMedia('(max-width:980px)').matches;
+    }
+
+    function syncPlayersPanelUI(){
       var btn = document.getElementById('btnPlayTogglePlayers');
       if (!btn) return;
-      var shouldHide = (typeof forceHide === 'boolean') ? forceHide : !document.body.classList.contains('playersHidden');
-      document.body.classList.toggle('playersHidden', shouldHide);
-      btn.setAttribute('aria-pressed', shouldHide ? 'true' : 'false');
-      btn.textContent = shouldHide ? 'Spielerleisten einblenden' : 'Spielerleisten ausblenden';
+      if (isPlayersDrawerMode()){
+        document.body.classList.remove('playersHidden');
+        var isOpen = document.body.classList.contains('playersDrawerOpen');
+        btn.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
+        btn.textContent = isOpen ? 'Spielerleisten schließen' : 'Spielerleisten öffnen';
+      } else {
+        document.body.classList.remove('playersDrawerOpen');
+        var isHidden = document.body.classList.contains('playersHidden');
+        btn.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+        btn.textContent = isHidden ? 'Spielerleisten einblenden' : 'Spielerleisten ausblenden';
+      }
+    }
+
+    function togglePlayersPanel(forceState){
+      if (isPlayersDrawerMode()){
+        var shouldOpen = (typeof forceState === 'boolean') ? forceState : !document.body.classList.contains('playersDrawerOpen');
+        document.body.classList.toggle('playersDrawerOpen', shouldOpen);
+      } else {
+        var shouldHide = (typeof forceState === 'boolean') ? forceState : !document.body.classList.contains('playersHidden');
+        document.body.classList.toggle('playersHidden', shouldHide);
+      }
+      syncPlayersPanelUI();
     }
 
     // ---------- self tests ----------
@@ -6650,6 +6716,9 @@
     var btnResolve = document.getElementById('btnResolve');
     if (btnResolve) btnResolve.onclick = function(){ resolveDecisions(); };
 
+    // Button-Text/Status bei Viewport-Änderungen aktuell halten.
+    window.addEventListener('resize', syncPlayersPanelUI);
+
     // init
     if (shouldRunSelfTests()){
       runSelfTests();
@@ -6658,6 +6727,7 @@
     restart();
     setUiMode('play');
     togglePlayersPanel(false);
+    syncPlayersPanelUI();
   })();
   </script>
 </body>
