@@ -595,7 +595,8 @@
 
     /* --- Scorett Layout --- */
     .mainGrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.9fr) minmax(0,1fr);gap:12px;flex:1;min-height:0}
-    .playLayout{display:none;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;flex:1;min-height:0;align-items:stretch}
+    /* Spielmodus-Grid: rechte Spielerleiste darf großzügiger wachsen. */
+    .playLayout{display:none;grid-template-columns:minmax(0,1.2fr) minmax(280px,1fr);gap:12px;flex:1;min-height:0;align-items:stretch}
     body.ui-play .playLayout{display:grid}
     body.ui-play .devLayout{display:none}
     body.ui-dev .playLayout{display:none}
@@ -611,6 +612,7 @@
       border:1px solid var(--stroke);
       box-shadow:var(--shadow);
       min-height:0;
+      align-self:stretch;
     }
     .playOverloadTrack{padding:14px;border-radius:18px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
     /* Spielmodus: Overload-Leiste etwas höher, damit der Marker klar sitzt. */
@@ -672,6 +674,7 @@
       border:1px solid var(--stroke);
       box-shadow:var(--shadow);
       min-height:0;
+      align-self:stretch;
     }
     .playPlayersHeader{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:15px}
     .playPlayersList{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0;flex:1}
@@ -1056,12 +1059,13 @@
     @media (min-width:1400px){
       /* Breite Screens: Grid-Spalten und Kartenflächen etwas kompakter skalieren. */
       .mainGrid{grid-template-columns:minmax(0,1.35fr) minmax(0,.85fr) minmax(0,.9fr)}
-      .playLayout{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+      /* Spielmodus darf die Spielerleiste mit wachsendem Platz ausdehnen. */
+      .playLayout{grid-template-columns:minmax(0,1.05fr) minmax(320px,1fr)}
       .stageCard{max-width:clamp(640px, 54vw, 900px);margin:0 auto}
       .playersCard{max-width:clamp(360px, 28vw, 480px);margin:0 auto}
       .rightPanel{max-width:clamp(320px, 26vw, 460px);margin:0 auto}
       .playStage{max-width:clamp(640px, 54vw, 920px);margin:0 auto}
-      .playPlayers{max-width:clamp(320px, 30vw, 420px);margin:0 auto}
+      .playPlayers{max-width:none;margin:0}
       .playCard{min-height:clamp(185px, 21vh, 260px)}
       .currentCard{min-height:clamp(175px, 21vh, 240px)}
     }
@@ -1079,6 +1083,8 @@
       .stageGrid{grid-template-columns:1fr}
       .decisionMain{grid-template-columns:1fr}
       .logDrawer{display:none}
+      /* Spielerleisten kompakt halten, damit Bühne/Buttons oben bleiben. */
+      .playPlayers{max-height:clamp(220px, 36vh, 360px);overflow:auto}
       .playDrawer{
         position:fixed;
         left:12px;
@@ -1686,7 +1692,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.61';
+    var VERSION = 'v0.62';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1719,6 +1725,15 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.62',
+        date: '2026-07-30',
+        items: [
+          'UI: Spielmodus-Grid so angepasst, dass die Spielerleiste auf großen Screens mitwachsen kann.',
+          'UI: Spielerleisten werden bei mittleren Viewports gedeckelt, damit Bühne und Buttons oben bleiben.',
+          'UI: Spielerleisten bleiben auf kleinen Screens als Drawer steuerbar.'
+        ]
+      },
       {
         ver: 'v0.61',
         date: '2026-07-23',
@@ -6162,6 +6177,7 @@
     }
 
     // Spielerleisten je nach Viewport als Drawer oder als versteckbare Spalte steuern.
+    // Bei kleinen Viewports als Drawer behandeln, damit die Bühne Priorität hat.
     function isPlayersDrawerMode(){
       return window.matchMedia('(max-width:980px)').matches;
     }
