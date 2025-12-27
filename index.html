@@ -765,40 +765,73 @@
       justify-content:flex-end;
       gap:8px;
     }
-    /* Rechtes Info-Panel für die Spielanleitung im Play-Modus. */
+    /* Modales Overlay für die Spielanleitung: größere Typo und mehr Scrollfläche. */
+    .playRulesOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(6,10,20,.72);
+      backdrop-filter:blur(2px);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .18s ease;
+      z-index:155;
+    }
+    .playRulesOverlay.open{opacity:1;pointer-events:auto}
     .playRulesDrawer{
       position:fixed;
-      top:88px;
-      bottom:12px;
-      right:12px;
-      width:clamp(320px, 32vw, 420px);
+      top:50%;
+      left:50%;
+      width:min(760px, 92vw);
+      max-height:84vh;
       background:rgba(20,27,42,.98);
       border:1px solid rgba(148,163,184,.22);
-      border-radius:18px;
-      box-shadow:0 20px 60px rgba(0,0,0,.6);
-      padding:12px;
+      border-radius:20px;
+      box-shadow:0 24px 70px rgba(0,0,0,.62);
+      padding:16px;
       display:flex;
       flex-direction:column;
-      gap:10px;
-      z-index:145;
-      transform:translateX(120%);
+      gap:12px;
+      z-index:160;
+      transform:translate(-50%, -50%) scale(.98);
       opacity:0;
       pointer-events:none;
       transition:transform .2s ease, opacity .2s ease;
     }
     .playRulesDrawer.open{
-      transform:translateX(0);
+      transform:translate(-50%, -50%) scale(1);
       opacity:1;
       pointer-events:auto;
     }
-    .playRulesHead{display:flex;justify-content:space-between;align-items:center}
+    .playRulesHead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .playRulesHeadLeft{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .playRulesLink{
+      font-size:13px;
+      color:var(--blue);
+      text-decoration:none;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(96,165,250,.4);
+      background:rgba(96,165,250,.12);
+      font-weight:700;
+    }
+    .playRulesLink:hover{background:rgba(96,165,250,.22);border-color:rgba(96,165,250,.7)}
+    /* Close-Button im Modal: stärkerer Kontrast und klare Warnfarbe. */
+    .playRulesClose{
+      background:rgba(239,68,68,.2);
+      border-color:rgba(239,68,68,.6);
+      color:#fff;
+      font-weight:800;
+      box-shadow:0 10px 24px rgba(239,68,68,.18), 0 0 0 1px rgba(239,68,68,.4) inset;
+    }
+    .playRulesClose:hover{background:rgba(239,68,68,.35);border-color:rgba(239,68,68,.85)}
     .playRulesBody{
       overflow:auto;
-      max-height:100%;
-      padding-right:4px;
+      max-height:70vh;
+      padding-right:10px;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:12px;
+      font-size:15px;
     }
     .playRulesSection{
       padding:10px 12px;
@@ -806,10 +839,10 @@
       background:rgba(11,15,23,.45);
       border:1px solid rgba(148,163,184,.16);
     }
-    .playRulesSection h3{margin:0 0 6px;font-size:15px;letter-spacing:.2px}
+    .playRulesSection h3{margin:0 0 6px;font-size:17px;letter-spacing:.2px}
     .playRulesSection p,
     .playRulesSection ol,
-    .playRulesSection ul{margin:0;color:var(--mutedStrong);line-height:1.5;font-size:13px}
+    .playRulesSection ul{margin:0;color:var(--mutedStrong);line-height:1.6;font-size:15px}
     .playRulesSection ol{padding-left:18px}
     .playRulesSection ul{padding-left:16px}
     .playRulesLegend{display:flex;flex-wrap:wrap;gap:6px}
@@ -1475,10 +1508,14 @@
       <div class="playLog" id="logPlay"></div>
     </div>
 
-    <div class="playRulesDrawer playOnly" id="playRulesDrawer" aria-hidden="true">
+    <div class="playRulesOverlay playOnly" id="playRulesOverlay" aria-hidden="true"></div>
+    <div class="playRulesDrawer playOnly" id="playRulesDrawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Anleitung">
       <div class="playRulesHead">
-        <b>Anleitung</b>
-        <button class="btn slim" id="btnPlayRulesClose">Schließen</button>
+        <div class="playRulesHeadLeft">
+          <b>Anleitung</b>
+          <a class="playRulesLink" href="https://example.com/festival-overload-hilfe" target="_blank" rel="noopener">Hilfe online</a>
+        </div>
+        <button class="btn slim playRulesClose" id="btnPlayRulesClose">Schließen</button>
       </div>
       <div class="playRulesBody">
         <section class="playRulesSection">
@@ -1838,7 +1875,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.62';
+    var VERSION = 'v0.64';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1871,6 +1908,14 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.64',
+        date: '2026-08-20',
+        items: [
+          'UI: Anleitung als modales Overlay mit größerer Schrift und breiterem Scrollbereich gestaltet.',
+          'UI: Externer Hilfe-Link in der Anleitung ergänzt und Close-Button stärker hervorgehoben.'
+        ]
+      },
       {
         ver: 'v0.63',
         date: '2026-08-06',
@@ -6324,13 +6369,19 @@
       if (notice) notice.textContent = notes.join(' ');
     }
 
-    // Play-Drawer: Anleitung als rechts andockendes Panel öffnen/schließen.
+    // Play-Drawer: Anleitung als modales Overlay öffnen/schließen.
     function togglePlayRulesDrawer(forceOpen){
       var drawer = document.getElementById('playRulesDrawer');
+      var overlay = document.getElementById('playRulesOverlay');
       if (!drawer) return;
       var shouldOpen = (typeof forceOpen === 'boolean') ? forceOpen : !drawer.classList.contains('open');
       drawer.classList.toggle('open', shouldOpen);
       drawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+      if (overlay){
+        overlay.classList.toggle('open', shouldOpen);
+        overlay.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+      }
+      // Buttons im Play-UI synchronisieren, damit der Zustand klar bleibt.
       setPlayRulesButtons(shouldOpen);
     }
 
@@ -7132,6 +7183,9 @@
     if (btnPlayRulesTop) btnPlayRulesTop.onclick = function(){ togglePlayRulesDrawer(); };
     var btnPlayRulesClose = document.getElementById('btnPlayRulesClose');
     if (btnPlayRulesClose) btnPlayRulesClose.onclick = function(){ togglePlayRulesDrawer(false); };
+    var playRulesOverlay = document.getElementById('playRulesOverlay');
+    // Klick auf das Overlay schließt die Anleitung, damit der Modalfluss klar bleibt.
+    if (playRulesOverlay) playRulesOverlay.onclick = function(){ togglePlayRulesDrawer(false); };
     var rulesClose = document.getElementById('rulesClose');
     if (rulesClose) rulesClose.onclick = closeRules;
     var rulesBack = document.getElementById('rulesBack');

@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- UI: Anleitung im Spielmodus als modales Overlay mit größerer Schrift und breiterem Scrollbereich umgesetzt.
+- UI: Externer Hilfe-Link in der Anleitung ergänzt und Close-Button visuell stärker hervorgehoben.
 - UI: Eventkarten-Typografie vergrößert, Zeilenhöhen optimiert und Inhalte vertikal kompakter zentriert.
 - UI: Effekte (Overload/Live/Pool) als integrierte Liste in den Eventkarten mit Label „Effekte“ dargestellt.
 - UI: Mini-Legende oberhalb der Overload-Leiste ergänzt, damit die Farbzonen sofort sichtbar sind.
