@@ -552,6 +552,7 @@
     .playMetaChip b{font-weight:900}
     .playMetaCompact{gap:6px}
     .playMetaCompact .playMetaChip{padding:4px 8px;font-size:11px;background:rgba(31,42,68,.55)}
+    .playStatusCompact{align-items:center}
 
     .playPoolRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .playPoolChip{padding:10px 16px;border-radius:999px;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.4);font-size:16px;font-weight:900}
@@ -815,7 +816,7 @@
           <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (Afterparty: +2), optional +1 extra bei Pool ≥3 (falls aktiviert)"><span class="n">3</span>Countdown</div>
           <div class="step" data-step="decision" title="Alle aktiven Spieler entscheiden gleichzeitig Bleib/Camp"><span class="n">4</span>Entscheidung</div>
         </div>
-        <div class="playMeta" aria-label="Deck-Status">
+        <div class="playMeta playMetaCompact playStatusCompact" aria-label="Deck-Status kompakt">
           <div class="playMetaChip">Deck: <b id="deckCountPlay">0</b></div>
           <div class="playMetaChip">Ablage: <b id="discardCountPlay">0</b></div>
         </div>
@@ -2862,9 +2863,9 @@
       var discardCount = document.getElementById('discardCount');
       if (discardCount) discardCount.textContent = String(state.discard.length);
       var deckCountPlay = document.getElementById('deckCountPlay');
-      if (deckCountPlay) deckCountPlay.textContent = String(state.deck.length);
+      if (deckCountPlay) deckCountPlay.textContent = deckCount ? deckCount.textContent : String(state.deck.length);
       var discardCountPlay = document.getElementById('discardCountPlay');
-      if (discardCountPlay) discardCountPlay.textContent = String(state.discard.length);
+      if (discardCountPlay) discardCountPlay.textContent = discardCount ? discardCount.textContent : String(state.discard.length);
       var deckCountMini = document.getElementById('deckCountMini');
       if (deckCountMini) deckCountMini.textContent = cardCountLabel(state.deck.length);
       var discardCountMini = document.getElementById('discardCountMini');
