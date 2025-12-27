@@ -806,6 +806,10 @@
           <div class="playMetaChip">Aufdecker: <b id="playRevealerName">—</b></div>
           <div class="playMetaChip">Richtung: <b id="playDirection">↻</b></div>
         </div>
+        <div class="playMeta" aria-label="Deck-Status">
+          <div class="playMetaChip">Deck: <b id="deckCountPlay">0</b></div>
+          <div class="playMetaChip">Ablage: <b id="discardCountPlay">0</b></div>
+        </div>
 
         <div class="eventCard playCard" id="playEventCard" data-type="twist">
           <div class="stripe"></div>
@@ -1176,6 +1180,7 @@
         ver: 'v0.38',
         date: '2026-02-12',
         items: [
+          'Neu: Deck- und Ablage-Status im Spielmodus direkt in der Bühne.',
           'Neu: Kompakte Phasenleiste im Spielmodus, synchron zum aktuellen Status.',
           'Fix: Catch-up greift nur noch strikt hinter dem Leader und erst ab Abstand ≥2 (max. 1× pro Spieler/Runde).',
           'Fix: Countdown startet sofort bei Overload ≥8, tickt im selben Zug und prüft Risiko vor Camp.',
@@ -2750,6 +2755,10 @@
       if (deckCount) deckCount.textContent = String(state.deck.length);
       var discardCount = document.getElementById('discardCount');
       if (discardCount) discardCount.textContent = String(state.discard.length);
+      var deckCountPlay = document.getElementById('deckCountPlay');
+      if (deckCountPlay) deckCountPlay.textContent = String(state.deck.length);
+      var discardCountPlay = document.getElementById('discardCountPlay');
+      if (discardCountPlay) discardCountPlay.textContent = String(state.discard.length);
       var deckCountMini = document.getElementById('deckCountMini');
       if (deckCountMini) deckCountMini.textContent = cardCountLabel(state.deck.length);
       var discardCountMini = document.getElementById('discardCountMini');
