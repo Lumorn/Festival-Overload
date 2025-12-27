@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Overload-Track als farbige Zonenleiste mit Marker/Label für die aktuelle Position.
 - UI: Panels und Kartenflächen aufgehellt, Textkontrast erhöht und einheitliche Typogrößen für Karten/Chips/Buttons definiert.
 - UI: Kartenflächen beruhigt (reduzierte Textur, leichter Verlauf), kleinere Mindesthöhen/Abstände und größere Karten-Typografie.
 - UI: Schmale Viewports mit kompakteren Buttons/Chips sowie geringeren Karten-Mindesthöhen bei fixiertem Seitenverhältnis.
