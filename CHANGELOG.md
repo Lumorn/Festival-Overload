@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Spielerleisten im Spielmodus heben aktive Zeilen kontrastreicher hervor und markieren gecampt/raus per dezenter Schraffur.
 - UI: Entscheidungs-Chips durch farbige Avatar-Initialen ersetzt; Bots markieren ihre Entscheidung mit einem Badge.
 - UI: Bleib/Camp-Buttons sind gleich groß und markieren die Auswahl zusätzlich mit einem Check-Icon.
 - UI: Countdown-Chips/Banner und der Entscheidungs-Countdown sind größer und prominenter platziert.

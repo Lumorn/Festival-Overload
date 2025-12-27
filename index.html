@@ -815,10 +815,17 @@
     .legendChip.status-active{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.14);color:rgba(214,255,226,.9)}
     .legendChip.status-camped{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.18);color:rgba(255,236,204,.95)}
     .legendChip.status-out{border-color:rgba(239,68,68,.55);background:rgba(239,68,68,.18);color:rgba(255,210,210,.95)}
-    /* Spielerleisten: stärkerer Kontrast, damit Icons/Zahlen deutlich wirken. */
+    /* Spielerleisten: Grundstil mit ruhigem Kontrast für klare Werte. */
     .playPlayer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:rgba(8,14,28,.6);border:1px solid rgba(148,163,184,.22);box-shadow:0 8px 18px rgba(0,0,0,.28)}
+    /* Aktive Zeile: stärkerer Kontrast und klarer Fokusrahmen. */
+    .playPlayer.is-active{background:rgba(10,20,40,.78);border-color:rgba(148,163,184,.5);box-shadow:0 10px 22px rgba(0,0,0,.35),0 0 0 1px rgba(96,165,250,.25)}
+    /* Gecampt: dezente Schraffur und warmer Farbrand. */
+    .playPlayer.is-camped{background:repeating-linear-gradient(135deg, rgba(245,158,11,.16) 0 7px, rgba(8,14,28,.72) 7px 14px);border-color:rgba(245,158,11,.4)}
+    /* Raus: dezente Schraffur und gedämpfter Rotton. */
+    .playPlayer.is-out{background:repeating-linear-gradient(135deg, rgba(239,68,68,.16) 0 7px, rgba(8,14,28,.72) 7px 14px);border-color:rgba(239,68,68,.45)}
     .playPlayerMain{display:flex;align-items:center;gap:8px;font-weight:800}
     .playPlayerRight{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    /* Status-Chips: kompakte Badge-Optik pro Spielerstatus. */
     .playStatus{font-size:11px;padding:4px 8px;border-radius:999px}
     .playStatus.active{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.4)}
     .playStatus.camped{background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.4)}
@@ -2063,6 +2070,14 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.69',
+        date: '2026-09-24',
+        items: [
+          'UI: Spielerleisten markieren aktive Zeilen kontrastreicher.',
+          'UI: Gecampt/Raus erhalten dezente Schraffur-Hintergründe in den Spielerleisten.'
+        ]
+      },
       {
         ver: 'v0.68',
         date: '2026-09-17',
@@ -4668,7 +4683,8 @@
         }
 
         var row = document.createElement('div');
-        row.className = 'playPlayer';
+        // Statusklasse für dezente Hintergrundmarkierung im Spielmodus.
+        row.className = 'playPlayer is-' + statusCls;
 
         var main = document.createElement('div');
         main.className = 'playPlayerMain';
