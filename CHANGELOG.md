@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Eventkarten mit doppeltem Rahmen, feiner Papiertextur, Eckornamenten und abgerundeten Farbbändern verfeinert.
 - UI: Aktuelle Eventkarte kompakter gestaltet (geringere Höhe, kleinere Typo, dichterer Impact-Block).
 - UI: Entscheidungsfenster und Spielmodus-Layout skalieren dynamisch mit der Viewport-Größe, inklusive Scrollbarkeit auf kleinen Screens.
 - Fix: Entscheidungsfeld im Spielmodus bleibt in der linken Bühne ausgerichtet, damit Bleib/Camp korrekt angezeigt wird.

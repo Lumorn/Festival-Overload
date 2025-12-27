@@ -35,6 +35,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Kompakter Meta-Block im Spielmodus zeigt Aufdecker und Richtung direkt unter dem Overload-Track.
 - Kompakter Statusbereich im Spielmodus zeigt Deck- und Ablage-Anzahl direkt in der Bühne.
 - Aktuelle Eventkarte im Spielmodus ist kompakter (geringere Höhe, kleinere Typo), damit Inhalte dichter wirken.
+- Eventkarten wirken papierartiger dank doppeltem Rahmen, feiner Textur, Eckornamenten und abgerundeten Farbbändern.
 - Fortschrittsblock bei den Spielerleisten zeigt Leader, Camp-Stand und Abstand zum Ziel.
 - Overload-Änderungen im Log und in den Overlays berücksichtigen die tatsächliche Deckelung bei 0/12.
 - Pool-Bonus bei simultanem Campen folgt dem Overload-Gate (0/1/2) und der Live-Schwelle (≥2, bei Richtungswechsel ≥3); Verteilung bleibt in Zugreihenfolge.
