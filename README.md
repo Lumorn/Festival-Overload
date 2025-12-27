@@ -48,6 +48,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Disabled-States sind stärker ausgegraut, aktive Aktionen farblich betont.
 - Zusätzliche Hilfetexte erklären, wann Bots automatisch oder manuell entscheiden.
 - Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C), damit Auswahl-Chips eindeutiger sind.
+- Entscheidungs-Chips zeigen vollständige Namen und kennzeichnen bereits gewählte Spieler per Tooltip.
+- Bleib/Camp-Auswahl ist visuell deutlicher markiert (farbiger Hintergrund, Rahmen, Glow).
 - Regelerinnerung im rechten Panel ist jetzt einklappbar, damit sie den Log weniger überdeckt.
 - Kurzregeln sind im Spielmodus zusätzlich oben rechts erreichbar, damit die Hilfe ohne Scrollen sichtbar bleibt.
 - Kompakter Meta-Block im Spielmodus zeigt Aufdecker und Richtung direkt unter dem Overload-Track.

@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- UI: Auswahlzustand bei Bleib/Camp deutlich markiert (farbiger Hintergrund, Rahmen, Glow).
+- UI: Entscheidungs-Chips zeigen vollständige Namen und Tooltip „Dieser Spieler hat schon gewählt“.
+- UI: Entscheidungs-Chips vergrößert, damit längere Namen lesbar bleiben.
 - UI: Phasen-Pills lokalisiert und aktive Phase mit kräftiger Vollflächenfarbe hervorgehoben.
 - UI: Kleine Phasen-Fortschrittsleiste oberhalb der Karten ergänzt.
 - UI: Dauerhafte Overload-Legende oberhalb der Leiste ergänzt (Sicher/Warnung/Gefahr).

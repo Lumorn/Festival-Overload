@@ -976,6 +976,7 @@
     .decisionBotBtn.good{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.12)}
     .decisionBotBtn.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
     .decisionBotBtn.selected{box-shadow:0 0 0 2px rgba(255,255,255,.14), 0 12px 28px rgba(0,0,0,.25)}
+    /* Entscheidungs-Buttons: kräftiger Zustand bei aktiver Auswahl. */
     .decisionBtn{
       padding:18px;
       border-radius:18px;
@@ -995,11 +996,14 @@
     .decisionBtn.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
     /* Entscheidungs-Buttons im Disabled-State stärker gedimmt. */
     .decisionBtn:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(.25);box-shadow:none}
-    .decisionBtn.selected{box-shadow:0 0 0 2px rgba(255,255,255,.18), 0 16px 32px rgba(0,0,0,.35);transform:translateY(-1px);border-color:rgba(255,255,255,.3)}
+    .decisionBtn.selected{box-shadow:0 0 0 2px rgba(255,255,255,.28), 0 0 18px rgba(255,255,255,.18), 0 16px 32px rgba(0,0,0,.35);transform:translateY(-1px);border-color:rgba(255,255,255,.55)}
+    .decisionBtn.selected.good{background:linear-gradient(135deg, rgba(34,197,94,.38), rgba(34,197,94,.12));box-shadow:0 0 0 2px rgba(34,197,94,.55), 0 0 18px rgba(34,197,94,.3), 0 18px 34px rgba(0,0,0,.38)}
+    .decisionBtn.selected.warn{background:linear-gradient(135deg, rgba(245,158,11,.38), rgba(245,158,11,.12));box-shadow:0 0 0 2px rgba(245,158,11,.55), 0 0 18px rgba(245,158,11,.32), 0 18px 34px rgba(0,0,0,.38)}
     .decisionPreview{padding:10px 12px;border-radius:14px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.16);display:flex;flex-direction:column;gap:6px}
+    /* Spielerchips in der Entscheidung: volle Namen sichtbar und klarer Status. */
     .decisionPlayers{display:flex;gap:8px;flex-wrap:wrap}
-    .decisionPlayer{width:28px;height:28px;border-radius:10px;background:rgba(148,163,184,.18);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--muted)}
-    .decisionPlayer.done{background:rgba(34,197,94,.22);color:#fff}
+    .decisionPlayer{padding:6px 10px;border-radius:999px;background:rgba(148,163,184,.18);border:1px solid rgba(148,163,184,.22);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--muted);min-width:70px}
+    .decisionPlayer.done{background:rgba(34,197,94,.22);border-color:rgba(34,197,94,.45);color:#fff;box-shadow:0 0 12px rgba(34,197,94,.25)}
     .decisionTimer{
       min-width:86px;
       padding:10px 14px;
@@ -1643,7 +1647,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.57';
+    var VERSION = 'v0.59';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1676,6 +1680,15 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.59',
+        date: '2026-07-09',
+        items: [
+          'UI: Auswahlzustand der Bleib/Camp-Karten mit farbiger Fläche, Rahmen und Glow hervorgehoben.',
+          'UI: Entscheidungs-Chips zeigen vollständige Namen (z. B. Bot A/B/C) und erklären gewählte Spieler per Tooltip.',
+          'UI: Entscheidungs-Chips vergrößert, damit Namen im Overlay lesbar bleiben.'
+        ]
+      },
       {
         ver: 'v0.58',
         date: '2026-07-02',
@@ -3962,14 +3975,18 @@
           }
           var chip = document.createElement('div');
           chip.className = 'decisionPlayer' + (done ? ' done' : '');
-          // Entscheidungschips: Bots vollständig benennen, damit „Bot A/B/C“ klar lesbar bleibt.
-          var chipLabel = p.name.substring(0,2).toUpperCase();
-          if (/^Bot\s+/i.test(p.name)){
-            chipLabel = p.name;
-          } else if (i === state.humanIndex){
-            chipLabel = 'DU';
+          // Entscheidungschips: Namen vollständig anzeigen und Done-Status als Tooltip erklären.
+          var chipLabel = p.name;
+          if (i === state.humanIndex){
+            chipLabel = 'Du';
           }
           chip.textContent = chipLabel;
+          if (done){
+            chip.title = 'Dieser Spieler hat schon gewählt';
+            chip.setAttribute('aria-label', chipLabel + ' – Dieser Spieler hat schon gewählt');
+          } else {
+            chip.setAttribute('aria-label', chipLabel);
+          }
           playersWrap.appendChild(chip);
         }
       }
