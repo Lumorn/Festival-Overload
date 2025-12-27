@@ -690,9 +690,9 @@
     .rightPanel .sideSection{background:rgba(11,15,23,.45)}
     .rightPanel .log{min-height:200px}
 
-    .decisionOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:120;background:rgba(3,6,12,.78);backdrop-filter:blur(6px)}
-    .decisionOverlay.show{display:flex}
-    .decisionModal{width:min(820px, 100%);background:rgba(20,27,42,.97);border:1px solid rgba(148,163,184,.22);border-radius:20px;box-shadow:0 22px 70px rgba(0,0,0,.6);padding:18px;display:flex;flex-direction:column;gap:14px}
+    .decisionOverlay{display:none;width:100%;padding:14px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.16);box-shadow:var(--shadow)}
+    .decisionOverlay.show{display:block}
+    .decisionModal{width:100%;background:transparent;border:none;box-shadow:none;padding:0;display:flex;flex-direction:column;gap:14px}
     .decisionHeader{display:flex;justify-content:space-between;align-items:center;gap:12px}
     .decisionTitle{font-size:22px;font-weight:950}
     .decisionStats{display:flex;gap:8px;flex-wrap:wrap}
@@ -880,6 +880,49 @@
       </section>
     </div>
 
+    <div class="decisionOverlay" id="decisionOverlay" aria-hidden="true">
+      <div class="decisionModal" role="dialog" aria-modal="false" aria-label="Entscheidung">
+        <div class="decisionHeader">
+          <div>
+            <div class="decisionTitle">Entscheidung!</div>
+            <div class="decisionStats">
+              <div class="decisionStat">Overload: <b id="decisionOverload">0</b></div>
+              <div class="decisionStat">Pool: <b id="decisionPool">0</b></div>
+              <div class="decisionStat">Live: <b id="decisionLive">0</b></div>
+            </div>
+          </div>
+          <div class="decisionTimer" id="decisionTimer">20s</div>
+        </div>
+
+        <div>
+          <div class="mini">Wer hat schon gewählt?</div>
+          <div class="decisionAvatars" id="decisionPlayers"></div>
+        </div>
+
+        <div class="decisionMain">
+          <button class="decisionBtn good" id="btnStay">
+            <strong>BLEIB</strong>
+            <small>Live bleibt riskant</small>
+          </button>
+          <button class="decisionBtn warn" id="btnCamp">
+            <strong>CAMP</strong>
+            <small id="campHint">Du sicherst dein Live</small>
+          </button>
+        </div>
+        <div class="decisionBots hidden" id="decisionBots"></div>
+
+        <div class="decisionPreview" id="decisionPreview">
+          <div class="mini" id="decisionHint">Wähle Bleib oder Camp. Danach wird simultan aufgelöst.</div>
+          <div class="mini" id="decisionGain">—</div>
+          <div class="mini" id="decisionTotal">—</div>
+        </div>
+
+        <div class="controls" style="justify-content:flex-end">
+          <button class="btn blue" id="btnResolve">Entscheidung ausführen</button>
+        </div>
+      </div>
+    </div>
+
     <div class="playDrawer playOnly">
       <button class="btn slim" id="btnPlayLog">Log</button>
       <button class="btn slim" id="btnPlayTogglePlayers" aria-pressed="false">Spielerleisten ausblenden</button>
@@ -949,7 +992,7 @@
             <div class="eventSummary" id="eventSummary">—</div>
 
             <div class="actionRow">
-              <div class="mini">Simultane Entscheidung erscheint als Overlay nach Eventende.</div>
+            <div class="mini">Simultane Entscheidung erscheint direkt im Spielbereich.</div>
               <div class="controls">
                 <button class="btn good primary" id="btnReveal">Aufdecken</button>
                 <button class="btn blue" id="btnLog">Log</button>
@@ -1092,49 +1135,6 @@
     </div>
   </div>
 
-  <div class="decisionOverlay" id="decisionOverlay" aria-hidden="true">
-    <div class="decisionModal" role="dialog" aria-modal="true" aria-label="Entscheidung">
-      <div class="decisionHeader">
-        <div>
-          <div class="decisionTitle">Entscheidung!</div>
-          <div class="decisionStats">
-            <div class="decisionStat">Overload: <b id="decisionOverload">0</b></div>
-            <div class="decisionStat">Pool: <b id="decisionPool">0</b></div>
-            <div class="decisionStat">Live: <b id="decisionLive">0</b></div>
-          </div>
-        </div>
-        <div class="decisionTimer" id="decisionTimer">20s</div>
-      </div>
-
-      <div>
-        <div class="mini">Wer hat schon gewählt?</div>
-        <div class="decisionAvatars" id="decisionPlayers"></div>
-      </div>
-
-      <div class="decisionMain">
-        <button class="decisionBtn good" id="btnStay">
-          <strong>BLEIB</strong>
-          <small>Live bleibt riskant</small>
-        </button>
-        <button class="decisionBtn warn" id="btnCamp">
-          <strong>CAMP</strong>
-          <small id="campHint">Du sicherst dein Live</small>
-        </button>
-      </div>
-      <div class="decisionBots hidden" id="decisionBots"></div>
-
-      <div class="decisionPreview" id="decisionPreview">
-        <div class="mini" id="decisionHint">Wähle Bleib oder Camp. Danach wird simultan aufgelöst.</div>
-        <div class="mini" id="decisionGain">—</div>
-        <div class="mini" id="decisionTotal">—</div>
-      </div>
-
-      <div class="controls" style="justify-content:flex-end">
-        <button class="btn blue" id="btnResolve">Entscheidung ausführen</button>
-      </div>
-    </div>
-  </div>
-
   <div class="toast" id="toast"></div>
 
   <!-- Patch Notes Modal -->
@@ -1190,7 +1190,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.45';
+    var VERSION = 'v0.46';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1223,6 +1223,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.46',
+        date: '2026-04-09',
+        items: [
+          'Neu: Entscheidungsfenster ist direkt in die Spieloberfläche integriert, statt als Overlay zu erscheinen.'
+        ]
+      },
       {
         ver: 'v0.45',
         date: '2026-04-02',
