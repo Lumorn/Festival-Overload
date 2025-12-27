@@ -665,10 +665,11 @@
     .playStatus.active{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.4)}
     .playStatus.camped{background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.4)}
     .playStatus.out{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4)}
-    /* Spielerwerte: Icon-Chips mit stärkerer Farbtrennung. */
-    .playStats{display:flex;gap:8px;font-size:12px;color:var(--mutedStrong)}
-    .playStat{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.2);background:rgba(0,0,0,.18);font-weight:700}
-    .playStatIcon{font-size:15px;line-height:1}
+    /* Spielerwerte: Icon-Chips mit größeren Zahlen und klarer Farbcodierung. */
+    .playStats{display:flex;gap:8px;font-size:13px;color:var(--mutedStrong)}
+    .playStat{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid rgba(148,163,184,.2);background:rgba(0,0,0,.18);font-weight:700}
+    .playStatIcon{font-size:16px;line-height:1}
+    .playStatValue{font-size:15px;font-weight:900;letter-spacing:.2px}
     .playStat.live{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.14);color:rgba(214,255,226,.9)}
     .playStat.camp{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.18);color:rgba(255,236,204,.95)}
     .playRevealer{font-size:12px;padding:2px 6px;border-radius:999px;background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.4)}
@@ -783,6 +784,12 @@
     .overloadTrackHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
     /* Overload-Leiste: segmentierte Balkenfläche mit Farbbereichen. */
     .overloadPills{display:flex;flex-direction:column;gap:10px}
+    /* Dauerhafte Legende über der Leiste, damit die Farbzonen sofort verständlich sind. */
+    .overloadLegend{display:flex;flex-wrap:wrap;gap:6px}
+    .overloadLegend .legendChip{padding:4px 10px;font-size:11px}
+    .legendChip.overload-good{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.14);color:rgba(214,255,226,.9)}
+    .legendChip.overload-warn{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.18);color:rgba(255,236,204,.95)}
+    .legendChip.overload-bad{border-color:rgba(239,68,68,.55);background:rgba(239,68,68,.18);color:rgba(255,210,210,.95)}
     .overloadBar{
       position:relative;
       padding:8px;
@@ -1192,6 +1199,11 @@
             <div><b>Overload</b> <span class="mini">0–12</span></div>
             <div class="overloadHint"><span class="chip">⏱️ Countdown +1</span> <span class="mini" id="playCountdownHint">inaktiv</span></div>
           </div>
+          <div class="overloadLegend" aria-label="Overload-Legende">
+            <span class="legendChip overload-good" title="Sicherer Bereich" aria-label="Sicherer Bereich"><span class="legendIcon" aria-hidden="true">🟢</span><span class="legendLabel">Sicher 0–6</span></span>
+            <span class="legendChip overload-warn" title="Warnbereich" aria-label="Warnbereich"><span class="legendIcon" aria-hidden="true">🟠</span><span class="legendLabel">Warnung 7–10</span></span>
+            <span class="legendChip overload-bad" title="Gefahrbereich" aria-label="Gefahrbereich"><span class="legendIcon" aria-hidden="true">🔴</span><span class="legendLabel">Gefahr 11–12</span></span>
+          </div>
           <div class="overloadPills" id="overloadPillsPlay"></div>
         </div>
         <div class="playMeta playMetaCompact" aria-label="Meta-Infos">
@@ -1373,6 +1385,11 @@
           <div class="overloadTrackHeader">
             <div><b>Overload-Track</b> <span class="mini">0–12</span></div>
             <div class="overloadHint"><span class="chip">⏱️ Countdown +1</span> <span class="mini" id="countdownHint">inaktiv</span></div>
+          </div>
+          <div class="overloadLegend" aria-label="Overload-Legende">
+            <span class="legendChip overload-good" title="Sicherer Bereich" aria-label="Sicherer Bereich"><span class="legendIcon" aria-hidden="true">🟢</span><span class="legendLabel">Sicher 0–6</span></span>
+            <span class="legendChip overload-warn" title="Warnbereich" aria-label="Warnbereich"><span class="legendIcon" aria-hidden="true">🟠</span><span class="legendLabel">Warnung 7–10</span></span>
+            <span class="legendChip overload-bad" title="Gefahrbereich" aria-label="Gefahrbereich"><span class="legendIcon" aria-hidden="true">🔴</span><span class="legendLabel">Gefahr 11–12</span></span>
           </div>
           <div class="overloadPills" id="overloadPills"></div>
         </div>
@@ -1647,6 +1664,15 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.58',
+        date: '2026-07-02',
+        items: [
+          'UI: Overload-Legende dauerhaft oberhalb der Leiste ergänzt (Sicher/Warnung/Gefahr).',
+          'UI: Spielerwerte (Live/Camp) im Spielmodus größer und farblich differenziert dargestellt.',
+          'UI: Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C).'
+        ]
+      },
       {
         ver: 'v0.57',
         date: '2026-06-25',
@@ -3905,7 +3931,14 @@
           }
           var chip = document.createElement('div');
           chip.className = 'decisionPlayer' + (done ? ' done' : '');
-          chip.textContent = p.name.substring(0,2).toUpperCase();
+          // Entscheidungschips: Bots vollständig benennen, damit „Bot A/B/C“ klar lesbar bleibt.
+          var chipLabel = p.name.substring(0,2).toUpperCase();
+          if (/^Bot\s+/i.test(p.name)){
+            chipLabel = p.name;
+          } else if (i === state.humanIndex){
+            chipLabel = 'DU';
+          }
+          chip.textContent = chipLabel;
           playersWrap.appendChild(chip);
         }
       }

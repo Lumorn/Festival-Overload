@@ -19,6 +19,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Kompakte Phasenleiste im Spielmodus unter dem Overload-Track, synchron zum aktuellen Status.
 - „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
 - Overload-Track als segmentierte Balkenleiste (grün/gelb/rot) mit Marker-Pfeil, Glow und größerer Zahl zur aktuellen Position.
+- Overload-Track: dauerhafte Legende oberhalb der Leiste für sichere/warnende/gefährliche Zonen.
 - Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.
 - Simultane Bleib/Camp-Entscheidung als zentriertes Modal-Overlay mit dunklem Hintergrund, Countdown und klaren Aktionskarten.
 - Entscheidungsfenster im Spielmodus erscheint als fokussiertes Overlay, damit Bleib/Camp zentral ausgerichtet sind.
@@ -35,6 +36,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: Symbol-Legende in den Spielerleisten plus Tooltipps für Live/Camp.
 - Spielerleisten: kompakte Symbol-Legenden direkt im Bereich platziert, mit dezenteren Chips.
 - Spielmodus: Spielerleisten-Legende und Werte-Icons sind größer, farblich stärker differenziert und mit klaren Tooltipps/Labels versehen.
+- Spielmodus: Live/Camp-Zahlen in den Spielerleisten sind größer und klarer farbcodiert.
 - Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
 - Spielmodus: Spielerleisten erscheinen auf kleinen Screens als Drawer und lassen sich über den Play-Drawer öffnen/schließen.
 - Breite Screens: Grid-Layouts und Kartenflächen skalieren kompakter, damit mehr Luft im Layout bleibt.
@@ -43,6 +45,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Button-Zustände für „Warten…“, „Weiter“ und „Event aufdecken“ sind visuell klarer hervorgehoben und mit Tooltips ergänzt.
 - Disabled-States sind stärker ausgegraut, aktive Aktionen farblich betont.
 - Zusätzliche Hilfetexte erklären, wann Bots automatisch oder manuell entscheiden.
+- Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C), damit Auswahl-Chips eindeutiger sind.
 - Regelerinnerung im rechten Panel ist jetzt einklappbar, damit sie den Log weniger überdeckt.
 - Kurzregeln sind im Spielmodus zusätzlich oben rechts erreichbar, damit die Hilfe ohne Scrollen sichtbar bleibt.
 - Kompakter Meta-Block im Spielmodus zeigt Aufdecker und Richtung direkt unter dem Overload-Track.
