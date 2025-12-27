@@ -14,6 +14,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 ## UI-Highlights
 
 - Neuer Spielmodus (minimal) mit großem Phasen-Status, Fokus auf Overload/Pool/Karte und Vollbild-Entscheidung Bleib/Camp.
+- Kompakte Phasenleiste im Spielmodus mit Aufdecken/Effekt/Countdown/Entscheidung.
 - „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
 - Overload-Track als 0–12 Pills mit deutlicher Markierung von Gefahrenschwellen sowie Status-Chips (Countdown, Bühnenregel, Twist-Effekte, Endkarte).
 - Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.

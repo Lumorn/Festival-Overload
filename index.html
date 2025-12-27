@@ -322,6 +322,9 @@
     .step .n{width:18px;height:18px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:rgba(148,163,184,.16);border:1px solid rgba(148,163,184,.18);color:var(--text);font-weight:900;font-size:11px}
     .step.active{color:var(--text);border-color:rgba(226,232,240,.35);background:rgba(31,42,68,.85);box-shadow:0 8px 20px rgba(0,0,0,.25)}
     .step.active .n{background:rgba(99,102,241,.32);border-color:rgba(99,102,241,.45)}
+    .steps.compact{gap:6px;margin-top:6px}
+    .steps.compact .step{padding:4px 8px;font-size:11px}
+    .steps.compact .step .n{width:16px;height:16px;font-size:10px}
 
     .banner{display:none;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(148,163,184,.14);background:rgba(31,42,68,.35);box-shadow:0 10px 28px rgba(0,0,0,.25)}
     .banner.show{display:block}
@@ -789,6 +792,12 @@
           </div>
           <div class="overloadPills" id="overloadPillsPlay"></div>
         </div>
+        <div class="steps compact" id="playSteps" aria-label="Phasen">
+          <div class="step" data-step="reveal" title="Der aktive Spieler deckt genau 1 Event auf"><span class="n">1</span>Aufdecken</div>
+          <div class="step" data-step="event" title="Event-Effekt wird ausgeführt (inkl. Endkarten, Twist, Overload-Check)"><span class="n">2</span>Effekt</div>
+          <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (Afterparty: +2), optional +1 extra bei Pool ≥3 (falls aktiviert)"><span class="n">3</span>Countdown</div>
+          <div class="step" data-step="decision" title="Alle aktiven Spieler entscheiden gleichzeitig Bleib/Camp"><span class="n">4</span>Entscheidung</div>
+        </div>
 
         <div class="eventCard playCard" id="playEventCard" data-type="twist">
           <div class="stripe"></div>
@@ -1159,6 +1168,7 @@
         ver: 'v0.38',
         date: '2026-02-12',
         items: [
+          'Neu: Kompakte Phasenleiste im Spielmodus, synchron zum aktuellen Status.',
           'Fix: Catch-up greift nur noch strikt hinter dem Leader und erst ab Abstand ≥2 (max. 1× pro Spieler/Runde).',
           'Fix: Countdown startet sofort bei Overload ≥8, tickt im selben Zug und prüft Risiko vor Camp.',
           'Fix: Logger nutzt feste EffectIds, keine UNKNOWN_EFFECT mehr, Details ohne HTML-Escapes.',
@@ -2468,8 +2478,8 @@
       el.textContent = phaseLabel();
     }
 
-    function renderSteps(){
-      var wrap = document.getElementById('steps');
+    function updateStepsFor(id){
+      var wrap = document.getElementById(id);
       if (!wrap) return;
       var phase = (state.gameOver ? 'decision' : (state.awaitingDecision ? 'decision' : (state.phase || 'reveal')));
       var steps = wrap.querySelectorAll('.step');
@@ -2483,6 +2493,11 @@
         else if (phase === 'decision') active = (st === 'decision');
         s.classList.toggle('active', active);
       }
+    }
+
+    function renderSteps(){
+      updateStepsFor('steps');
+      updateStepsFor('playSteps');
     }
 
     function showBanner(kind, title, sub){

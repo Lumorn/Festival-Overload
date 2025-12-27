@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Kompakte Phasenleiste im Spielmodus ergänzt (Aufdecken/Effekt/Countdown/Entscheidung).
 - Catch-up-Bonus nur noch bei strikt hinter dem Leader und Abstand ≥2; max. 1× pro Spieler/Runde.
 - Countdown startet sofort bei Overload ≥8, tickt im selben Zug und triggert Check vor der Camp-Entscheidung.
 - Logger nutzt feste EffectIds, keine UNKNOWN_EFFECT-Einträge; Detail-Felder sind roh.
