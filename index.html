@@ -550,6 +550,8 @@
     .playMeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .playMetaChip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(31,42,68,.65);border:1px solid rgba(148,163,184,.18);font-size:12px;font-weight:700}
     .playMetaChip b{font-weight:900}
+    .playMetaCompact{gap:6px}
+    .playMetaCompact .playMetaChip{padding:4px 8px;font-size:11px;background:rgba(31,42,68,.55)}
 
     .playPoolRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .playPoolChip{padding:10px 16px;border-radius:999px;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.4);font-size:16px;font-weight:900}
@@ -803,16 +805,15 @@
           </div>
           <div class="overloadPills" id="overloadPillsPlay"></div>
         </div>
+        <div class="playMeta playMetaCompact" aria-label="Meta-Infos">
+          <div class="playMetaChip">Aufdecker: <b id="playRevealerName">—</b></div>
+          <div class="playMetaChip">Richtung: <b id="playDirection">↻</b></div>
+        </div>
         <div class="playSteps" id="playSteps" aria-label="Phasen">
           <div class="step" data-step="reveal" title="Der aktive Spieler deckt genau 1 Event auf"><span class="n">1</span>Aufdecken</div>
           <div class="step" data-step="event" title="Event-Effekt wird ausgeführt (inkl. Endkarten, Twist, Overload-Check)"><span class="n">2</span>Effekt</div>
           <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (Afterparty: +2), optional +1 extra bei Pool ≥3 (falls aktiviert)"><span class="n">3</span>Countdown</div>
           <div class="step" data-step="decision" title="Alle aktiven Spieler entscheiden gleichzeitig Bleib/Camp"><span class="n">4</span>Entscheidung</div>
-        </div>
-
-        <div class="playMeta" aria-label="Meta-Infos">
-          <div class="playMetaChip">Aufdecker: <b id="playRevealerName">—</b></div>
-          <div class="playMetaChip">Richtung: <b id="playDirection">↻</b></div>
         </div>
         <div class="playMeta" aria-label="Deck-Status">
           <div class="playMetaChip">Deck: <b id="deckCountPlay">0</b></div>
@@ -1158,7 +1159,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.40';
+    var VERSION = 'v0.42';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1191,6 +1192,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.42',
+        date: '2026-03-12',
+        items: [
+          'Neu: Im Spielmodus zeigt ein kompakter Meta-Block unter dem Overload-Track den Aufdecker und die Richtung.'
+        ]
+      },
       {
         ver: 'v0.41',
         date: '2026-03-05',

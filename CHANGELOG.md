@@ -5,7 +5,7 @@
 - Spielmodus: vereinfachte Phasenleiste unter dem Overload-Track ergänzt und mit dem Status synchronisiert.
 - Spielerleisten zeigen jetzt einen Fortschrittsblock mit Leader, Camp-Stand und Abstand zum Ziel.
 - Spielmodus: Deck- und Ablage-Status im Bühnenbereich ergänzt.
-- Spielmodus: kompakter Meta-Block für Aufdecker und Richtung ergänzt.
+- Spielmodus: kompakter Meta-Block für Aufdecker und Richtung direkt unter dem Overload-Track ergänzt.
 - Kompakte Phasenleiste im Spielmodus ergänzt (Aufdecken/Effekt/Countdown/Entscheidung).
 - Catch-up-Bonus nur noch bei strikt hinter dem Leader und Abstand ≥2; max. 1× pro Spieler/Runde.
 - Countdown startet sofort bei Overload ≥8, tickt im selben Zug und triggert Check vor der Camp-Entscheidung.
