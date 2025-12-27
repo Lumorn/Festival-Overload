@@ -659,10 +659,11 @@
     .overloadHint .chip{padding:4px 8px;border-radius:999px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);font-size:11px}
 
     .stageGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:12px;min-height:0}
-    .currentCard{min-height:360px;border-radius:20px;padding:16px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.75);box-shadow:0 18px 38px rgba(0,0,0,.45);position:relative;overflow:hidden}
-    .currentCard .kName{font-size:18px}
-    .currentCard .kText{font-size:14px}
-    .currentCard .impact{margin-top:8px}
+    /* Kompakteres Format für die aktuelle Karte, damit mehr Inhalt sichtbar bleibt. */
+    .currentCard{min-height:240px;aspect-ratio:2.5 / 3.5;border-radius:20px;padding:12px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.75);box-shadow:0 18px 38px rgba(0,0,0,.45);position:relative;overflow:hidden}
+    .currentCard .kName{font-size:16px}
+    .currentCard .kText{font-size:13px}
+    .currentCard .impact{margin-top:4px}
 
     .poolPanel{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
     .poolChip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(96,165,250,.16);border:1px solid rgba(96,165,250,.38);font-size:14px;font-weight:900}
