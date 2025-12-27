@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Fix: Entscheidungsfeld im Spielmodus bleibt in der linken Bühne ausgerichtet, damit Bleib/Camp korrekt angezeigt wird.
 - Spielmodus: Entscheidungsfenster ist jetzt Teil der Spieloberfläche statt ein eigenes Overlay.
 - Spielmodus: Kontrast, Schriftgrößen und Panel-Styles für bessere Lesbarkeit verbessert.
 - Spielmodus: aktive Phasen werden deutlich hervorgehoben und per progressiver Unterstreichung markiert.

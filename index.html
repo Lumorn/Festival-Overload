@@ -858,6 +858,49 @@
         <button class="btn good primary playPrimary" id="btnRevealPlay">Nächste Karte</button>
         <button class="btn blue playPrimary" id="btnPlayNext" disabled>Entscheiden</button>
         <div class="playBanner" id="playBanner"></div>
+
+        <div class="decisionOverlay" id="decisionOverlay" aria-hidden="true">
+          <div class="decisionModal" role="dialog" aria-modal="false" aria-label="Entscheidung">
+            <div class="decisionHeader">
+              <div>
+                <div class="decisionTitle">Entscheidung!</div>
+                <div class="decisionStats">
+                  <div class="decisionStat">Overload: <b id="decisionOverload">0</b></div>
+                  <div class="decisionStat">Pool: <b id="decisionPool">0</b></div>
+                  <div class="decisionStat">Live: <b id="decisionLive">0</b></div>
+                </div>
+              </div>
+              <div class="decisionTimer" id="decisionTimer">20s</div>
+            </div>
+
+            <div>
+              <div class="mini">Wer hat schon gewählt?</div>
+              <div class="decisionAvatars" id="decisionPlayers"></div>
+            </div>
+
+            <div class="decisionMain">
+              <button class="decisionBtn good" id="btnStay">
+                <strong>BLEIB</strong>
+                <small>Live bleibt riskant</small>
+              </button>
+              <button class="decisionBtn warn" id="btnCamp">
+                <strong>CAMP</strong>
+                <small id="campHint">Du sicherst dein Live</small>
+              </button>
+            </div>
+            <div class="decisionBots hidden" id="decisionBots"></div>
+
+            <div class="decisionPreview" id="decisionPreview">
+              <div class="mini" id="decisionHint">Wähle Bleib oder Camp. Danach wird simultan aufgelöst.</div>
+              <div class="mini" id="decisionGain">—</div>
+              <div class="mini" id="decisionTotal">—</div>
+            </div>
+
+            <div class="controls" style="justify-content:flex-end">
+              <button class="btn blue" id="btnResolve">Entscheidung ausführen</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="playPlayers">
@@ -878,49 +921,6 @@
         </div>
         <div class="playPlayersList" id="playersPlay"></div>
       </section>
-    </div>
-
-    <div class="decisionOverlay" id="decisionOverlay" aria-hidden="true">
-      <div class="decisionModal" role="dialog" aria-modal="false" aria-label="Entscheidung">
-        <div class="decisionHeader">
-          <div>
-            <div class="decisionTitle">Entscheidung!</div>
-            <div class="decisionStats">
-              <div class="decisionStat">Overload: <b id="decisionOverload">0</b></div>
-              <div class="decisionStat">Pool: <b id="decisionPool">0</b></div>
-              <div class="decisionStat">Live: <b id="decisionLive">0</b></div>
-            </div>
-          </div>
-          <div class="decisionTimer" id="decisionTimer">20s</div>
-        </div>
-
-        <div>
-          <div class="mini">Wer hat schon gewählt?</div>
-          <div class="decisionAvatars" id="decisionPlayers"></div>
-        </div>
-
-        <div class="decisionMain">
-          <button class="decisionBtn good" id="btnStay">
-            <strong>BLEIB</strong>
-            <small>Live bleibt riskant</small>
-          </button>
-          <button class="decisionBtn warn" id="btnCamp">
-            <strong>CAMP</strong>
-            <small id="campHint">Du sicherst dein Live</small>
-          </button>
-        </div>
-        <div class="decisionBots hidden" id="decisionBots"></div>
-
-        <div class="decisionPreview" id="decisionPreview">
-          <div class="mini" id="decisionHint">Wähle Bleib oder Camp. Danach wird simultan aufgelöst.</div>
-          <div class="mini" id="decisionGain">—</div>
-          <div class="mini" id="decisionTotal">—</div>
-        </div>
-
-        <div class="controls" style="justify-content:flex-end">
-          <button class="btn blue" id="btnResolve">Entscheidung ausführen</button>
-        </div>
-      </div>
     </div>
 
     <div class="playDrawer playOnly">
@@ -1190,7 +1190,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.46';
+    var VERSION = 'v0.47';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1223,6 +1223,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.47',
+        date: '2026-04-16',
+        items: [
+          'Fix: Entscheidungsfeld im Spielmodus bleibt in der linken Bühne, damit Bleib/Camp korrekt dargestellt wird.'
+        ]
+      },
       {
         ver: 'v0.46',
         date: '2026-04-09',
