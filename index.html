@@ -782,6 +782,7 @@
       </div>
       <div class="topRight">
         <div class="goalChip">Ziel: 8 Camp</div>
+        <button class="btn slim playOnly" id="btnPlayRulesTop" aria-label="Kurzregeln">?</button>
         <div class="modeToggle" role="group" aria-label="Modus wechseln">
           <button class="btn slim" id="btnModePlay">Spielmodus</button>
           <button class="btn slim" id="btnModeDev">Dev</button>
@@ -1160,7 +1161,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.42';
+    var VERSION = 'v0.43';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1193,6 +1194,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.43',
+        date: '2026-03-19',
+        items: [
+          'Neu: Kurzregeln-Button im Spielmodus nun auch oben rechts, damit die Hilfe jederzeit sichtbar ist.'
+        ]
+      },
       {
         ver: 'v0.42',
         date: '2026-03-12',
@@ -6021,6 +6029,8 @@
     if (btnPlayLogClose) btnPlayLogClose.onclick = function(){ togglePlayLog(false); };
     var btnPlayRules = document.getElementById('btnPlayRules');
     if (btnPlayRules) btnPlayRules.onclick = openRules;
+    var btnPlayRulesTop = document.getElementById('btnPlayRulesTop');
+    if (btnPlayRulesTop) btnPlayRulesTop.onclick = openRules;
     var rulesClose = document.getElementById('rulesClose');
     if (rulesClose) rulesClose.onclick = closeRules;
     var rulesBack = document.getElementById('rulesBack');

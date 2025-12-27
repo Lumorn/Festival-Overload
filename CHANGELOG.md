@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Spielmodus: Kurzregeln-Button zusätzlich oben rechts ergänzt, damit die Hilfe ohne Scrollen sichtbar bleibt.
 - Spielmodus: Weiter-Button ergänzt, der abhängig vom Status den nächsten Schritt (Entscheidung/Abschluss) startet.
 - Spielmodus: vereinfachte Phasenleiste unter dem Overload-Track ergänzt und mit dem Status synchronisiert.
 - Spielerleisten zeigen jetzt einen Fortschrittsblock mit Leader, Camp-Stand und Abstand zum Ziel.
