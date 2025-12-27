@@ -73,6 +73,7 @@
     .statusChip.bad{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.12)}
     .modeToggle{display:inline-flex;gap:6px}
     .modeToggle .btn.active{border-color:rgba(226,232,240,.45);background:rgba(255,255,255,.08);font-weight:800}
+    .btn.active{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.18);font-weight:800}
 
     h1{margin:0;font-size:20px;letter-spacing:.2px}
     .sub{color:var(--mutedStrong);font-size:14px;max-width:920px;line-height:1.45}
@@ -857,6 +858,7 @@
 
     <div class="playDrawer playOnly">
       <button class="btn slim" id="btnPlayLog">Log</button>
+      <button class="btn slim" id="btnPlayAutoplay" aria-pressed="false">Autoplay</button>
       <button class="btn slim" id="btnPlayRules" aria-label="Kurzregeln">?</button>
     </div>
 
@@ -1161,7 +1163,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.43';
+    var VERSION = 'v0.44';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1194,6 +1196,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.44',
+        date: '2026-03-26',
+        items: [
+          'Neu: Autoplay-Toggle im Spielmodus ergänzt, inkl. Statusanzeige.'
+        ]
+      },
       {
         ver: 'v0.43',
         date: '2026-03-19',
@@ -1638,6 +1647,7 @@
       finalPushActor: -1,
       catchUpGrantedRound: {},
 
+      autoPlay: false,
       autoTimer: null,
       decisionTimer: { enabled:true, seconds:20, remaining:20, timerId:null },
 
@@ -2182,6 +2192,10 @@
 
     function isAutoAll(){
       return controlMode() === 'all-auto';
+    }
+
+    function isAutoplayEnabled(){
+      return isAutoAll() || state.autoPlay;
     }
 
     function areBotsAuto(){
@@ -2897,6 +2911,12 @@
       if (playCountdownHint) playCountdownHint.textContent = state.countdownActive ? 'aktiv' : 'inaktiv';
       var playCountdownBadge = document.getElementById('playCountdownBadge');
       if (playCountdownBadge) playCountdownBadge.classList.toggle('active', state.countdownActive);
+      var autoplayBtn = document.getElementById('btnPlayAutoplay');
+      if (autoplayBtn){
+        var autoplayActive = isAutoplayEnabled();
+        autoplayBtn.classList.toggle('active', autoplayActive);
+        autoplayBtn.setAttribute('aria-pressed', autoplayActive ? 'true' : 'false');
+      }
       var timerOpt = document.getElementById('optDecisionTimer');
       if (timerOpt){
         state.decisionTimer.enabled = !!timerOpt.checked;
@@ -3085,7 +3105,7 @@
       var forced = forcedStay || forcedFinalPush;
       var campBlockedByZero = (human.live <= 0);
 
-      var auto = isAutoAll();
+      var auto = isAutoplayEnabled();
       document.getElementById('btnStay').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || auto || forcedFinalPush;
       document.getElementById('btnCamp').disabled = !state.awaitingDecision || !isHumanActive || state.gameOver || forcedStay || campBlockedByZero || auto;
       document.getElementById('btnResolve').disabled = !state.awaitingDecision || state.gameOver || auto;
@@ -4140,7 +4160,7 @@
 
       if (card.fx === 'stageDive'){
         if (rev === state.humanIndex) {
-          if (isAutoAll()){
+          if (isAutoplayEnabled()){
             var aiTarget = botPickStageDiveTarget(rev);
             if (aiTarget === rev){
               logStep('warn', {
@@ -4353,7 +4373,7 @@
       }
 
       if (targetIdx === state.humanIndex){
-        if (isAutoAll()){
+        if (isAutoplayEnabled()){
           if (tP.live > 0 && botStageDivePay(targetIdx)){
             var liveBeforeAuto = tP.live;
             tP.live = Math.max(0, tP.live - 1);
@@ -4874,7 +4894,7 @@
         }
         if (i === state.humanIndex){
           if (!isFinalPushLastCall){
-            if (isAutoAll()){
+            if (isAutoplayEnabled()){
               choice = botWantsToCamp(i) ? 'camp' : 'stay';
             } else if (p.forcedStay) {
               choice = 'stay';
@@ -5179,7 +5199,7 @@
       if (!state.players.length) return;
       state.revealer = normalizeRevealerIndex();
 
-      if (isAutoAll()){
+      if (isAutoplayEnabled()){
         if (state.askOpen) return;
 
         if (state.awaitingDecision){
@@ -6025,6 +6045,8 @@
     if (btnExportDebug) btnExportDebug.onclick = exportDebug;
     var btnPlayLog = document.getElementById('btnPlayLog');
     if (btnPlayLog) btnPlayLog.onclick = function(){ togglePlayLog(); };
+    var btnPlayAutoplay = document.getElementById('btnPlayAutoplay');
+    if (btnPlayAutoplay) btnPlayAutoplay.onclick = function(){ state.autoPlay = !state.autoPlay; updateUI(); pumpBots(); };
     var btnPlayLogClose = document.getElementById('btnPlayLogClose');
     if (btnPlayLogClose) btnPlayLogClose.onclick = function(){ togglePlayLog(false); };
     var btnPlayRules = document.getElementById('btnPlayRules');
