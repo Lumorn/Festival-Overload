@@ -621,6 +621,55 @@
       justify-content:flex-end;
       gap:8px;
     }
+    /* Rechtes Info-Panel für die Spielanleitung im Play-Modus. */
+    .playRulesDrawer{
+      position:fixed;
+      top:88px;
+      bottom:12px;
+      right:12px;
+      width:clamp(320px, 32vw, 420px);
+      background:rgba(20,27,42,.98);
+      border:1px solid rgba(148,163,184,.22);
+      border-radius:18px;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      z-index:145;
+      transform:translateX(120%);
+      opacity:0;
+      pointer-events:none;
+      transition:transform .2s ease, opacity .2s ease;
+    }
+    .playRulesDrawer.open{
+      transform:translateX(0);
+      opacity:1;
+      pointer-events:auto;
+    }
+    .playRulesHead{display:flex;justify-content:space-between;align-items:center}
+    .playRulesBody{
+      overflow:auto;
+      max-height:100%;
+      padding-right:4px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .playRulesSection{
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(11,15,23,.45);
+      border:1px solid rgba(148,163,184,.16);
+    }
+    .playRulesSection h3{margin:0 0 6px;font-size:15px;letter-spacing:.2px}
+    .playRulesSection p,
+    .playRulesSection ol,
+    .playRulesSection ul{margin:0;color:var(--mutedStrong);line-height:1.5;font-size:13px}
+    .playRulesSection ol{padding-left:18px}
+    .playRulesSection ul{padding-left:16px}
+    .playRulesLegend{display:flex;flex-wrap:wrap;gap:6px}
+    .playRulesLegend .legendChip{font-size:11px}
     .playLogDrawer{
       position:fixed;
       left:12px;
@@ -834,7 +883,7 @@
       </div>
       <div class="topRight">
         <div class="goalChip">Ziel: 8 Camp</div>
-        <button class="btn slim playOnly" id="btnPlayRulesTop" aria-label="Kurzregeln">?</button>
+        <button class="btn slim playOnly" id="btnPlayRulesTop" aria-label="Anleitung" aria-expanded="false">Anleitung</button>
         <div class="modeToggle" role="group" aria-label="Modus wechseln">
           <button class="btn slim" id="btnModePlay">Spielmodus</button>
           <button class="btn slim" id="btnModeDev">Dev</button>
@@ -962,7 +1011,7 @@
       <button class="btn slim" id="btnPlayLog">Log</button>
       <button class="btn slim" id="btnPlayTogglePlayers" aria-pressed="false">Spielerleisten ausblenden</button>
       <button class="btn slim" id="btnPlayAutoplay" aria-pressed="false">Autoplay</button>
-      <button class="btn slim" id="btnPlayRules" aria-label="Kurzregeln">?</button>
+      <button class="btn slim" id="btnPlayRulesDrawer" aria-label="Anleitung" aria-expanded="false">Anleitung</button>
     </div>
 
     <div class="playLogDrawer" id="playLogDrawer" aria-hidden="true">
@@ -971,6 +1020,48 @@
         <button class="btn slim" id="btnPlayLogClose">Schließen</button>
       </div>
       <div class="playLog" id="logPlay"></div>
+    </div>
+
+    <div class="playRulesDrawer playOnly" id="playRulesDrawer" aria-hidden="true">
+      <div class="playRulesHead">
+        <b>Anleitung</b>
+        <button class="btn slim" id="btnPlayRulesClose">Schließen</button>
+      </div>
+      <div class="playRulesBody">
+        <section class="playRulesSection">
+          <h3>Ziel</h3>
+          <p>Erreiche als Erste:r <b>8 Camp</b>, ohne vorher durch Overload auszuscheiden.</p>
+        </section>
+        <section class="playRulesSection">
+          <h3>Ablauf einer Runde</h3>
+          <ol>
+            <li>Der aktive Spieler deckt ein Event auf.</li>
+            <li>Event-Effekt anwenden (inkl. Twist/Encore/Overload-Check).</li>
+            <li>Countdown (falls aktiv) erhöht Overload.</li>
+            <li>Alle Aktiven entscheiden simultan: <b>Bleib</b> oder <b>Camp</b>.</li>
+          </ol>
+        </section>
+        <section class="playRulesSection">
+          <h3>Wichtige Regeln</h3>
+          <ul>
+            <li>Campen ist nur mit mindestens <b>1 Live</b> möglich.</li>
+            <li>Pool-Bonus gibt es nur bei genug Live (≥2 / ≥3 bei Richtungswechsel).</li>
+            <li>Overload 12 triggert den Katastrophen-Check.</li>
+            <li>Twists gelten bis zum Rundenende.</li>
+          </ul>
+        </section>
+        <section class="playRulesSection">
+          <h3>Symbole/Legende</h3>
+          <div class="playRulesLegend" aria-label="Symbol-Legende">
+            <span class="legendChip" title="Live">🎟️ Live</span>
+            <span class="legendChip" title="Camp">⛺ Camp</span>
+            <span class="legendChip" title="Aufdecker">⬅️ Aufdecker</span>
+            <span class="legendChip" title="Status aktiv">🟢 Aktiv</span>
+            <span class="legendChip" title="Status gecampt">🟠 Gecampt</span>
+            <span class="legendChip" title="Status raus">🔴 Raus</span>
+          </div>
+        </section>
+      </div>
     </div>
 
     <div class="mainGrid devLayout">
@@ -1225,7 +1316,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.48';
+    var VERSION = 'v0.50';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1258,6 +1349,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.50',
+        date: '2026-05-07',
+        items: [
+          'Neu: Einblendbarer Anleitung-Drawer im Spielmodus mit strukturierten Kurzregeln und Symbol-Legende.'
+        ]
+      },
       {
         ver: 'v0.49',
         date: '2026-04-30',
@@ -5425,6 +5523,23 @@
       back.setAttribute('aria-hidden','true');
     }
 
+    // Play-Drawer: Anleitung als rechts andockendes Panel öffnen/schließen.
+    function togglePlayRulesDrawer(forceOpen){
+      var drawer = document.getElementById('playRulesDrawer');
+      if (!drawer) return;
+      var shouldOpen = (typeof forceOpen === 'boolean') ? forceOpen : !drawer.classList.contains('open');
+      drawer.classList.toggle('open', shouldOpen);
+      drawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+      setPlayRulesButtons(shouldOpen);
+    }
+
+    function setPlayRulesButtons(isOpen){
+      var btnDrawer = document.getElementById('btnPlayRulesDrawer');
+      if (btnDrawer) btnDrawer.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      var btnTop = document.getElementById('btnPlayRulesTop');
+      if (btnTop) btnTop.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
     function togglePlayLog(forceOpen){
       var drawer = document.getElementById('playLogDrawer');
       if (!drawer) return;
@@ -6117,6 +6232,7 @@
         closePatchNotes();
         closeRules();
         togglePlayLog(false);
+        togglePlayRulesDrawer(false);
         if (state.askOpen){
           var back = document.getElementById('askBack');
           back.style.display = 'none';
@@ -6163,10 +6279,12 @@
     if (btnPlayAutoplay) btnPlayAutoplay.onclick = function(){ state.autoPlay = !state.autoPlay; updateUI(); pumpBots(); };
     var btnPlayLogClose = document.getElementById('btnPlayLogClose');
     if (btnPlayLogClose) btnPlayLogClose.onclick = function(){ togglePlayLog(false); };
-    var btnPlayRules = document.getElementById('btnPlayRules');
-    if (btnPlayRules) btnPlayRules.onclick = openRules;
+    var btnPlayRulesDrawer = document.getElementById('btnPlayRulesDrawer');
+    if (btnPlayRulesDrawer) btnPlayRulesDrawer.onclick = function(){ togglePlayRulesDrawer(); };
     var btnPlayRulesTop = document.getElementById('btnPlayRulesTop');
-    if (btnPlayRulesTop) btnPlayRulesTop.onclick = openRules;
+    if (btnPlayRulesTop) btnPlayRulesTop.onclick = function(){ togglePlayRulesDrawer(); };
+    var btnPlayRulesClose = document.getElementById('btnPlayRulesClose');
+    if (btnPlayRulesClose) btnPlayRulesClose.onclick = function(){ togglePlayRulesDrawer(false); };
     var rulesClose = document.getElementById('rulesClose');
     if (rulesClose) rulesClose.onclick = closeRules;
     var rulesBack = document.getElementById('rulesBack');
