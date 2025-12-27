@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- UI: Mini-Legende oberhalb der Overload-Leiste ergänzt, damit die Farbzonen sofort sichtbar sind.
+- UI: Spielerleisten mit größeren Icons/Zahlen und stärker differenzierten Farben versehen.
+- UI: Status- und Aufdecker-Hinweise in den Spielerleisten mit Tooltipps (title/aria-label) ergänzt.
 - UI: Info-Icons mit Tooltipps für Pool-Bonus, Gate und Camp direkt an den relevanten Elementen ergänzt.
 - UI: Anleitung im Spielmodus um eine kurze Beispielrunde mit visueller Schrittfolge ergänzt.
 - UI: Spielmodus-Grid so angepasst, dass die Spielerleiste auf großen Screens mehr Breite mitnehmen kann.
