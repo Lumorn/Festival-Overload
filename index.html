@@ -289,8 +289,6 @@
     /* Standard-Buttons mit klarer Fläche und sichtbarem Hover. */
     .btn{background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:10px 12px;color:var(--text);cursor:pointer;transition:.12s transform,.12s border-color,.12s box-shadow,.12s background-color;font-size:var(--fs-button)}
     .btn:hover{transform:translateY(-1px);border-color:rgba(226,232,240,.45);background:rgba(148,163,184,.2);box-shadow:0 10px 22px rgba(0,0,0,.28)}
-    /* Disabled-Buttons sind sichtbar stärker ausgegraut. */
-    .btn:disabled{opacity:.35;cursor:not-allowed;transform:none;background:rgba(71,85,105,.2);border-color:rgba(148,163,184,.12);color:rgba(226,232,240,.55);box-shadow:none;filter:grayscale(.35)}
     .btn.warn{background:rgba(245,158,11,.16);border-color:rgba(245,158,11,.32)}
     .btn.bad{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.32)}
     .btn.good{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.32)}
@@ -298,7 +296,26 @@
     .btn.slim{padding:8px 10px;border-radius:12px;font-size:var(--fs-button-compact)}
     /* Aktive Standard-Buttons bekommen eine kräftigere Fläche. */
     .btn.emphasis{border-color:rgba(148,163,184,.65);background:linear-gradient(120deg, rgba(96,165,250,.28), rgba(15,23,42,.55));box-shadow:0 12px 28px rgba(0,0,0,.35)}
-    .btn.waiting{background:rgba(148,163,184,.08);border-color:rgba(148,163,184,.16);color:rgba(226,232,240,.6)}
+    /* Aktive farbige Buttons füllen die Fläche sichtbar aus. */
+    .btn.good.emphasis{background:linear-gradient(120deg, rgba(34,197,94,.55), rgba(34,197,94,.18));border-color:rgba(34,197,94,.75);color:#f0fff7}
+    .btn.blue.emphasis{background:linear-gradient(120deg, rgba(96,165,250,.55), rgba(96,165,250,.2));border-color:rgba(96,165,250,.78);color:#f0f6ff}
+    /* Wartestatus für automatische Phasen: bewusst neutraler Farbton. */
+    .btn.waiting{background:rgba(71,85,105,.18);border-color:rgba(148,163,184,.18);color:rgba(226,232,240,.65)}
+    /* Disabled-Buttons sind sichtbar stärker ausgegraut (auch bei Farbklassen). */
+    .btn:disabled,
+    .btn:disabled.good,
+    .btn:disabled.warn,
+    .btn:disabled.bad,
+    .btn:disabled.blue{
+      opacity:.35;
+      cursor:not-allowed;
+      transform:none;
+      background:rgba(71,85,105,.2);
+      border-color:rgba(148,163,184,.12);
+      color:rgba(226,232,240,.55);
+      box-shadow:none;
+      filter:grayscale(.35)
+    }
 
     .decision{
       margin-top:0;
@@ -634,7 +651,9 @@
     .playPrimary:hover{filter:brightness(1.05);box-shadow:0 16px 36px rgba(0,0,0,.4);border-color:rgba(226,232,240,.6)}
     /* Disabled-State im Spielmodus deutlicher abgedunkelt. */
     .playPrimary:disabled{opacity:.35;filter:grayscale(.3);box-shadow:none}
-    .playHint{font-size:12px;color:var(--mutedStrong);line-height:1.45}
+    /* Spielmodus-Hinweis für Bot-Entscheidungen prominent hervorheben. */
+    .playHint{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--mutedStrong);line-height:1.45;padding:10px 12px;border-radius:12px;border:1px solid rgba(96,165,250,.35);background:rgba(96,165,250,.12);box-shadow:0 10px 22px rgba(0,0,0,.25)}
+    .playHintIcon{font-size:16px;line-height:1}
 
     .playPlayers{
       display:flex;
@@ -1249,9 +1268,12 @@
           <div class="playCountdownBadge" id="playCountdownBadge">Countdown +1</div>
         </div>
 
+        <div class="playHint" id="playHint">
+          <span class="playHintIcon" aria-hidden="true">🤖</span>
+          <span id="playHintText">Bots entscheiden automatisch, wenn der Steuerungsmodus auf „Nur Bots automatisch“ oder „Alles automatisch“ steht.</span>
+        </div>
         <button class="btn good primary playPrimary" id="btnRevealPlay" title="Event aufdecken, wenn du dran bist">Nächste Karte</button>
         <button class="btn blue playPrimary" id="btnPlayNext" disabled title="Nächsten Schritt ausführen">Entscheiden</button>
-        <div class="playHint" id="playHint">Bots entscheiden automatisch, wenn der Steuerungsmodus auf „Nur Bots automatisch“ oder „Alles automatisch“ steht.</div>
         <div class="playBanner" id="playBanner"></div>
 
         <div class="decisionOverlay" id="decisionOverlay" aria-hidden="true">
@@ -1680,6 +1702,15 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.60',
+        date: '2026-07-16',
+        items: [
+          'UI: Aktive Spielmodus-Buttons füllen jetzt ihre Farbakzente klar aus (Weiter/Entscheidung starten/Event).',
+          'UI: Disabled-Buttons sind im Spielmodus sichtbar stärker ausgegraut.',
+          'UI: Bot-Hinweis im Spielmodus prominent oberhalb der Aktionsbuttons platziert.'
+        ]
+      },
       {
         ver: 'v0.59',
         date: '2026-07-09',
@@ -3787,15 +3818,15 @@
         else h.textContent = 'Wähle Bleib oder Camp (Camp nur mit Live, Pool-Bonus ab Live ≥' + minLiveForPool() + ', Gate ' + maxPoolToCampThisCamp() + '). Dann wird simultan aufgelöst.';
       }
 
-      // Bot-/Autoplay-Hinweis unter den Spielmodus-Buttons.
-      var playHint = document.getElementById('playHint');
-      if (playHint){
+      // Bot-/Autoplay-Hinweis oberhalb der Spielmodus-Buttons aktualisieren.
+      var playHintText = document.getElementById('playHintText');
+      if (playHintText){
         if (auto){
-          playHint.textContent = 'Autoplay ist aktiv – Bots und dein Slot werden automatisch entschieden.';
+          playHintText.textContent = 'Autoplay ist aktiv – Bots und dein Slot werden automatisch entschieden.';
         } else if (areBotsManual()){
-          playHint.textContent = 'Bots entscheiden manuell: Nach deiner Wahl müssen die Bot-Entscheidungen gesetzt werden.';
+          playHintText.textContent = 'Bots entscheiden manuell: Nach deiner Wahl müssen die Bot-Entscheidungen gesetzt werden.';
         } else {
-          playHint.textContent = 'Bots entscheiden automatisch, sobald du gewählt hast oder ein Schritt bereit ist.';
+          playHintText.textContent = 'Bots entscheiden automatisch, sobald du gewählt hast oder ein Schritt bereit ist.';
         }
       }
 
