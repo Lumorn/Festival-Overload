@@ -20,7 +20,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Phasen-Pills sind lokalisiert und die aktive Phase ist farbkräftig als gefülltes Pill hervorgehoben.
 - Kleine Phasen-Fortschrittsleiste oberhalb der Kartenflächen für schnelle Orientierung.
 - „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
-- Overload-Track als segmentierte Balkenleiste (grün/gelb/rot) mit Marker-Pfeil, Glow und größerer Zahl zur aktuellen Position.
+- Overload-Track als segmentierte Balkenleiste (grün/gelb/rot) mit klar abgegrenzten Farbzonen, größeren Segmenten/Zahlen und betontem Marker-Glow.
 - Overload-Track: dauerhafte Legende oberhalb der Leiste für sichere/warnende/gefährliche Zonen.
 - Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.
 - Simultane Bleib/Camp-Entscheidung als zentriertes Modal-Overlay mit dunklem Hintergrund, Countdown und klaren Aktionskarten.
