@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Spielmodus: Entscheidungsfenster ist jetzt Teil der Spieloberfläche statt ein eigenes Overlay.
 - Spielmodus: Kontrast, Schriftgrößen und Panel-Styles für bessere Lesbarkeit verbessert.
 - Spielmodus: aktive Phasen werden deutlich hervorgehoben und per progressiver Unterstreichung markiert.
 - Spielmodus: Symbol-Legende für Live/Camp/Status ergänzt, plus Tooltips in der Spielerleiste.
