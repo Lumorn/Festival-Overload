@@ -22,6 +22,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Simultane Bleib/Camp-Entscheidung als integriertes Entscheidungsfeld im Spielbereich inkl. Vorschau auf Pool-Bonus und Gesamtstand.
 - Entscheidungsfeld im Spielmodus bleibt in der linken Bühne verankert, damit Bleib/Camp sauber ausgerichtet sind.
 - Spielmodus skaliert Entscheidungspanel, Kartenhöhe und Abstände dynamisch mit der Viewport-Größe, inklusive Scrollbarkeit auf kleinen Screens.
+- Zusätzliche Responsive-Optimierungen für niedrige Viewports: engere Abstände, reduzierte Mindesthöhen und scrollbare Nebenbereiche im Dev-Modus.
 - Steuerungsmodi für Bots (Bots automatisch, Bots manuell, alles automatisch) und auswählbares Bot-Profil für modular erweiterbare KI.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.

@@ -701,7 +701,7 @@
     .playBanner.warn{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.08)}
     .playBanner.bad{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)}
 
-    .stageCard{display:flex;flex-direction:column;gap:12px}
+    .stageCard{display:flex;flex-direction:column;gap:12px;min-height:0}
     .stageTop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
     .stageMeta{display:flex;gap:8px;flex-wrap:wrap}
     .stageChip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(31,42,68,.65);border:1px solid rgba(148,163,184,.18);font-size:12px;position:relative}
@@ -855,6 +855,35 @@
     @media (max-height:900px){
       body{overflow:auto}
       .wrap{height:auto}
+      /* Kompaktere Abstände für niedrige Höhen. */
+      .playStage{gap:10px;padding:12px}
+      .playPlayers{gap:10px;padding:12px}
+      .stageCard{gap:10px}
+      .stageGrid{gap:10px}
+      /* Kleinere Mindesthöhen, damit der Viewport passt. */
+      .playCard{min-height:clamp(180px, 22vh, 260px)}
+      .currentCard{min-height:200px}
+      /* Hohe Inhalte innerhalb der Dev-Ansicht scrollen, statt die Seite zu strecken. */
+      .stageGrid > div:first-child{max-height:42vh;overflow:auto}
+      .stageGrid > .poolPanel{max-height:42vh;overflow:auto}
+      .rightPanel .sideSection{max-height:28vh;overflow:auto}
+      .playersCard{max-height:42vh;overflow:auto}
+    }
+    @media (max-height:760px){
+      /* Extra-enger Modus für sehr niedrige Viewports. */
+      .playStage{gap:8px;padding:10px}
+      .playPlayers{gap:8px;padding:10px}
+      .playChips{gap:6px}
+      .playMeta{gap:6px}
+      .stageCard{gap:8px}
+      .stageGrid{gap:8px}
+      .playCard{min-height:clamp(160px, 20vh, 220px);padding:10px}
+      .currentCard{min-height:170px;padding:10px}
+      .stageGrid > div:first-child{max-height:38vh}
+      .stageGrid > .poolPanel{max-height:38vh}
+      /* Dev-Modus: Nebenbereiche bei sehr geringer Höhe scrollen. */
+      body.ui-dev .playersCard{max-height:36vh}
+      body.ui-dev .rightPanel .sideSection{max-height:22vh}
     }
   </style>
 </head>

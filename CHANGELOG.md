@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Zusätzliche Responsive-Optimierungen für niedrige Viewports mit reduzierten Abständen, kleineren Mindesthöhen und scrollbaren Nebenbereichen im Dev-Modus.
 - UI: Einblendbarer Anleitung-Drawer im Spielmodus mit strukturierten Kurzregeln und Symbol-Legende.
 - UI: Spielmodus-Eventkarte weiter verdichtet (kleinere Höhe, geringeres Padding, reduzierte Typo).
 - UI: Spielmodus-Eventkarte kompakter gestaltet und mit Kartenrahmen/Innen-Schatten veredelt.
