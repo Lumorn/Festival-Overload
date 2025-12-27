@@ -93,6 +93,42 @@
     .modeToggle .btn{background:rgba(15,23,42,.55);border-color:rgba(148,163,184,.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);position:relative}
     .modeToggle .btn:hover{background:rgba(30,41,59,.68);border-color:rgba(226,232,240,.6);box-shadow:0 12px 26px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.05)}
     .modeToggle .btn.active{border-color:rgba(148,163,184,.9);background:linear-gradient(120deg, rgba(255,255,255,.2), rgba(15,23,42,.7));box-shadow:0 14px 30px rgba(0,0,0,.36), inset 0 0 0 1px rgba(255,255,255,.12);font-weight:800}
+    /* Spielmodus-Dropdown: eigenständiger Wrapper mit Overlay-Liste. */
+    .modeSelect{position:relative;display:inline-flex}
+    .modeDropdown{
+      position:absolute;
+      top:calc(100% + 8px);
+      left:0;
+      min-width:220px;
+      background:rgba(20,30,52,.96);
+      border:1px solid rgba(148,163,184,.28);
+      border-radius:12px;
+      padding:6px;
+      box-shadow:var(--shadow);
+      opacity:0;
+      pointer-events:none;
+      transform:translateY(-4px);
+      transition:.12s opacity,.12s transform;
+      z-index:30;
+    }
+    .modeSelect.open .modeDropdown{opacity:1;pointer-events:auto;transform:translateY(0)}
+    .modeOption{
+      width:100%;
+      text-align:left;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid transparent;
+      background:rgba(15,23,42,.55);
+      color:var(--text);
+      cursor:pointer;
+      font-size:12px;
+    }
+    .modeOption small{color:var(--mutedStrong);font-size:11px}
+    .modeOption:hover{border-color:rgba(226,232,240,.4);background:rgba(30,41,59,.7)}
+    .modeOption.active{border-color:rgba(96,165,250,.6);background:rgba(96,165,250,.18)}
     /* Icon-Buttons oben rechts: mehr Kontrast, sichtbarer Fokus und Pfeil-Hinweis. */
     .topAction{display:inline-flex;align-items:center;gap:6px}
     .topAction .btnIcon{font-size:14px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35));transition:transform .12s ease}
@@ -1362,11 +1398,14 @@
           <span>Anleitung</span>
         </button>
         <div class="modeToggle" role="group" aria-label="Modus wechseln">
-          <button class="btn slim topAction" id="btnModePlay" aria-pressed="false">
-            <span class="btnIcon" aria-hidden="true">🎮</span>
-            <span>Spielmodus</span>
-            <span class="btnCaret" aria-hidden="true">▾</span>
-          </button>
+          <div class="modeSelect" id="modeSelect">
+            <button class="btn slim topAction" id="btnModePlay" aria-pressed="false" aria-haspopup="true" aria-expanded="false" aria-controls="modeDropdown">
+              <span class="btnIcon" aria-hidden="true">🎮</span>
+              <span id="playModeLabel">Spielmodus</span>
+              <span class="btnCaret" aria-hidden="true">▾</span>
+            </button>
+            <div class="modeDropdown" id="modeDropdown" role="menu" aria-label="Spielmodus auswählen"></div>
+          </div>
           <button class="btn slim topAction" id="btnModeDev" aria-pressed="false">
             <span class="btnIcon" aria-hidden="true">🧪</span>
             <span>Dev</span>
@@ -1911,7 +1950,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.65';
+    var VERSION = 'v0.66';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1944,6 +1983,13 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.66',
+        date: '2026-09-03',
+        items: [
+          'UI: Spielmodus-Button zeigt ein echtes Dropdown mit auswählbaren Modi oder deaktiviert sich mit „in Arbeit“.'
+        ]
+      },
       {
         ver: 'v0.65',
         date: '2026-08-27',
@@ -2541,6 +2587,7 @@
       humanIndex: 0,
       botProfileId: 'standard',
       botCount: 3,
+      playModeId: null,
 
       awaitingDecision: false,
       humanChoice: 'stay', // 'stay' | 'camp'
@@ -6401,6 +6448,81 @@
       btn.setAttribute('aria-expanded','false');
     }
 
+    var playModes = [
+      {
+        id: 'simultan',
+        label: 'Simultan Camp/Bleib',
+        description: 'Alle Spieler entscheiden gleichzeitig, Eventeffekte laufen sofort.'
+      }
+    ];
+
+    // Spielmodus-Dropdown schließen.
+    function closePlayModeDropdown(){
+      var wrap = document.getElementById('modeSelect');
+      var btn = document.getElementById('btnModePlay');
+      if (!wrap || !btn) return;
+      wrap.classList.remove('open');
+      btn.setAttribute('aria-expanded','false');
+    }
+
+    // Ausgewählten Spielmodus setzen und UI aktualisieren.
+    function setPlayMode(modeId){
+      var label = document.getElementById('playModeLabel');
+      var dropdown = document.getElementById('modeDropdown');
+      var btn = document.getElementById('btnModePlay');
+      var selected = playModes.find(function(mode){ return mode.id === modeId; }) || playModes[0];
+      if (!selected){
+        state.playModeId = null;
+        if (label) label.textContent = 'Spielmodus';
+        return;
+      }
+      state.playModeId = selected.id;
+      if (label) label.textContent = selected.label;
+      if (dropdown){
+        var options = dropdown.querySelectorAll('.modeOption');
+        options.forEach(function(option){
+          option.classList.toggle('active', option.dataset.modeId === selected.id);
+        });
+      }
+      if (btn) btn.setAttribute('title', 'Aktiver Modus: ' + selected.label);
+      setUiMode('play');
+      closePlayModeDropdown();
+    }
+
+    // Spielmodus-Dropdown aus Spielmodusliste aufbauen.
+    function buildPlayModeDropdown(){
+      var dropdown = document.getElementById('modeDropdown');
+      var btn = document.getElementById('btnModePlay');
+      var label = document.getElementById('playModeLabel');
+      if (!dropdown || !btn) return;
+      dropdown.innerHTML = '';
+      if (!playModes.length){
+        btn.disabled = true;
+        btn.setAttribute('title','in Arbeit');
+        if (label) label.textContent = 'Spielmodus';
+        closePlayModeDropdown();
+        return;
+      }
+      btn.disabled = false;
+      btn.setAttribute('title','Spielmodus wählen');
+      playModes.forEach(function(mode){
+        var option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'modeOption';
+        option.dataset.modeId = mode.id;
+        option.innerHTML = '<b>' + esc(mode.label) + '</b><small>' + esc(mode.description || '') + '</small>';
+        option.onclick = function(){
+          setPlayMode(mode.id);
+        };
+        dropdown.appendChild(option);
+      });
+      if (!state.playModeId){
+        setPlayMode(playModes[0].id);
+      } else {
+        setPlayMode(state.playModeId);
+      }
+    }
+
     // Modus-Verfügbarkeit prüfen und Buttons ggf. deaktivieren plus Hinweistext setzen.
     function syncModeAvailability(){
       var btnPlay = document.getElementById('btnModePlay');
@@ -6410,10 +6532,13 @@
       var hasDev = !!document.querySelector('.devOnly');
       var notes = [];
       if (btnPlay){
-        btnPlay.disabled = !hasPlay;
+        btnPlay.disabled = !hasPlay || !playModes.length;
         if (!hasPlay){
           btnPlay.setAttribute('title','Spielmodus ist noch nicht umgesetzt.');
           notes.push('Spielmodus ist in dieser Ansicht noch nicht verfügbar.');
+        } else if (!playModes.length){
+          btnPlay.setAttribute('title','in Arbeit');
+          notes.push('Spielmodus-Varianten sind noch in Arbeit.');
         }
       }
       if (btnDev){
@@ -7174,6 +7299,7 @@
         togglePlayLog(false);
         togglePlayRulesDrawer(false);
         closeModeHint();
+        closePlayModeDropdown();
         if (state.askOpen){
           var back = document.getElementById('askBack');
           back.style.display = 'none';
@@ -7184,9 +7310,18 @@
     });
 
     var btnModePlay = document.getElementById('btnModePlay');
-    if (btnModePlay) btnModePlay.onclick = function(){ setUiMode('play'); };
+    if (btnModePlay) btnModePlay.onclick = function(){
+      if (btnModePlay.disabled) return;
+      var wrap = document.getElementById('modeSelect');
+      if (!wrap) return;
+      var isOpen = wrap.classList.toggle('open');
+      btnModePlay.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    };
     var btnModeDev = document.getElementById('btnModeDev');
-    if (btnModeDev) btnModeDev.onclick = function(){ setUiMode('dev'); };
+    if (btnModeDev) btnModeDev.onclick = function(){
+      closePlayModeDropdown();
+      setUiMode('dev');
+    };
     // Modus-Hinweis: Tooltip per Klick öffnen und bei Außenklick schließen.
     var modeHint = document.getElementById('modeHint');
     var btnModeHint = document.getElementById('btnModeHint');
@@ -7200,8 +7335,13 @@
         if (!modeHint.contains(e.target)) closeModeHint();
       });
     }
+    document.addEventListener('click', function(e){
+      var modeSelect = document.getElementById('modeSelect');
+      if (modeSelect && !modeSelect.contains(e.target)) closePlayModeDropdown();
+    });
     var btnPlayPreview = document.getElementById('btnPlayPreview');
     if (btnPlayPreview) btnPlayPreview.onclick = function(){ setUiMode('play'); };
+    buildPlayModeDropdown();
     syncModeAvailability();
 
     var btnReveal = document.getElementById('btnReveal');
