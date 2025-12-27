@@ -19,8 +19,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
 - Overload-Track als horizontale Zonenleiste (grün/gelb/rot) mit klarer Marker-Position und Schwellenmarkierung.
 - Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.
-- Simultane Bleib/Camp-Entscheidung als integriertes Entscheidungsfeld im Spielbereich inkl. Vorschau auf Pool-Bonus und Gesamtstand.
-- Entscheidungsfeld im Spielmodus bleibt in der linken Bühne verankert, damit Bleib/Camp sauber ausgerichtet sind.
+- Simultane Bleib/Camp-Entscheidung als zentriertes Modal-Overlay mit dunklem Hintergrund, Countdown und klaren Aktionskarten.
+- Entscheidungsfenster im Spielmodus erscheint als fokussiertes Overlay, damit Bleib/Camp zentral ausgerichtet sind.
 - Spielmodus skaliert Entscheidungspanel, Kartenhöhe und Abstände dynamisch mit der Viewport-Größe, inklusive Scrollbarkeit auf kleinen Screens.
 - Zusätzliche Responsive-Optimierungen für niedrige Viewports: engere Abstände, reduzierte Mindesthöhen und scrollbare Nebenbereiche im Dev-Modus.
 - Steuerungsmodi für Bots (Bots automatisch, Bots manuell, alles automatisch) und auswählbares Bot-Profil für modular erweiterbare KI.
