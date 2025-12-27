@@ -24,6 +24,11 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
 - Autoplay-Toggle im Spielmodus (Play-Drawer) für schnelles Ein/Aus mit Statusanzeige.
+- Spielmodus: kontraststärkeres Farbschema, größere Schrift und klarer hervorgehobene Phasen für bessere Lesbarkeit.
+- Spielmodus: Symbol-Legende in den Spielerleisten plus Tooltipps für Live/Camp.
+- Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
+- Spielmodus: Primär-Buttons sind visuell stärker hervorgehoben und eindeutig beschriftet.
+- Regelerinnerung im rechten Panel ist jetzt einklappbar, damit sie den Log weniger überdeckt.
 - Kurzregeln sind im Spielmodus zusätzlich oben rechts erreichbar, damit die Hilfe ohne Scrollen sichtbar bleibt.
 - Kompakter Meta-Block im Spielmodus zeigt Aufdecker und Richtung direkt unter dem Overload-Track.
 - Kompakter Statusbereich im Spielmodus zeigt Deck- und Ablage-Anzahl direkt in der Bühne.
