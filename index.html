@@ -255,6 +255,7 @@
     .kText{font-size:12px;color:#d6dbea;line-height:1.28;position:relative;z-index:2}
 
     .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:0;justify-content:flex-end}
+    /* Standard-Buttons mit sanfter Kante für schnelle Interaktionen. */
     .btn{background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:10px 12px;color:var(--text);cursor:pointer;transition:.12s transform,.12s border-color}
     .btn:hover{transform:translateY(-1px);border-color:rgba(226,232,240,.35)}
     .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
@@ -552,7 +553,7 @@
     @keyframes trackPulseStrong{0%{box-shadow:0 0 0 rgba(245,158,11,0)}40%{box-shadow:0 0 0 6px rgba(245,158,11,.18)}100%{box-shadow:0 0 0 rgba(245,158,11,0)}}
     @keyframes trackShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
 
-    /* Kompakte Spielkarte mit Kartenrahmen, Innen-Schatten und feiner Papierstruktur */
+    /* Kompakte Spielkarte mit Kartenrahmen, Innen-Schatten und feiner Papierstruktur. */
     .playCard{
       min-height:clamp(220px, 28vh, 320px);
       border-radius:20px;
@@ -570,6 +571,7 @@
     .playCard .kType{font-size:12px}
     .playCard .kText{font-size:14px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .playChips{display:flex;gap:8px;flex-wrap:wrap}
+    /* Chips im Spielmodus mit stärkerer Typo für schnelle Lesbarkeit. */
     .playChip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid rgba(148,163,184,.18);background:rgba(0,0,0,.18);font-size:13px;font-weight:700}
     .playChip.good{border-color:rgba(34,197,94,.38);background:rgba(34,197,94,.12)}
     .playChip.warn{border-color:rgba(245,158,11,.38);background:rgba(245,158,11,.12)}
@@ -586,6 +588,7 @@
     .playPoolChip{padding:10px 16px;border-radius:999px;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.4);font-size:16px;font-weight:900}
     .playCountdownBadge{padding:6px 10px;border-radius:999px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.16);font-size:12px;font-weight:800;display:none}
     .playCountdownBadge.active{display:inline-flex}
+    /* Primär-Button für den Spielmodus mit klarer Gewichtung. */
     .playPrimary{padding:16px 20px;font-size:17px;font-weight:800;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
     .playPrimary.good{background:linear-gradient(135deg, rgba(34,197,94,.35), rgba(34,197,94,.12));border-color:rgba(34,197,94,.55)}
     .playPrimary.blue{background:linear-gradient(135deg, rgba(96,165,250,.35), rgba(96,165,250,.12));border-color:rgba(96,165,250,.55)}
@@ -722,7 +725,7 @@
 
     .stageGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:12px;min-height:0}
     /* Kompakteres Format für die aktuelle Karte, damit mehr Inhalt sichtbar bleibt. */
-    /* Aktuelle Karte mit zusätzlichem Innen-Schatten für mehr Tiefe */
+    /* Aktuelle Karte mit zusätzlichem Innen-Schatten für mehr Tiefe. */
     .currentCard{min-height:240px;aspect-ratio:2.5 / 3.5;border-radius:20px;padding:12px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.75);box-shadow:0 18px 38px rgba(0,0,0,.45), inset 0 0 22px rgba(0,0,0,.28);position:relative;overflow:hidden}
     .currentCard .kName{font-size:16px}
     .currentCard .kText{font-size:13px}
@@ -847,10 +850,27 @@
       }
     }
     @media (max-width:780px){
+      /* Schmale Breiten: Buttons/Chips kompakter, damit weniger Zeilen umbrechen. */
       .playStage{padding:12px}
       .playPlayers{padding:12px}
-      .playPrimary{width:100%}
+      .btn{padding:8px 10px;font-size:12px}
+      .btn.slim{padding:6px 8px;font-size:11px}
+      .pill{padding:5px 8px;font-size:11px}
+      .playChip{padding:6px 10px;font-size:12px}
+      .playPrimary{width:100%;padding:14px 16px;font-size:15px}
+      /* Karten bleiben im Verhältnis, aber brauchen weniger Höhe. */
+      .playCard{min-height:clamp(170px, 24vh, 240px);aspect-ratio:2.5 / 3.5}
+      .currentCard{min-height:190px;aspect-ratio:2.5 / 3.5}
       .playDrawer{gap:6px;flex-wrap:wrap}
+    }
+    @media (max-width:560px){
+      /* Extra kompakt für sehr schmale Displays. */
+      .btn{padding:7px 8px;font-size:11px}
+      .pill{padding:4px 7px;font-size:10px}
+      .playChip{padding:5px 8px;font-size:11px}
+      .playPrimary{padding:12px 14px;font-size:14px}
+      .playCard{min-height:clamp(155px, 22vh, 220px);padding:10px}
+      .currentCard{min-height:170px;padding:10px}
     }
     @media (max-height:900px){
       body{overflow:auto}
@@ -861,8 +881,8 @@
       .stageCard{gap:10px}
       .stageGrid{gap:10px}
       /* Kleinere Mindesthöhen, damit der Viewport passt. */
-      .playCard{min-height:clamp(180px, 22vh, 260px)}
-      .currentCard{min-height:200px}
+      .playCard{min-height:clamp(170px, 20vh, 250px);aspect-ratio:2.5 / 3.5}
+      .currentCard{min-height:190px;aspect-ratio:2.5 / 3.5}
       /* Hohe Inhalte innerhalb der Dev-Ansicht scrollen, statt die Seite zu strecken. */
       .stageGrid > div:first-child{max-height:42vh;overflow:auto}
       .stageGrid > .poolPanel{max-height:42vh;overflow:auto}
@@ -877,8 +897,8 @@
       .playMeta{gap:6px}
       .stageCard{gap:8px}
       .stageGrid{gap:8px}
-      .playCard{min-height:clamp(160px, 20vh, 220px);padding:10px}
-      .currentCard{min-height:170px;padding:10px}
+      .playCard{min-height:clamp(145px, 18vh, 210px);padding:10px;aspect-ratio:2.5 / 3.5}
+      .currentCard{min-height:160px;padding:10px;aspect-ratio:2.5 / 3.5}
       .stageGrid > div:first-child{max-height:38vh}
       .stageGrid > .poolPanel{max-height:38vh}
       /* Dev-Modus: Nebenbereiche bei sehr geringer Höhe scrollen. */
