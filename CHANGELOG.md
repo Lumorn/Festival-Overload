@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- UI: Dauerhafte Overload-Legende oberhalb der Leiste ergänzt (Sicher/Warnung/Gefahr).
+- UI: Live/Camp-Werte in der Spielerleiste vergrößert und farblich klarer getrennt.
+- UI: Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C).
 - UI: Hintergrundverlauf vereinfacht, Kartenflächen geglättet, Typografie vergrößert und Padding für klarere Abstände erhöht.
 - UI: Overload-Track als segmentierte Balkenleiste mit Pfeil/Glow-Marker und größeren Zahlen für die aktuelle Position gestaltet.
 - UI: Modus-Umschalter mit erklärendem Tooltip ergänzt und Hinweistext für nicht verfügbare Ansichten hinzugefügt.
