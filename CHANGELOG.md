@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Buttons mit deutlicheren Hover-Effekten, klareren Active-Zuständen und stärkerem Schatten-Feedback ausgestattet.
 - UI: Spielerleisten-Legende und Werte-Icons vergrößert, farblich stärker differenziert und mit Tooltipps/Labels ergänzt.
 - UI: Overload-Track als farbige Zonenleiste mit Marker/Label für die aktuelle Position.
 - UI: Panels und Kartenflächen aufgehellt, Textkontrast erhöht und einheitliche Typogrößen für Karten/Chips/Buttons definiert.
