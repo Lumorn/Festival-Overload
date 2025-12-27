@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- UI: Aktive Spielmodus-Buttons füllen ihre Farbakzente klarer aus (Weiter/Entscheidung starten/Warten…).
+- UI: Disabled-Buttons sind konsistent sichtbar ausgegraut, auch bei Farbvarianten.
+- UI: Bot-Hinweis im Spielmodus prominent oberhalb der Aktionsbuttons platziert.
 - UI: Auswahlzustand bei Bleib/Camp deutlich markiert (farbiger Hintergrund, Rahmen, Glow).
 - UI: Entscheidungs-Chips zeigen vollständige Namen und Tooltip „Dieser Spieler hat schon gewählt“.
 - UI: Entscheidungs-Chips vergrößert, damit längere Namen lesbar bleiben.

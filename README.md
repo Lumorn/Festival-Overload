@@ -45,6 +45,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: Primär-Buttons sind visuell stärker hervorgehoben und eindeutig beschriftet.
 - Buttons haben jetzt deutlichere Hover-Effekte und klarere Active-Zustände für bessere Interaktion.
 - Button-Zustände für „Warten…“, „Weiter“ und „Event aufdecken“ sind visuell klarer hervorgehoben und mit Tooltips ergänzt.
+- Spielmodus: Aktive Aktionsbuttons füllen ihre Farbakzente deutlicher aus, Disabled-States sind klar ausgegraut.
+- Spielmodus: Bot-Hinweis ist prominent oberhalb der Aktionsbuttons platziert.
 - Disabled-States sind stärker ausgegraut, aktive Aktionen farblich betont.
 - Zusätzliche Hilfetexte erklären, wann Bots automatisch oder manuell entscheiden.
 - Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C), damit Auswahl-Chips eindeutiger sind.
