@@ -623,10 +623,15 @@
     }
     .playPlayersHeader{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:15px}
     .playPlayersList{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0;flex:1}
-    .playPlayersLegend{display:flex;flex-wrap:wrap;gap:6px}
-    /* Symbol-Legende: größere Icons und klar getrennte Farben. */
+    /* Legenden-Zeilen neben den Spielerleisten kompakt halten. */
+    .playPlayersLegend,
+    .playersLegend{display:flex;flex-wrap:wrap;gap:6px}
+    /* Symbol-Legende: klare Icons, aber bewusst dezente Flächen. */
     .legendChip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.18);border:1px solid rgba(148,163,184,.18);font-size:12px;font-weight:700;color:var(--mutedStrong)}
     .legendChip .legendIcon{font-size:15px;line-height:1}
+    /* Kompakte Variante für engere Layouts, damit die Leiste nicht überlädt. */
+    .legendCompact .legendChip{padding:3px 8px;font-size:11px;background:rgba(0,0,0,.12);border-color:rgba(148,163,184,.14)}
+    .legendCompact .legendIcon{font-size:13px}
     .legendChip.live{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.12);color:rgba(214,255,226,.9)}
     .legendChip.camp{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.15);color:rgba(255,236,204,.95)}
     .legendChip.reveal{border-color:rgba(96,165,250,.55);background:rgba(96,165,250,.14);color:rgba(214,233,255,.95)}
@@ -1192,7 +1197,7 @@
         <div class="leaderSummary">
           <span class="pill blue" id="leaderSummaryPlay">Leader: — · Camp — · Abstand —</span>
         </div>
-        <div class="playPlayersLegend" aria-label="Symbol-Legende">
+        <div class="playPlayersLegend legendCompact" aria-label="Symbol-Legende">
           <span class="legendChip live" title="Live" aria-label="Live"><span class="legendIcon" aria-hidden="true">🎟️</span><span class="legendLabel">Live</span></span>
           <span class="legendChip camp" title="Camp" aria-label="Camp"><span class="legendIcon" aria-hidden="true">⛺</span><span class="legendLabel">Camp</span></span>
           <span class="legendChip reveal" title="Aufdecker" aria-label="Aufdecker"><span class="legendIcon" aria-hidden="true">⬅️</span><span class="legendLabel">Aufdecker</span></span>
@@ -1389,6 +1394,14 @@
         <div class="leaderSummary">
           <span class="pill blue" id="leaderSummary">Leader: — · Camp — · Abstand —</span>
         </div>
+        <div class="playersLegend legendCompact" aria-label="Symbol-Legende">
+          <span class="legendChip live" title="Live" aria-label="Live"><span class="legendIcon" aria-hidden="true">🎟️</span><span class="legendLabel">Live</span></span>
+          <span class="legendChip camp" title="Camp" aria-label="Camp"><span class="legendIcon" aria-hidden="true">⛺</span><span class="legendLabel">Camp</span></span>
+          <span class="legendChip reveal" title="Aufdecker" aria-label="Aufdecker"><span class="legendIcon" aria-hidden="true">⬅️</span><span class="legendLabel">Aufdecker</span></span>
+          <span class="legendChip status-active" title="Status aktiv" aria-label="Status aktiv"><span class="legendIcon" aria-hidden="true">🟢</span><span class="legendLabel">Aktiv</span></span>
+          <span class="legendChip status-camped" title="Status gecampt" aria-label="Status gecampt"><span class="legendIcon" aria-hidden="true">🟠</span><span class="legendLabel">Gecampt</span></span>
+          <span class="legendChip status-out" title="Status raus" aria-label="Status raus"><span class="legendIcon" aria-hidden="true">🔴</span><span class="legendLabel">Raus</span></span>
+        </div>
         <div class="playersList" id="players"></div>
       </section>
 
@@ -1514,7 +1527,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.54';
+    var VERSION = 'v0.55';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1547,6 +1560,14 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.55',
+        date: '2026-06-11',
+        items: [
+          'UI: Kompakte Symbol-Legenden in den Spielerleisten platziert und optisch dezenter gestaltet.',
+          'UI: Legenden-Chips verkleinert, damit die Spielerbereiche ruhiger bleiben.'
+        ]
+      },
       {
         ver: 'v0.54',
         date: '2026-06-04',
