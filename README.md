@@ -31,6 +31,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: kontraststärkeres Farbschema, größere Schrift und klarer hervorgehobene Phasen für bessere Lesbarkeit.
 - Panels und Kartenflächen sind heller abgestimmt, Text/Chips/Buttons nutzen einheitliche Schriftgrößen für konsistenten Kontrast.
 - Spielmodus: Symbol-Legende in den Spielerleisten plus Tooltipps für Live/Camp.
+- Spielerleisten: kompakte Symbol-Legenden direkt im Bereich platziert, mit dezenteren Chips.
 - Spielmodus: Spielerleisten-Legende und Werte-Icons sind größer, farblich stärker differenziert und mit klaren Tooltipps/Labels versehen.
 - Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
 - Spielmodus: Primär-Buttons sind visuell stärker hervorgehoben und eindeutig beschriftet.
