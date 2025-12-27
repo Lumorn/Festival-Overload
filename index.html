@@ -56,6 +56,17 @@
     body.ui-play .playOnly{display:block}
     body.ui-dev .devOnly{display:block}
     body.ui-dev .playOnly{display:none}
+    /* Dev-Zugang: Schalter und Link erst nach Freischaltung anzeigen. */
+    .devGate{display:none;align-items:center}
+    .devAccess{
+      display:none;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      color:var(--mutedStrong);
+      white-space:nowrap;
+    }
+    .devAccess .btn{font-size:var(--fs-button-compact)}
 
     .topBar{
       display:grid;
@@ -670,6 +681,17 @@
       letter-spacing:.2px;
       margin-bottom:6px;
     }
+    /* Debug-Tools: gruppierter Block mit höherer Schrift für bessere Lesbarkeit. */
+    .debugGroup{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      font-size:14px;
+    }
+    .debugGroup .debugTitle{font-size:15px;font-weight:800;letter-spacing:.2px}
+    .debugGroup .mini{font-size:13px}
+    .debugGroup label{font-size:14px}
+    .debugGroup code{font-size:12px}
     .ruleList{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:8px}
     .ruleList li{padding:8px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.12);background:rgba(0,0,0,.12);line-height:1.45}
     .ruleList li b{font-weight:800}
@@ -1554,6 +1576,8 @@
             </button>
             <div class="modeDropdown" id="modeDropdown" role="menu" aria-label="Spielmodus auswählen"></div>
           </div>
+        </div>
+        <div class="devGate" id="devGate" aria-hidden="true">
           <button class="btn slim topAction" id="btnModeDev" aria-pressed="false">
             <span class="btnIcon" aria-hidden="true">🧪</span>
             <span>Dev</span>
@@ -1567,6 +1591,10 @@
           </div>
         </div>
         <div class="modeHintNotice" id="modeHintNotice" aria-live="polite"></div>
+        <div class="devAccess" id="devAccess">
+          <span class="devAccessLabel" id="devAccessLabel">Dev-Tools verborgen</span>
+          <button class="btn slim" id="btnDevAccess" type="button" aria-pressed="false">Dev-Tools freischalten</button>
+        </div>
         <div class="statusIcons devOnly">
           <span class="statusChip warn" id="countdownStatus">🔥 Countdown aktiv</span>
           <span class="statusChip blue" id="stageRuleChip">🌀 Bühnenregel</span>
@@ -2002,7 +2030,6 @@
             <b>Log</b>
             <div class="logActions">
               <button class="btn slim" id="btnCopyLog">Log kopieren</button>
-              <button class="btn slim" id="btnExportDebug">Debug exportieren</button>
             </div>
           </div>
           <div class="log" id="log"></div>
@@ -2034,7 +2061,6 @@
               <span class="tag">nur vor Spielstart</span>
             </div>
             <label class="mini"><input id="optDecisionTimer" type="checkbox" checked> Timer aktiv (20s, Auto-Bleib)</label>
-            <label class="mini"><input id="optDebugAssertFail" type="checkbox"> Debug: ASSERT_FAIL erzwingen</label>
             <label class="mini">Tempo:
               <select id="optSpeed">
                 <option value="250">schnell</option>
@@ -2050,8 +2076,11 @@
           <div class="sideTitle">Test-Deck (60 Karten)</div>
           <div class="mini">⚡ Push 26 · 🛠️ Stabilisieren 14 · 🌀 Twist 14 · 🎤 Encore 6</div>
         </div>
-        <div class="sideSection mini">
-          <b>Dev:</b> Browser-Konsole: <code>FestivalOverloadTests</code>
+        <div class="sideSection debugGroup" id="debugGroup">
+          <div class="debugTitle">Debug-Tools</div>
+          <button class="btn slim" id="btnExportDebug">Debug exportieren</button>
+          <label><input id="optDebugAssertFail" type="checkbox"> Debug: ASSERT_FAIL erzwingen</label>
+          <div class="mini"><b>Dev:</b> Browser-Konsole: <code>FestivalOverloadTests</code></div>
         </div>
       </section>
     </div>
@@ -2112,7 +2141,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.66';
+    var VERSION = 'v0.71';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -2142,9 +2171,19 @@
     // Bot-Limits für die UI-Anpassung
     var MIN_BOTS = 1;
     var MAX_BOTS = 6;
+    // Dev-Zugang: nur mit Freischaltung (URL-Parameter oder lokaler Schalter).
+    var DEV_ACCESS_KEY = 'festivalOverloadDevAccess';
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.71',
+        date: '2026-10-08',
+        items: [
+          'UI: Dev-Modus ist jetzt hinter einem separaten Dev-Zugang versteckt (URL-Parameter dev=1 oder Schalter).',
+          'UI: Debug-Tools im rechten Panel gruppiert und mit größeren Schriftgrößen versehen.'
+        ]
+      },
       {
         ver: 'v0.70',
         date: '2026-10-01',
@@ -3808,7 +3847,57 @@
       renderSteps();
     }
 
+    // Dev-Zugang prüfen: URL-Parameter dev=1 oder lokaler Toggle.
+    function hasDevAccess(){
+      var params = new URLSearchParams(window.location.search);
+      if (params.has('dev')) return true;
+      if (!window.localStorage) return false;
+      return localStorage.getItem(DEV_ACCESS_KEY) === '1';
+    }
+
+    // Dev-Zugang speichern, damit der Schalter dauerhaft bleibt.
+    function setDevAccess(enabled){
+      if (!window.localStorage) return;
+      if (enabled) localStorage.setItem(DEV_ACCESS_KEY, '1');
+      else localStorage.removeItem(DEV_ACCESS_KEY);
+    }
+
+    // Dev-Schalter/Buttons sichtbar halten und UI ggf. zurücksetzen.
+    function syncDevAccessUI(){
+      var devGate = document.getElementById('devGate');
+      var devAccess = document.getElementById('devAccess');
+      var devLabel = document.getElementById('devAccessLabel');
+      var devBtn = document.getElementById('btnDevAccess');
+      var modeHint = document.getElementById('modeHint');
+      var enabled = hasDevAccess();
+      var hasParam = new URLSearchParams(window.location.search).has('dev');
+      var showAccess = enabled || hasParam;
+      if (devGate){
+        devGate.style.display = enabled ? 'inline-flex' : 'none';
+        devGate.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+      }
+      if (modeHint){
+        modeHint.style.display = enabled ? 'inline-flex' : 'none';
+      }
+      if (devAccess){
+        devAccess.style.display = showAccess ? 'inline-flex' : 'none';
+      }
+      if (devLabel){
+        devLabel.textContent = enabled ? 'Dev-Tools aktiv' : 'Dev-Tools verborgen';
+      }
+      if (devBtn){
+        devBtn.textContent = enabled ? 'Dev-Tools sperren' : 'Dev-Tools freischalten';
+        devBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      }
+      if (!enabled && state.uiMode === 'dev'){
+        setUiMode('play');
+      }
+    }
+
     function setUiMode(mode){
+      if (mode === 'dev' && !hasDevAccess()){
+        mode = 'play';
+      }
       state.uiMode = (mode === 'dev') ? 'dev' : 'play';
       document.body.classList.toggle('ui-play', state.uiMode === 'play');
       document.body.classList.toggle('ui-dev', state.uiMode === 'dev');
@@ -6761,6 +6850,7 @@
       var notice = document.getElementById('modeHintNotice');
       var hasPlay = !!document.querySelector('.playOnly');
       var hasDev = !!document.querySelector('.devOnly');
+      var devAccess = hasDevAccess();
       var notes = [];
       if (btnPlay){
         btnPlay.disabled = !hasPlay || !playModes.length;
@@ -6773,10 +6863,12 @@
         }
       }
       if (btnDev){
-        btnDev.disabled = !hasDev;
+        btnDev.disabled = !hasDev || !devAccess;
         if (!hasDev){
           btnDev.setAttribute('title','Dev-Modus ist noch nicht umgesetzt.');
           notes.push('Dev-Modus ist in dieser Ansicht noch nicht verfügbar.');
+        } else if (!devAccess){
+          btnDev.setAttribute('title','Dev-Modus ist verborgen.');
         }
       }
       if (notice) notice.textContent = notes.join(' ');
@@ -7568,6 +7660,16 @@
       closePlayModeDropdown();
       setUiMode('dev');
     };
+    // Dev-Zugang per separatem Schalter freischalten/entziehen.
+    var btnDevAccess = document.getElementById('btnDevAccess');
+    if (btnDevAccess){
+      btnDevAccess.onclick = function(){
+        var nextState = !hasDevAccess();
+        setDevAccess(nextState);
+        syncDevAccessUI();
+        syncModeAvailability();
+      };
+    }
     // Modus-Hinweis: Tooltip per Klick öffnen und bei Außenklick schließen.
     var modeHint = document.getElementById('modeHint');
     var btnModeHint = document.getElementById('btnModeHint');
@@ -7588,6 +7690,7 @@
     var btnPlayPreview = document.getElementById('btnPlayPreview');
     if (btnPlayPreview) btnPlayPreview.onclick = function(){ setUiMode('play'); };
     buildPlayModeDropdown();
+    syncDevAccessUI();
     syncModeAvailability();
 
     var btnReveal = document.getElementById('btnReveal');

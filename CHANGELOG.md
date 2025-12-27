@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- UI: Dev-Modus hinter separatem Dev-Zugang (URL-Parameter dev=1 plus Schalter) versteckt.
+- UI: Debug-Tools im rechten Panel gruppiert und Schriftgrößen erhöht.
 - UI: Play-Drawer-Leiste verbreitert, Icons ergänzt und Hover-Beschreibungen für die Aktionen hinzugefügt.
 - UI: Log-Funktion zusätzlich im Hauptmenü verlinkt und Button-Zustände synchronisiert.
 - UI: Spielerleisten im Spielmodus heben aktive Zeilen kontrastreicher hervor und markieren gecampt/raus per dezenter Schraffur.
