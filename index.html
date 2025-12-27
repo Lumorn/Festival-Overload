@@ -1255,10 +1255,45 @@
     .decisionBtn.selected.good{background:linear-gradient(135deg, rgba(34,197,94,.38), rgba(34,197,94,.12));box-shadow:0 0 0 2px rgba(34,197,94,.55), 0 0 18px rgba(34,197,94,.3), 0 18px 34px rgba(0,0,0,.38)}
     .decisionBtn.selected.warn{background:linear-gradient(135deg, rgba(245,158,11,.38), rgba(245,158,11,.12));box-shadow:0 0 0 2px rgba(245,158,11,.55), 0 0 18px rgba(245,158,11,.32), 0 18px 34px rgba(0,0,0,.38)}
     .decisionPreview{padding:10px 12px;border-radius:14px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.16);display:flex;flex-direction:column;gap:6px}
-    /* Spielerchips in der Entscheidung: volle Namen sichtbar und klarer Status. */
-    .decisionPlayers{display:flex;gap:8px;flex-wrap:wrap}
-    .decisionPlayer{padding:6px 10px;border-radius:999px;background:rgba(148,163,184,.18);border:1px solid rgba(148,163,184,.22);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--muted);min-width:70px}
-    .decisionPlayer.done{background:rgba(34,197,94,.22);border-color:rgba(34,197,94,.45);color:#fff;box-shadow:0 0 12px rgba(34,197,94,.25)}
+    /* Entscheidung: Avatare mit Initialen, damit die Auswahl visuell klarer wirkt. */
+    .decisionPlayers{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+    .decisionPlayer{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px}
+    .decisionPlayerAvatar{
+      width:44px;
+      height:44px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.4px;
+      color:#0b1020;
+      background:var(--avatar-bg, #cbd5f5);
+      border:2px solid var(--avatar-ring, rgba(148,163,184,.6));
+      box-shadow:0 8px 18px rgba(0,0,0,.28);
+      position:relative;
+      text-transform:uppercase;
+    }
+    .decisionPlayerLabel{font-size:11px;color:var(--mutedStrong);font-weight:700;text-align:center;max-width:76px}
+    .decisionPlayer.done .decisionPlayerAvatar{box-shadow:0 0 0 2px rgba(34,197,94,.5), 0 0 14px rgba(34,197,94,.28)}
+    /* Badge zeigt, dass ein Bot seine Entscheidung bereits bestätigt hat. */
+    .decisionPlayerBadge{
+      position:absolute;
+      bottom:-4px;
+      right:-4px;
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--good);
+      color:#fff;
+      font-size:11px;
+      border:2px solid #0b1020;
+      box-shadow:0 6px 14px rgba(0,0,0,.35);
+    }
     .decisionTimer{
       min-width:86px;
       padding:12px 18px;
@@ -2028,6 +2063,14 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.68',
+        date: '2026-09-17',
+        items: [
+          'UI: Entscheidung zeigt farbige Avatar-Initialen statt Chips für schnellere Orientierung.',
+          'UI: Bot-Entscheidungen werden im Avatar mit Badge markiert.'
+        ]
+      },
       {
         ver: 'v0.67',
         date: '2026-09-10',
@@ -4422,25 +4465,60 @@
       var playersWrap = document.getElementById('decisionPlayers');
       if (playersWrap){
         playersWrap.innerHTML = '';
+        var avatarPalette = [
+          { bg:'#f6c453', ring:'rgba(246,196,83,.6)' },
+          { bg:'#fb7185', ring:'rgba(251,113,133,.55)' },
+          { bg:'#60a5fa', ring:'rgba(96,165,250,.6)' },
+          { bg:'#34d399', ring:'rgba(52,211,153,.6)' },
+          { bg:'#c084fc', ring:'rgba(192,132,252,.6)' },
+          { bg:'#f97316', ring:'rgba(249,115,22,.6)' }
+        ];
+        // Initialen aus den Spieler- oder Bot-Namen ableiten, damit Avatare schnell erkennbar sind.
+        function getInitials(label){
+          var parts = label.trim().split(/\s+/).filter(Boolean);
+          if (parts.length === 1){
+            return parts[0].slice(0, 2);
+          }
+          return (parts[0][0] || '') + (parts[1][0] || '');
+        }
         for (var i=0;i<state.players.length;i++){
           var p = state.players[i];
           var done = (p.roundState !== 'active') || (i === state.humanIndex && state.humanLockedIn);
           if (areBotsManual() && i !== state.humanIndex){
             done = done || !!state.botChoices[String(i)];
           }
+          var isBot = i !== state.humanIndex;
           var chip = document.createElement('div');
-          chip.className = 'decisionPlayer' + (done ? ' done' : '');
-          // Entscheidungschips: Namen vollständig anzeigen und Done-Status als Tooltip erklären.
+          chip.className = 'decisionPlayer' + (done ? ' done' : '') + (isBot ? ' is-bot' : ' is-human');
+          // Entscheidungs-Avatare: Namen lokalisieren und Initialen sichtbar machen.
           var chipLabel = p.name;
           if (i === state.humanIndex){
             chipLabel = 'Du';
           }
-          chip.textContent = chipLabel;
+          var avatar = document.createElement('div');
+          avatar.className = 'decisionPlayerAvatar';
+          var avatarColor = avatarPalette[i % avatarPalette.length];
+          avatar.style.setProperty('--avatar-bg', avatarColor.bg);
+          avatar.style.setProperty('--avatar-ring', avatarColor.ring);
+          avatar.textContent = getInitials(chipLabel);
+          if (isBot && done){
+            var badge = document.createElement('span');
+            badge.className = 'decisionPlayerBadge';
+            badge.textContent = '✓';
+            badge.setAttribute('aria-hidden', 'true');
+            avatar.appendChild(badge);
+          }
+          var label = document.createElement('span');
+          label.className = 'decisionPlayerLabel';
+          label.textContent = chipLabel;
+          chip.appendChild(avatar);
+          chip.appendChild(label);
           if (done){
-            chip.title = 'Dieser Spieler hat schon gewählt';
-            chip.setAttribute('aria-label', chipLabel + ' – Dieser Spieler hat schon gewählt');
+            var doneText = isBot ? 'Bot hat entschieden' : 'Dieser Spieler hat schon gewählt';
+            chip.title = doneText;
+            chip.setAttribute('aria-label', chipLabel + ' – ' + doneText);
           } else {
-            chip.setAttribute('aria-label', chipLabel);
+            chip.setAttribute('aria-label', chipLabel + ' – wartet auf Entscheidung');
           }
           playersWrap.appendChild(chip);
         }

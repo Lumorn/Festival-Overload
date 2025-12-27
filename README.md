@@ -60,6 +60,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Top-Bar: Anleitung/Spielmodus/Dev mit klaren Icons, deutlicherem Hover-Feedback und aktivem Zustand; Spielmodus zeigt einen Dropdown-Hinweis.
 - Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C), damit Auswahl-Chips eindeutiger sind.
 - Entscheidungs-Chips zeigen vollständige Namen und kennzeichnen bereits gewählte Spieler per Tooltip.
+- Entscheidung zeigt jetzt farbige Avatar-Initialen statt Chips; Bots markieren ihre Wahl mit einem Badge.
 - Bleib/Camp-Auswahl ist visuell deutlicher markiert (farbiger Hintergrund, Rahmen, Glow).
 - Bleib/Camp-Buttons sind gleich groß und zeigen eine klare Auswahlmarke inklusive Check-Icon.
 - Countdown ist im Spiel- und Dev-Bereich größer und prominenter platziert.
