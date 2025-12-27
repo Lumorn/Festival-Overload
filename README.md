@@ -64,7 +64,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Kompakter Statusbereich im Spielmodus zeigt Deck- und Ablage-Anzahl direkt in der Bühne.
 - Aktuelle Eventkarte im Spielmodus ist kompakter (geringere Höhe, kleinere Typo, engeres Padding), damit Inhalte dichter wirken.
 - Spielmodus-Eventkarte ist jetzt kompakter und erhält einen veredelten Kartenrahmen mit Innen-Schatten.
-- Effekte werden als kompakte Icon-Liste direkt in der Eventkarte (unter dem Titel) angezeigt, auch im Spielmodus.
+- Effekte sind als integrierte Liste in der Eventkarte dargestellt, inklusive Label „Effekte“ und kompakter Variante im Spielmodus.
+- Eventkarten nutzen größere Typografie mit optimierter Zeilenhöhe sowie zentrierte Inhalte für weniger Leerraum.
 - Kartenflächen sind ruhiger gestaltet (weniger Textur, sanfter Verlauf) und die Karten-Typografie ist größer für bessere Lesbarkeit.
 - Schmale Viewports: Buttons/Chips sind enger gesetzt, Karten behalten ihr Seitenverhältnis bei geringerer Mindesthöhe.
 - Eventkarten wirken papierartiger dank doppeltem Rahmen, feiner Textur, Eckornamenten und abgerundeten Farbbändern.
