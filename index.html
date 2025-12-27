@@ -478,7 +478,7 @@
       pointer-events:none;
     }
 
-    /* Event Impact Row */
+    /* Effektliste direkt in der Eventkarte: kompakt, damit sie unter dem Titel bleibt. */
     .impact{display:flex;gap:8px;flex-wrap:wrap;margin:-2px 0 10px;position:relative;z-index:2}
     .imp{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(0,0,0,.12);font-size:12px;color:#e8edf7}
     .imp b{font-weight:950}
@@ -486,6 +486,9 @@
     .imp.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.06)}
     .imp.bad{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.06)}
     .imp.blue{border-color:rgba(96,165,250,.28);background:rgba(96,165,250,.06)}
+    /* Kompakte Variante für den Spielmodus: kleinere Chips mit engerem Abstand. */
+    .impact.compact{gap:6px;margin:2px 0 8px}
+    .impact.compact .imp{padding:4px 8px;font-size:11px;gap:6px}
 
     /* Spieler: deutlicher Live/Camp als Karten-Icons + Deltazeile */
     .pPills{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -604,13 +607,8 @@
     .playCard .kName{font-size:21px;line-height:1.2}
     .playCard .kType{font-size:12px}
     .playCard .kText{font-size:16px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    /* Spielmodus: Effekte erscheinen direkt in der Karte als kompakte Liste. */
     .playChips{display:flex;gap:8px;flex-wrap:wrap}
-    /* Chips im Spielmodus mit stärkerer Typo für schnelle Lesbarkeit. */
-    .playChip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid rgba(148,163,184,.18);background:rgba(0,0,0,.18);font-size:13px;font-weight:700}
-    .playChip.good{border-color:rgba(34,197,94,.38);background:rgba(34,197,94,.12)}
-    .playChip.warn{border-color:rgba(245,158,11,.38);background:rgba(245,158,11,.12)}
-    .playChip.bad{border-color:rgba(239,68,68,.38);background:rgba(239,68,68,.12)}
-    .playChip.blue{border-color:rgba(96,165,250,.38);background:rgba(96,165,250,.12)}
     .playMeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .playMetaChip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(31,42,68,.65);border:1px solid rgba(148,163,184,.18);font-size:12px;font-weight:700}
     .playMetaChip b{font-weight:900}
@@ -1217,10 +1215,9 @@
             <div class="kName" id="playEventName">Bereit</div>
             <div class="kType" id="playEventType"><span class="dot" style="background:rgba(148,163,184,.6)"></span> ⏺️ Event</div>
           </div>
+          <div class="impact compact" id="playEventChips">—</div>
           <div class="kText" id="playEventText">Klicke auf „Event aufdecken“, um zu starten.</div>
         </div>
-
-        <div class="playChips" id="playEventChips">—</div>
 
         <div class="playPoolRow">
           <div class="playPoolChip">Pool: <span id="poolValuePlay">0</span></div>
@@ -3006,11 +3003,12 @@
       renderPlayChips(card);
     }
 
+    // Spielmodus-Chips als kompakte Effektliste direkt in der Kartenfläche rendern.
     function renderPlayChips(card){
       var wrap = document.getElementById('playEventChips');
       if (!wrap) return;
       if (!card){
-        wrap.innerHTML = '<span class="playChip">Bereit</span>';
+        wrap.innerHTML = '<span class="imp">Bereit</span>';
         return;
       }
 
@@ -3019,33 +3017,33 @@
       var addFeedback = feedbackLevel();
 
       if (t === 'push'){
-        chips.push({ cls:'bad', text:'Overload +' + ((card.delta || 1) + addFeedback) + ' (+ Mood)' });
-        chips.push({ cls:'blue', text:(state.revealer === state.humanIndex ? '+1 Live (Du)' : 'Aufdecker +1 Live') });
-        chips.push({ cls:'warn', text:'Pool +1' });
-        if (isTwistActive('pyro')) chips.push({ cls:'bad', text:'Pyro aktiv: +1 Overload' });
+        chips.push({ cls:'bad', text:'⚡ Overload +' + ((card.delta || 1) + addFeedback) + ' (+ Mood)' });
+        chips.push({ cls:'blue', text:'🎟️ ' + (state.revealer === state.humanIndex ? '+1 Live (Du)' : 'Aufdecker +1 Live') });
+        chips.push({ cls:'warn', text:'🎁 Pool +1' });
+        if (isTwistActive('pyro')) chips.push({ cls:'bad', text:'🔥 Pyro aktiv: +1 Overload' });
       } else if (t === 'stabilize'){
-        chips.push({ cls:'good', text:'Overload ' + (card.delta || -2) });
-        chips.push({ cls:'blue', text:'Live +1 nur bei Overload 9+ vorher' });
-        chips.push({ cls:'warn', text:'Pool +0' });
+        chips.push({ cls:'good', text:'🛠️ Overload ' + (card.delta || -2) });
+        chips.push({ cls:'blue', text:'🎟️ Live +1 nur bei Overload 9+ vorher' });
+        chips.push({ cls:'warn', text:'🎁 Pool +0' });
       } else if (t === 'twist'){
-        if (card.stage) chips.push({ cls:'warn', text:'Bühnenregel: ' + card.name });
-        if (card.fx === 'pyro') chips.push({ cls:'bad', text:'Push +1 Overload' });
-        if (card.fx === 'flipDir') chips.push({ cls:'warn', text:'Pool→Camp erst ab Live 3' });
-        if (card.fx === 'afterparty') chips.push({ cls:'warn', text:'Countdown sofort, Tick +2' });
-        if (card.fx === 'stageDive') chips.push({ cls:'bad', text:'Stage Dive' });
+        if (card.stage) chips.push({ cls:'warn', text:'🌀 Bühnenregel: ' + card.name });
+        if (card.fx === 'pyro') chips.push({ cls:'bad', text:'🔥 Push +1 Overload' });
+        if (card.fx === 'flipDir') chips.push({ cls:'warn', text:'🔄 Pool→Camp erst ab Live 3' });
+        if (card.fx === 'afterparty') chips.push({ cls:'warn', text:'🎉 Countdown sofort, Tick +2' });
+        if (card.fx === 'stageDive') chips.push({ cls:'bad', text:'🪂 Stage Dive' });
       } else if (t === 'encore'){
-        chips.push({ cls:'blue', text:'Endkarte: Alle Aktiven +1 Live' });
-        chips.push({ cls:'warn', text:'Finale Camp-Entscheidung' });
+        chips.push({ cls:'blue', text:'🎤 Endkarte: Alle Aktiven +1 Live' });
+        chips.push({ cls:'warn', text:'🏕️ Finale Camp-Entscheidung' });
       }
 
-      if (state.countdownActive) chips.push({ cls:'warn', text:'Countdown +' + countdownTickValue() });
+      if (state.countdownActive) chips.push({ cls:'warn', text:'⏱️ Countdown +' + countdownTickValue() });
 
-      if (!chips.length) chips.push({ cls:'blue', text:'Event' });
+      if (!chips.length) chips.push({ cls:'blue', text:'🎬 Event' });
 
       var html = '';
       for (var i=0;i<chips.length;i++){
         var c = chips[i];
-        html += '<span class="playChip' + (c.cls ? ' ' + c.cls : '') + '">' + esc(c.text) + '</span>';
+        html += '<span class="imp' + (c.cls ? ' ' + c.cls : '') + '"><b>' + esc(c.text) + '</b></span>';
       }
       wrap.innerHTML = html;
     }
