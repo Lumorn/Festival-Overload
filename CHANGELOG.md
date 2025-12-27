@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Spielmodus: kompakter Meta-Block für Aufdecker und Richtung ergänzt.
 - Kompakte Phasenleiste im Spielmodus ergänzt (Aufdecken/Effekt/Countdown/Entscheidung).
 - Catch-up-Bonus nur noch bei strikt hinter dem Leader und Abstand ≥2; max. 1× pro Spieler/Runde.
 - Countdown startet sofort bei Overload ≥8, tickt im selben Zug und triggert Check vor der Camp-Entscheidung.

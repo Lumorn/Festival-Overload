@@ -540,6 +540,9 @@
     .playChip.warn{border-color:rgba(245,158,11,.38);background:rgba(245,158,11,.12)}
     .playChip.bad{border-color:rgba(239,68,68,.38);background:rgba(239,68,68,.12)}
     .playChip.blue{border-color:rgba(96,165,250,.38);background:rgba(96,165,250,.12)}
+    .playMeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .playMetaChip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(31,42,68,.65);border:1px solid rgba(148,163,184,.18);font-size:12px;font-weight:700}
+    .playMetaChip b{font-weight:900}
 
     .playPoolRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .playPoolChip{padding:10px 16px;border-radius:999px;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.4);font-size:16px;font-weight:900}
@@ -797,6 +800,11 @@
           <div class="step" data-step="event" title="Event-Effekt wird ausgeführt (inkl. Endkarten, Twist, Overload-Check)"><span class="n">2</span>Effekt</div>
           <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (Afterparty: +2), optional +1 extra bei Pool ≥3 (falls aktiviert)"><span class="n">3</span>Countdown</div>
           <div class="step" data-step="decision" title="Alle aktiven Spieler entscheiden gleichzeitig Bleib/Camp"><span class="n">4</span>Entscheidung</div>
+        </div>
+
+        <div class="playMeta" aria-label="Meta-Infos">
+          <div class="playMetaChip">Aufdecker: <b id="playRevealerName">—</b></div>
+          <div class="playMetaChip">Richtung: <b id="playDirection">↻</b></div>
         </div>
 
         <div class="eventCard playCard" id="playEventCard" data-type="twist">
@@ -2832,6 +2840,14 @@
 
       document.getElementById('revealerName').textContent = state.players[state.revealer] ? state.players[state.revealer].name : '—';
       document.getElementById('dir').textContent = (state.direction === 1) ? '↻' : '↺';
+      var playRevealerName = document.getElementById('playRevealerName');
+      if (playRevealerName){
+        playRevealerName.textContent = state.players[state.revealer] ? state.players[state.revealer].name : '—';
+      }
+      var playDirection = document.getElementById('playDirection');
+      if (playDirection){
+        playDirection.textContent = (state.direction === 1) ? '↻' : '↺';
+      }
       var statusHeadline = document.getElementById('statusHeadline');
       if (statusHeadline) statusHeadline.textContent = statusHeadlineText();
       updateRevealCard();
