@@ -22,6 +22,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
 - Overload-Track als segmentierte Balkenleiste (grün/gelb/rot) mit klar abgegrenzten Farbzonen, größeren Segmenten/Zahlen und betontem Marker-Glow.
 - Overload-Track: dauerhafte Legende oberhalb der Leiste für sichere/warnende/gefährliche Zonen.
+- Overload-Track: zusätzliche Mini-Legende direkt oberhalb der Leiste für schnelle Farborientierung.
 - Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.
 - Simultane Bleib/Camp-Entscheidung als zentriertes Modal-Overlay mit dunklem Hintergrund, Countdown und klaren Aktionskarten.
 - Entscheidungsfenster im Spielmodus erscheint als fokussiertes Overlay, damit Bleib/Camp zentral ausgerichtet sind.
@@ -38,6 +39,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: Symbol-Legende in den Spielerleisten plus Tooltipps für Live/Camp.
 - Spielerleisten: kompakte Symbol-Legenden direkt im Bereich platziert, mit dezenteren Chips.
 - Spielmodus: Spielerleisten-Legende und Werte-Icons sind größer, farblich stärker differenziert und mit klaren Tooltipps/Labels versehen.
+- Spielmodus: Status- und Aufdecker-Hinweise in den Spielerleisten haben eigene Tooltips für bessere Verständlichkeit.
 - Info-Icons markieren Pool-Bonus, Gate und Camp direkt im UI und zeigen kurze Tooltips.
 - Spielmodus: Live/Camp-Zahlen in den Spielerleisten sind größer und klarer farbcodiert.
 - Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
