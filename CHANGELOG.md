@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Entscheidungsfenster und Spielmodus-Layout skalieren dynamisch mit der Viewport-Größe, inklusive Scrollbarkeit auf kleinen Screens.
 - Fix: Entscheidungsfeld im Spielmodus bleibt in der linken Bühne ausgerichtet, damit Bleib/Camp korrekt angezeigt wird.
 - Spielmodus: Entscheidungsfenster ist jetzt Teil der Spieloberfläche statt ein eigenes Overlay.
 - Spielmodus: Kontrast, Schriftgrößen und Panel-Styles für bessere Lesbarkeit verbessert.
