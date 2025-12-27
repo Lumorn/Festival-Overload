@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- UI: Entscheidungsfenster als dunkles Modal-Overlay mit zentrierter Karte und prominentem Countdown gestaltet.
+- UI: Bleib/Camp-Optionen als klar klickbare Aktionskarten mit erklärendem Kurztext ausgearbeitet.
 - UI: Buttons mit deutlicheren Hover-Effekten, klareren Active-Zuständen und stärkerem Schatten-Feedback ausgestattet.
 - UI: Spielerleisten-Legende und Werte-Icons vergrößert, farblich stärker differenziert und mit Tooltipps/Labels ergänzt.
 - UI: Overload-Track als farbige Zonenleiste mit Marker/Label für die aktuelle Position.
@@ -14,8 +16,6 @@
 - UI: Eventkarten mit doppeltem Rahmen, feiner Papiertextur, Eckornamenten und abgerundeten Farbbändern verfeinert.
 - UI: Aktuelle Eventkarte kompakter gestaltet (geringere Höhe, kleinere Typo, dichterer Impact-Block).
 - UI: Entscheidungsfenster und Spielmodus-Layout skalieren dynamisch mit der Viewport-Größe, inklusive Scrollbarkeit auf kleinen Screens.
-- Fix: Entscheidungsfeld im Spielmodus bleibt in der linken Bühne ausgerichtet, damit Bleib/Camp korrekt angezeigt wird.
-- Spielmodus: Entscheidungsfenster ist jetzt Teil der Spieloberfläche statt ein eigenes Overlay.
 - Spielmodus: Kontrast, Schriftgrößen und Panel-Styles für bessere Lesbarkeit verbessert.
 - Spielmodus: aktive Phasen werden deutlich hervorgehoben und per progressiver Unterstreichung markiert.
 - Spielmodus: Symbol-Legende für Live/Camp/Status ergänzt, plus Tooltips in der Spielerleiste.
