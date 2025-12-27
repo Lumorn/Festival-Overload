@@ -22,6 +22,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Steuerungsmodi für Bots (Bots automatisch, Bots manuell, alles automatisch) und auswählbares Bot-Profil für modular erweiterbare KI.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
+- Kompakter Meta-Block im Spielmodus zeigt Aufdecker und Richtung direkt oberhalb der Eventkarte.
 - Overload-Änderungen im Log und in den Overlays berücksichtigen die tatsächliche Deckelung bei 0/12.
 - Pool-Bonus bei simultanem Campen folgt dem Overload-Gate (0/1/2) und der Live-Schwelle (≥2, bei Richtungswechsel ≥3); Verteilung bleibt in Zugreihenfolge.
 - Stabilisieren ist ein Safety-Tool ohne Pool-Ertrag; Bonus-Live gibt es nur bei Overload ≥9.
