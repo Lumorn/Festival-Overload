@@ -836,6 +836,7 @@
         </div>
 
         <button class="btn good primary playPrimary" id="btnRevealPlay">Event aufdecken</button>
+        <button class="btn blue playPrimary" id="btnPlayNext" disabled>Weiter</button>
         <div class="playBanner" id="playBanner"></div>
       </section>
 
@@ -1190,6 +1191,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.41',
+        date: '2026-03-05',
+        items: [
+          'Neu: Weiter-Button im Spielmodus führt nach Eventeffekten oder Entscheidungen gezielt zum nächsten Schritt.'
+        ]
+      },
       {
         ver: 'v0.40',
         date: '2026-02-27',
@@ -1565,6 +1573,8 @@
       uiHeadline: null,
       uiHeadlineTimer: null,
       playBannerTimer: null,
+      playNextStep: null,
+      playNextStepRoundId: 0,
       stageRule: null, // { name, text, fx, _cardRef }
       feedbackLevel: 0,
       countdownActive: false,
@@ -2593,7 +2603,52 @@
       var btnDev = document.getElementById('btnModeDev');
       if (btnPlay) btnPlay.classList.toggle('active', state.uiMode === 'play');
       if (btnDev) btnDev.classList.toggle('active', state.uiMode === 'dev');
+      // Wenn wir in den Dev-Modus wechseln, laufende Play-Fortschritte sofort abwickeln.
+      if (state.uiMode === 'dev' && state.playNextStep === 'postEvent'){
+        var nextId = state.playNextStepRoundId;
+        clearPlayNextStep();
+        runPostEventFlow(nextId);
+      }
       updateUI();
+    }
+
+    function clearPlayNextStep(){
+      state.playNextStep = null;
+      state.playNextStepRoundId = 0;
+    }
+
+    function setPlayNextStep(step, roundResetId){
+      state.playNextStep = step || null;
+      state.playNextStepRoundId = roundResetId || 0;
+    }
+
+    function canPlayNext(){
+      if (state.uiMode !== 'play') return false;
+      if (state.gameOver) return false;
+      if (state.askOpen) return false;
+      return state.awaitingDecision || state.playNextStep === 'postEvent';
+    }
+
+    function playNextLabel(){
+      if (state.awaitingDecision) return 'Entscheidung abschließen';
+      if (state.playNextStep === 'postEvent'){
+        if (state.forceFinalCampWindow || sollDecisionWindowOeffnen()) return 'Entscheidung starten';
+        if (activeCount() === 0) return 'Runde abschließen';
+      }
+      return 'Weiter';
+    }
+
+    function runPlayNextStep(){
+      if (!canPlayNext()) return;
+      if (state.awaitingDecision){
+        resolveDecisions();
+        return;
+      }
+      if (state.playNextStep === 'postEvent'){
+        var nextId = state.playNextStepRoundId || state.roundResetId;
+        clearPlayNextStep();
+        runPostEventFlow(nextId);
+      }
     }
 
     function statusHeadlineText(){
@@ -3019,7 +3074,7 @@
       document.getElementById('btnResolve').disabled = !state.awaitingDecision || state.gameOver || auto;
 
       // reveal
-      var canReveal = !state.gameOver && !state.awaitingDecision &&
+      var canReveal = !state.gameOver && !state.awaitingDecision && !state.playNextStep &&
         ((state.revealer === state.humanIndex && isHumanActive) ||
         (areBotsManual() && state.players[state.revealer] && state.players[state.revealer].roundState === 'active'));
       document.getElementById('btnReveal').disabled = !canReveal || auto;
@@ -3027,6 +3082,13 @@
       if (playReveal){
         playReveal.disabled = !canReveal || auto;
         playReveal.textContent = canReveal ? 'Event aufdecken' : 'Warten…';
+      }
+
+      var playNext = document.getElementById('btnPlayNext');
+      if (playNext){
+        var nextEnabled = canPlayNext();
+        playNext.disabled = !nextEnabled || auto;
+        playNext.textContent = playNextLabel();
       }
 
       // hint
@@ -3423,6 +3485,7 @@
 
     function endRound(reason){
       if (state.gameOver) return;
+      clearPlayNextStep();
       if (!state.players.length){
         logStep('bad', {
           action: 'ROUND_END',
@@ -3691,6 +3754,7 @@
 
     function ensureDecisionPhase(){
       if (state.gameOver) return;
+      clearPlayNextStep();
       state.awaitingDecision = true;
       state.humanChoice = 'stay';
       state.humanLockedIn = false;
@@ -3723,6 +3787,7 @@
 
     function skipDecisionWindow(reason){
       stopDecisionTimer();
+      clearPlayNextStep();
       state.awaitingDecision = false;
       state.humanChoice = 'stay';
       state.humanLockedIn = false;
@@ -4497,9 +4562,36 @@
     }
 
     // ---------- main loop ----------
+    function runPostEventFlow(roundResetId){
+      if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
+
+      if (state.forceFinalCampWindow){
+        if (!state.awaitingDecision){
+          ensureDecisionPhase();
+        }
+        pumpBots();
+        return;
+      }
+
+      if (state.skipCountdownOnce){
+        state.skipCountdownOnce = false;
+      } else {
+        resolveCountdownTick();
+        if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
+      }
+
+      if (sollDecisionWindowOeffnen()){
+        ensureDecisionPhase();
+        pumpBots();
+      } else {
+        skipDecisionWindow('NoMeaningfulChoice');
+      }
+    }
+
     function revealEvent(){
       if (state.gameOver) return;
       if (state.awaitingDecision) return;
+      if (state.playNextStep) return;
       if (!state.players.length){
         logStep('bad', {
           action: 'CHECK',
@@ -4569,27 +4661,13 @@
       resolveEventCard(rev, card, function(){
         if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
 
-        if (state.forceFinalCampWindow){
-          if (!state.awaitingDecision){
-            ensureDecisionPhase();
-          }
-          pumpBots();
+        if (state.uiMode === 'play'){
+          setPlayNextStep('postEvent', roundResetId);
+          updateUI();
           return;
         }
 
-        if (state.skipCountdownOnce){
-          state.skipCountdownOnce = false;
-        } else {
-          resolveCountdownTick();
-          if (state.gameOver || state.roundResetId !== roundResetId) { updateUI(); return; }
-        }
-
-        if (sollDecisionWindowOeffnen()){
-          ensureDecisionPhase();
-          pumpBots();
-        } else {
-          skipDecisionWindow('NoMeaningfulChoice');
-        }
+        runPostEventFlow(roundResetId);
       });
     }
 
@@ -5794,6 +5872,8 @@
       state.overload = 0;
       state.pool = 0;
       state.uiHeadline = null;
+      state.playNextStep = null;
+      state.playNextStepRoundId = 0;
       state.stageRule = null;
       state.feedbackLevel = 0;
       state.countdownActive = false;
@@ -5908,6 +5988,8 @@
     if (btnReveal) btnReveal.onclick = function(){ revealEvent(); };
     var btnRevealPlay = document.getElementById('btnRevealPlay');
     if (btnRevealPlay) btnRevealPlay.onclick = function(){ revealEvent(); };
+    var btnPlayNext = document.getElementById('btnPlayNext');
+    if (btnPlayNext) btnPlayNext.onclick = function(){ runPlayNextStep(); };
     var btnRestart = document.getElementById('btnRestart');
     if (btnRestart) btnRestart.onclick = function(){ restart(); };
     var btnLog = document.getElementById('btnLog');
