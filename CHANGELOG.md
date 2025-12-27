@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- UI: Bleib/Camp-Buttons sind gleich groß und markieren die Auswahl zusätzlich mit einem Check-Icon.
+- UI: Countdown-Chips/Banner und der Entscheidungs-Countdown sind größer und prominenter platziert.
 - UI: Spielmodus-Button zeigt ein Dropdown für Spielvarianten und deaktiviert sich mit Tooltip „in Arbeit“, wenn keine Modi verfügbar sind.
 - UI: Untere Aktionsbuttons stärker ausgegraut, aktive Toggles im Play-Drawer farblich hervorgehoben.
 - UI: Bot-Hinweis als sichtbares Banner in den Dev-Einstellungen ergänzt.

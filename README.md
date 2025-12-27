@@ -61,6 +61,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C), damit Auswahl-Chips eindeutiger sind.
 - Entscheidungs-Chips zeigen vollständige Namen und kennzeichnen bereits gewählte Spieler per Tooltip.
 - Bleib/Camp-Auswahl ist visuell deutlicher markiert (farbiger Hintergrund, Rahmen, Glow).
+- Bleib/Camp-Buttons sind gleich groß und zeigen eine klare Auswahlmarke inklusive Check-Icon.
+- Countdown ist im Spiel- und Dev-Bereich größer und prominenter platziert.
 - Regelerinnerung im rechten Panel ist jetzt einklappbar, damit sie den Log weniger überdeckt.
 - Kurzregeln sind im Spielmodus zusätzlich oben rechts erreichbar, damit die Hilfe ohne Scrollen sichtbar bleibt.
 - Kompakter Meta-Block im Spielmodus zeigt Aufdecker und Richtung direkt unter dem Overload-Track.
