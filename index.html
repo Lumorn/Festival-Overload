@@ -326,6 +326,13 @@
     .steps.compact .step{padding:4px 8px;font-size:11px}
     .steps.compact .step .n{width:16px;height:16px;font-size:10px}
 
+    /* Spielmodus: kompakte Phasenleiste */
+    .playSteps{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .playSteps .step{padding:4px 8px;font-size:11px;border-radius:999px;background:rgba(31,42,68,.35);border:1px solid rgba(148,163,184,.12);color:var(--mutedStrong)}
+    .playSteps .step .n{width:16px;height:16px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:rgba(148,163,184,.16);border:1px solid rgba(148,163,184,.18);color:var(--text);font-weight:900;font-size:10px}
+    .playSteps .step.active{color:var(--text);border-color:rgba(226,232,240,.3);background:rgba(31,42,68,.7);box-shadow:0 8px 18px rgba(0,0,0,.22)}
+    .playSteps .step.active .n{background:rgba(99,102,241,.28);border-color:rgba(99,102,241,.38)}
+
     .banner{display:none;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(148,163,184,.14);background:rgba(31,42,68,.35);box-shadow:0 10px 28px rgba(0,0,0,.25)}
     .banner.show{display:block}
     .banner.good{border-color:rgba(34,197,94,.30);background:rgba(34,197,94,.06)}
@@ -796,7 +803,7 @@
           </div>
           <div class="overloadPills" id="overloadPillsPlay"></div>
         </div>
-        <div class="steps compact" id="playSteps" aria-label="Phasen">
+        <div class="playSteps" id="playSteps" aria-label="Phasen">
           <div class="step" data-step="reveal" title="Der aktive Spieler deckt genau 1 Event auf"><span class="n">1</span>Aufdecken</div>
           <div class="step" data-step="event" title="Event-Effekt wird ausgeführt (inkl. Endkarten, Twist, Overload-Check)"><span class="n">2</span>Effekt</div>
           <div class="step" data-step="countdown" title="Wenn Countdown aktiv ist: nach dem Event Overload +1 (Afterparty: +2), optional +1 extra bei Pool ≥3 (falls aktiviert)"><span class="n">3</span>Countdown</div>
@@ -1150,7 +1157,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.39';
+    var VERSION = 'v0.40';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1183,6 +1190,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.40',
+        date: '2026-02-27',
+        items: [
+          'Neu: Vereinfachte Phasenleiste im Spielmodus direkt unter dem Overload-Track, synchron zum Status.'
+        ]
+      },
       {
         ver: 'v0.39',
         date: '2026-02-20',

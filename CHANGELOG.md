@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Spielmodus: vereinfachte Phasenleiste unter dem Overload-Track ergänzt und mit dem Status synchronisiert.
 - Spielerleisten zeigen jetzt einen Fortschrittsblock mit Leader, Camp-Stand und Abstand zum Ziel.
 - Spielmodus: Deck- und Ablage-Status im Bühnenbereich ergänzt.
 - Spielmodus: kompakter Meta-Block für Aufdecker und Richtung ergänzt.
