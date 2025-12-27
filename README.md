@@ -38,6 +38,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Kompakter Statusbereich im Spielmodus zeigt Deck- und Ablage-Anzahl direkt in der Bühne.
 - Aktuelle Eventkarte im Spielmodus ist kompakter (geringere Höhe, kleinere Typo, engeres Padding), damit Inhalte dichter wirken.
 - Spielmodus-Eventkarte ist jetzt kompakter und erhält einen veredelten Kartenrahmen mit Innen-Schatten.
+- Kartenflächen sind ruhiger gestaltet (weniger Textur, sanfter Verlauf) und die Karten-Typografie ist größer für bessere Lesbarkeit.
 - Schmale Viewports: Buttons/Chips sind enger gesetzt, Karten behalten ihr Seitenverhältnis bei geringerer Mindesthöhe.
 - Eventkarten wirken papierartiger dank doppeltem Rahmen, feiner Textur, Eckornamenten und abgerundeten Farbbändern.
 - Fortschrittsblock bei den Spielerleisten zeigt Leader, Camp-Stand und Abstand zum Ziel.
