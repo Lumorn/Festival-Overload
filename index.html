@@ -648,6 +648,7 @@
 
     .playersCard{display:flex;flex-direction:column;gap:12px;min-height:0}
     .playersHeader{display:flex;justify-content:space-between;align-items:center}
+    .leaderSummary{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .playersList{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0}
     .playerCard{padding:12px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.16);display:flex;flex-direction:column;gap:10px}
     .playerHeader{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -836,6 +837,9 @@
           <span>Spielerleisten</span>
           <span class="mini">Status & Werte</span>
         </div>
+        <div class="leaderSummary">
+          <span class="pill blue" id="leaderSummaryPlay">Leader: — · Camp — · Abstand —</span>
+        </div>
         <div class="playPlayersList" id="playersPlay"></div>
       </section>
     </div>
@@ -977,6 +981,9 @@
         <div class="playersHeader">
           <b>Spielerleisten</b>
           <span class="mini">Reihenfolge & Status</span>
+        </div>
+        <div class="leaderSummary">
+          <span class="pill blue" id="leaderSummary">Leader: — · Camp — · Abstand —</span>
         </div>
         <div class="playersList" id="players"></div>
       </section>
@@ -1143,7 +1150,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.38';
+    var VERSION = 'v0.39';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1176,6 +1183,13 @@
 
     // Patch notes: newest first
     var PATCH_NOTES = [
+      {
+        ver: 'v0.39',
+        date: '2026-02-20',
+        items: [
+          'Neu: Fortschrittsblock bei den Spielerleisten zeigt Leader, Camp-Stand und Abstand zum Ziel.'
+        ]
+      },
       {
         ver: 'v0.38',
         date: '2026-02-12',
@@ -2735,6 +2749,21 @@
         state.botCount = clampBotCount(Math.max(0, state.players.length - 1));
       }
 
+      // Führungsstand ermitteln (höchster Camp-Wert)
+      var leaderLabel = 'Leader: — · Camp — · Abstand —';
+      if (state.players.length){
+        var leaderName = state.players[0].name;
+        var leaderCamp = state.players[0].camp;
+        for (var l=1;l<state.players.length;l++){
+          if (state.players[l].camp > leaderCamp){
+            leaderCamp = state.players[l].camp;
+            leaderName = state.players[l].name;
+          }
+        }
+        var leaderDistance = Math.max(0, WIN_CAMP - leaderCamp);
+        leaderLabel = 'Leader: ' + leaderName + ' · Camp ' + leaderCamp + ' · Abstand ' + leaderDistance;
+      }
+
       var verText = document.getElementById('verText');
       if (verText) verText.textContent = VERSION;
       var playVer = document.getElementById('playVersion');
@@ -2763,6 +2792,11 @@
       if (deckCountMini) deckCountMini.textContent = cardCountLabel(state.deck.length);
       var discardCountMini = document.getElementById('discardCountMini');
       if (discardCountMini) discardCountMini.textContent = cardCountLabel(state.discard.length);
+
+      var leaderSummary = document.getElementById('leaderSummary');
+      if (leaderSummary) leaderSummary.textContent = leaderLabel;
+      var leaderSummaryPlay = document.getElementById('leaderSummaryPlay');
+      if (leaderSummaryPlay) leaderSummaryPlay.textContent = leaderLabel;
 
       var deckStack = document.getElementById('deckStack');
       var discardStack = document.getElementById('discardStack');
