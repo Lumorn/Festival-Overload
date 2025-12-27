@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- UI: Grid-Layouts im Dev- und Spielmodus für breite Screens kompakter skaliert.
+- UI: Kartenflächen auf großen Viewports proportional verkleinert, damit mehr Luft im Layout entsteht.
+- UI: Spielerleisten auf kleinen Screens als ausfahrbarer Drawer umgesetzt.
 - UI: Kompakte Symbol-Legenden in den Spielerleisten platziert und Chips optisch dezenter gestaltet.
 - UI: Button-Zustände für „Warten…“, „Weiter“ und „Event aufdecken“ klarer hervorgehoben und mit hilfreichen Tooltipps ergänzt.
 - UI: Disabled-States stärker ausgegraut, aktive Buttons farblich betont.
