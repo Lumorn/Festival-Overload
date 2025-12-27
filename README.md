@@ -31,6 +31,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Autoplay-Toggle im Spielmodus (Play-Drawer) für schnelles Ein/Aus mit Statusanzeige.
 - Spielmodus: kontraststärkeres Farbschema, größere Schrift und klarer hervorgehobene Phasen für bessere Lesbarkeit.
 - Panels und Kartenflächen sind heller abgestimmt, Text/Chips/Buttons nutzen einheitliche Schriftgrößen für konsistenten Kontrast.
+- Hintergrundverlauf und Kartenflächen sind vereinfacht, mit größerer Karten-Typografie, stärkerem Textkontrast und mehr Innenabstand.
 - Spielmodus: Symbol-Legende in den Spielerleisten plus Tooltipps für Live/Camp.
 - Spielerleisten: kompakte Symbol-Legenden direkt im Bereich platziert, mit dezenteren Chips.
 - Spielmodus: Spielerleisten-Legende und Werte-Icons sind größer, farblich stärker differenziert und mit klaren Tooltipps/Labels versehen.

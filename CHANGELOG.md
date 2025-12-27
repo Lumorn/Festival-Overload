@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Hintergrundverlauf vereinfacht, Kartenflächen geglättet, Typografie vergrößert und Padding für klarere Abstände erhöht.
 - UI: Overload-Track als segmentierte Balkenleiste mit Pfeil/Glow-Marker und größeren Zahlen für die aktuelle Position gestaltet.
 - UI: Modus-Umschalter mit erklärendem Tooltip ergänzt und Hinweistext für nicht verfügbare Ansichten hinzugefügt.
 - UI: Grid-Layouts im Dev- und Spielmodus für breite Screens kompakter skaliert.
