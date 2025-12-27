@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Spielmodus-Button zeigt ein Dropdown für Spielvarianten und deaktiviert sich mit Tooltip „in Arbeit“, wenn keine Modi verfügbar sind.
 - UI: Untere Aktionsbuttons stärker ausgegraut, aktive Toggles im Play-Drawer farblich hervorgehoben.
 - UI: Bot-Hinweis als sichtbares Banner in den Dev-Einstellungen ergänzt.
 - UI: Primäraktionen im Spielmodus erhalten bei aktiven Schritten mehr visuelle Betonung.
