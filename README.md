@@ -49,6 +49,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: Bot-Hinweis ist prominent oberhalb der Aktionsbuttons platziert.
 - Disabled-States sind stärker ausgegraut, aktive Aktionen farblich betont.
 - Zusätzliche Hilfetexte erklären, wann Bots automatisch oder manuell entscheiden.
+- Top-Bar: Anleitung/Spielmodus/Dev mit klaren Icons, deutlicherem Hover-Feedback und aktivem Zustand; Spielmodus zeigt einen Dropdown-Hinweis.
 - Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C), damit Auswahl-Chips eindeutiger sind.
 - Entscheidungs-Chips zeigen vollständige Namen und kennzeichnen bereits gewählte Spieler per Tooltip.
 - Bleib/Camp-Auswahl ist visuell deutlicher markiert (farbiger Hintergrund, Rahmen, Glow).

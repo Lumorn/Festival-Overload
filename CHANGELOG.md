@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- UI: Top-Bar-Buttons für Anleitung/Spielmodus/Dev mit Icons, stärkerem Hover-Feedback und aktivem Zustand ergänzt.
+- UI: Spielmodus-Button zeigt einen Dropdown-Hinweis, damit die Moduswahl sofort klar ist.
 - UI: Aktive Spielmodus-Buttons füllen ihre Farbakzente klarer aus (Weiter/Entscheidung starten/Warten…).
 - UI: Disabled-Buttons sind konsistent sichtbar ausgegraut, auch bei Farbvarianten.
 - UI: Bot-Hinweis im Spielmodus prominent oberhalb der Aktionsbuttons platziert.
