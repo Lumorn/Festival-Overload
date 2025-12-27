@@ -25,16 +25,15 @@
       --fs-chip-compact:11px;
       --fs-button:13px;
       --fs-button-compact:12px;
-      --fs-card-title:16px;
-      --fs-card-text:13px;
-      --fs-card-meta:12px;
+      --fs-card-title:18px;
+      --fs-card-text:14px;
+      --fs-card-meta:13px;
     }
     *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
     html, body{height:100%}
-    /* Hintergrund bewusst ruhiger gehalten, damit Karten stärker wirken. */
+    /* Hintergrund bewusst reduziert, damit Karten stärker wirken. */
     body{margin:0;color:var(--text);background:
-      radial-gradient(900px 380px at 12% 8%, rgba(99,102,241,.14), transparent 60%),
-      linear-gradient(180deg,var(--bg1), var(--bg2) 50%, var(--bg3));
+      linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
       overflow:auto;
       font-size:15px;
     }
@@ -245,24 +244,22 @@
     .eventCard{
       position:relative;
       border-radius:18px;
-      padding:10px 10px 12px;
+      padding:14px 14px 16px;
       border:2px solid rgba(148,163,184,.32);
       box-shadow:0 14px 34px rgba(0,0,0,.38);
       background:
-        radial-gradient(220px 140px at 18% 16%, rgba(255,255,255,.10), transparent 60%),
-        linear-gradient(180deg, rgba(48,64,96,.82), rgba(38,52,82,.9));
+        linear-gradient(180deg, rgba(52,68,102,.95), rgba(32,44,70,.96));
       min-height:104px;
       aspect-ratio:2.5 / 3.5;
       overflow:hidden;
     }
-    /* Reduzierte Lichtreflexe statt starker Textur für ruhigere Karten. */
+    /* Dezenter Lichtakzent statt starker Textur für ruhigere Karten. */
     .eventCard:before{
       content:"";
       position:absolute;inset:0;
       background:
-        linear-gradient(120deg, rgba(255,255,255,.10), transparent 40%, rgba(255,255,255,.04) 65%, transparent 80%),
-        radial-gradient(360px 140px at 20% 0%, rgba(255,255,255,.06), transparent 60%);
-      opacity:.6;
+        linear-gradient(130deg, rgba(255,255,255,.08), transparent 55%);
+      opacity:.45;
       pointer-events:none;
     }
     /* Innenrahmen für den doppelten Kartenrahmen */
@@ -281,12 +278,12 @@
     .eventCard[data-type="twist"] .stripe{background:rgba(245,158,11,.85)}
     .eventCard[data-type="encore"] .stripe{background:rgba(96,165,250,.85)}
 
-    .kTop{display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:8px;gap:10px;position:relative;z-index:2}
-    /* Karten-Typografie etwas größer für bessere Lesbarkeit. */
-    .kName{font-weight:950;letter-spacing:.2px;font-size:var(--fs-card-title);line-height:1.2}
-    .kType{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-card-meta);color:#d7deee;white-space:nowrap}
+    .kTop{display:flex;justify-content:space-between;align-items:center;margin-top:8px;margin-bottom:10px;gap:10px;position:relative;z-index:2}
+    /* Karten-Typografie größer und kontrastreicher für bessere Lesbarkeit. */
+    .kName{font-weight:950;letter-spacing:.2px;font-size:var(--fs-card-title);line-height:1.2;color:var(--text)}
+    .kType{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-card-meta);color:var(--mutedStrong);white-space:nowrap}
     .dot{width:8px;height:8px;border-radius:999px;display:inline-block}
-    .kText{font-size:var(--fs-card-text);color:#d6dbea;line-height:1.45;position:relative;z-index:2}
+    .kText{font-size:var(--fs-card-text);color:var(--mutedStrong);line-height:1.5;position:relative;z-index:2}
 
     .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:0;justify-content:flex-end}
     /* Standard-Buttons mit klarer Fläche und sichtbarem Hover. */
@@ -593,21 +590,20 @@
     @keyframes trackPulseStrong{0%{box-shadow:0 0 0 rgba(245,158,11,0)}40%{box-shadow:0 0 0 6px rgba(245,158,11,.18)}100%{box-shadow:0 0 0 rgba(245,158,11,0)}}
     @keyframes trackShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
 
-    /* Kompakte Spielkarte mit Kartenrahmen und ruhiger Fläche. */
+    /* Kompakte Spielkarte mit ruhiger Fläche und mehr Innenabstand. */
     .playCard{
       min-height:clamp(200px, 26vh, 300px);
       border-radius:20px;
-      padding:10px;
+      padding:14px;
       border:1px solid rgba(148,163,184,.26);
       background:
-        radial-gradient(240px 150px at 16% 10%, rgba(255,255,255,.10), transparent 62%),
-        linear-gradient(180deg, rgba(35,48,78,.78), rgba(28,38,62,.88));
+        linear-gradient(180deg, rgba(38,52,82,.92), rgba(25,34,56,.96));
       box-shadow:0 18px 36px rgba(0,0,0,.45), inset 0 0 20px rgba(0,0,0,.28);
     }
     .playStage .playCard{flex:0 0 auto;display:flex;flex-direction:column}
-    .playCard .kName{font-size:20px;line-height:1.2}
+    .playCard .kName{font-size:21px;line-height:1.2}
     .playCard .kType{font-size:12px}
-    .playCard .kText{font-size:15px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .playCard .kText{font-size:16px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .playChips{display:flex;gap:8px;flex-wrap:wrap}
     /* Chips im Spielmodus mit stärkerer Typo für schnelle Lesbarkeit. */
     .playChip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid rgba(148,163,184,.18);background:rgba(0,0,0,.18);font-size:13px;font-weight:700}
@@ -884,10 +880,10 @@
     .overloadHint .chip{padding:4px 8px;border-radius:999px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);font-size:11px}
 
     .stageGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:12px;min-height:0}
-    /* Aktuelle Karte mit ruhiger Fläche und klarer Typo. */
-    .currentCard{min-height:210px;aspect-ratio:2.5 / 3.5;border-radius:20px;padding:10px;border:1px solid rgba(148,163,184,.22);background:linear-gradient(180deg, rgba(35,48,78,.78), rgba(28,38,62,.88));box-shadow:0 18px 38px rgba(0,0,0,.45), inset 0 0 22px rgba(0,0,0,.28);position:relative;overflow:hidden}
-    .currentCard .kName{font-size:18px;line-height:1.2}
-    .currentCard .kText{font-size:14px;line-height:1.45}
+    /* Aktuelle Karte mit ruhiger Fläche und mehr Innenabstand. */
+    .currentCard{min-height:210px;aspect-ratio:2.5 / 3.5;border-radius:20px;padding:14px;border:1px solid rgba(148,163,184,.22);background:linear-gradient(180deg, rgba(38,52,82,.92), rgba(25,34,56,.96));box-shadow:0 18px 38px rgba(0,0,0,.45), inset 0 0 22px rgba(0,0,0,.28);position:relative;overflow:hidden}
+    .currentCard .kName{font-size:19px;line-height:1.2}
+    .currentCard .kText{font-size:15px;line-height:1.5}
     .currentCard .impact{margin-top:4px}
 
     .poolPanel{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
@@ -1094,8 +1090,8 @@
       .playChip{padding:6px 10px;font-size:12px}
       .playPrimary{width:100%;padding:14px 16px;font-size:15px}
       /* Karten bleiben im Verhältnis, aber brauchen weniger Höhe. */
-      .playCard{min-height:clamp(160px, 23vh, 230px);aspect-ratio:2.5 / 3.5}
-      .currentCard{min-height:175px;aspect-ratio:2.5 / 3.5}
+      .playCard{min-height:clamp(160px, 23vh, 230px);padding:12px;aspect-ratio:2.5 / 3.5}
+      .currentCard{min-height:175px;padding:12px;aspect-ratio:2.5 / 3.5}
       .playDrawer{gap:6px;flex-wrap:wrap}
     }
     @media (max-width:560px){
@@ -1104,8 +1100,8 @@
       .pill{padding:4px 7px;font-size:10px}
       .playChip{padding:5px 8px;font-size:11px}
       .playPrimary{padding:12px 14px;font-size:14px}
-      .playCard{min-height:clamp(145px, 21vh, 210px);padding:10px}
-      .currentCard{min-height:160px;padding:10px}
+      .playCard{min-height:clamp(145px, 21vh, 210px);padding:12px}
+      .currentCard{min-height:160px;padding:12px}
     }
     @media (max-height:900px){
       body{overflow:auto}
@@ -1116,8 +1112,8 @@
       .stageCard{gap:10px}
       .stageGrid{gap:10px}
       /* Kleinere Mindesthöhen, damit der Viewport passt. */
-      .playCard{min-height:clamp(160px, 19vh, 235px);aspect-ratio:2.5 / 3.5}
-      .currentCard{min-height:175px;aspect-ratio:2.5 / 3.5}
+      .playCard{min-height:clamp(160px, 19vh, 235px);padding:12px;aspect-ratio:2.5 / 3.5}
+      .currentCard{min-height:175px;padding:12px;aspect-ratio:2.5 / 3.5}
       /* Hohe Inhalte innerhalb der Dev-Ansicht scrollen, statt die Seite zu strecken. */
       .stageGrid > div:first-child{max-height:42vh;overflow:auto}
       .stageGrid > .poolPanel{max-height:42vh;overflow:auto}
@@ -1132,8 +1128,8 @@
       .playMeta{gap:6px}
       .stageCard{gap:8px}
       .stageGrid{gap:8px}
-      .playCard{min-height:clamp(135px, 17vh, 195px);padding:10px;aspect-ratio:2.5 / 3.5}
-      .currentCard{min-height:150px;padding:10px;aspect-ratio:2.5 / 3.5}
+      .playCard{min-height:clamp(135px, 17vh, 195px);padding:12px;aspect-ratio:2.5 / 3.5}
+      .currentCard{min-height:150px;padding:12px;aspect-ratio:2.5 / 3.5}
       .stageGrid > div:first-child{max-height:38vh}
       .stageGrid > .poolPanel{max-height:38vh}
       /* Dev-Modus: Nebenbereiche bei sehr geringer Höhe scrollen. */
