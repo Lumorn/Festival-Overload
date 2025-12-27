@@ -136,6 +136,28 @@
     .topAction.active,
     .topAction[aria-expanded="true"]{border-color:rgba(96,165,250,.7);background:linear-gradient(120deg, rgba(96,165,250,.28), rgba(15,23,42,.55));box-shadow:0 12px 26px rgba(0,0,0,.35), inset 0 0 0 1px rgba(96,165,250,.18)}
     .topAction:hover .btnIcon{transform:scale(1.05)}
+    /* Hauptmenü-Tooltips: kurze Hinweise direkt an den Icon-Buttons. */
+    .topAction[data-tooltip]{position:relative}
+    .topAction[data-tooltip]::after{
+      content:attr(data-tooltip);
+      position:absolute;
+      bottom:calc(100% + 8px);
+      right:0;
+      transform:translateY(4px);
+      padding:6px 10px;
+      border-radius:10px;
+      background:rgba(20,30,52,.96);
+      border:1px solid rgba(148,163,184,.3);
+      color:var(--mutedStrong);
+      font-size:11px;
+      white-space:nowrap;
+      opacity:0;
+      pointer-events:none;
+      transition:.12s opacity,.12s transform;
+      z-index:40;
+    }
+    .topAction[data-tooltip]:focus-visible::after,
+    .topAction[data-tooltip]:hover::after{opacity:1;transform:translateY(0)}
     /* Modus-Hinweis: kleines Tooltip/Dashboard erklärt Spielmodus vs. Dev. */
     .modeHint{position:relative;display:inline-flex;align-items:center}
     .modeHintBtn{min-width:28px;padding:6px 8px;font-weight:900}
@@ -839,10 +861,47 @@
     .playStat.camp{border-color:rgba(245,158,11,.65);background:rgba(245,158,11,.24);color:rgba(255,236,204,.98)}
     .playRevealer{font-size:12px;padding:2px 6px;border-radius:999px;background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.4)}
 
+    /* Play-Drawer: breitere Leiste mit eigener Panel-Fläche für mehr Präsenz. */
     .playDrawer{
       display:flex;
       justify-content:flex-end;
       gap:8px;
+      width:100%;
+      padding:10px 14px;
+      border-radius:16px;
+      background:rgba(12,18,32,.6);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      align-items:center;
+    }
+    /* Play-Drawer: Icon-Labels sorgen für schnelle Orientierung. */
+    .playDrawer .drawerIcon{font-size:15px;line-height:1}
+    /* Play-Drawer-Tooltips: kurze Hover-Beschreibungen für die wichtigsten Aktionen. */
+    .playDrawer .btn[data-tooltip]{
+      position:relative;
+    }
+    .playDrawer .btn[data-tooltip]::after{
+      content:attr(data-tooltip);
+      position:absolute;
+      bottom:calc(100% + 8px);
+      left:50%;
+      transform:translateX(-50%) translateY(4px);
+      padding:6px 10px;
+      border-radius:10px;
+      background:rgba(20,30,52,.96);
+      border:1px solid rgba(148,163,184,.3);
+      color:var(--mutedStrong);
+      font-size:11px;
+      white-space:nowrap;
+      opacity:0;
+      pointer-events:none;
+      transition:.12s opacity,.12s transform;
+      z-index:40;
+    }
+    .playDrawer .btn[data-tooltip]:focus-visible::after,
+    .playDrawer .btn[data-tooltip]:hover::after{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
     }
     /* Play-Drawer: aktive Toggles klar farblich hervorheben. */
     .playDrawer .btn.active,
@@ -1478,6 +1537,10 @@
       </div>
       <div class="topRight">
         <div class="goalChip">Ziel: 8 Camp</div>
+        <button class="btn slim playOnly topAction" id="btnPlayLogTop" aria-label="Log" aria-expanded="false" data-tooltip="Log öffnen oder schließen">
+          <span class="btnIcon" aria-hidden="true">🧾</span>
+          <span>Log</span>
+        </button>
         <button class="btn slim playOnly topAction" id="btnPlayRulesTop" aria-label="Anleitung" aria-expanded="false">
           <span class="btnIcon" aria-hidden="true">📘</span>
           <span>Anleitung</span>
@@ -1652,10 +1715,22 @@
     </div>
 
     <div class="playDrawer playOnly">
-      <button class="btn slim" id="btnPlayLog">Log</button>
-      <button class="btn slim" id="btnPlayTogglePlayers" aria-pressed="false">Spielerleisten ausblenden</button>
-      <button class="btn slim" id="btnPlayAutoplay" aria-pressed="false">Autoplay</button>
-      <button class="btn slim" id="btnPlayRulesDrawer" aria-label="Anleitung" aria-expanded="false">Anleitung</button>
+      <button class="btn slim" id="btnPlayLog" aria-expanded="false" data-tooltip="Log-Drawer öffnen/schließen">
+        <span class="drawerIcon" aria-hidden="true">🧾</span>
+        <span>Log</span>
+      </button>
+      <button class="btn slim" id="btnPlayTogglePlayers" aria-pressed="false" data-tooltip="Spielerleisten ein- oder ausblenden">
+        <span class="drawerIcon" aria-hidden="true">👥</span>
+        <span>Spielerleisten ausblenden</span>
+      </button>
+      <button class="btn slim" id="btnPlayAutoplay" aria-pressed="false" data-tooltip="Autoplay aktivieren oder stoppen">
+        <span class="drawerIcon" aria-hidden="true">⏯️</span>
+        <span>Autoplay</span>
+      </button>
+      <button class="btn slim" id="btnPlayRulesDrawer" aria-label="Anleitung" aria-expanded="false" data-tooltip="Kurzregeln anzeigen">
+        <span class="drawerIcon" aria-hidden="true">📘</span>
+        <span>Anleitung</span>
+      </button>
     </div>
 
     <div class="playLogDrawer" id="playLogDrawer" aria-hidden="true">
@@ -2070,6 +2145,14 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.70',
+        date: '2026-10-01',
+        items: [
+          'UI: Play-Drawer-Leiste verbreitert, mit Icons und Hover-Beschreibungen ergänzt.',
+          'UI: Log-Button zusätzlich im Hauptmenü platziert und mit aktivem Zustand synchronisiert.'
+        ]
+      },
       {
         ver: 'v0.69',
         date: '2026-09-24',
@@ -6729,12 +6812,27 @@
       }
     }
 
+    // Log-Drawer öffnen/schließen und alle Log-Buttons synchron halten.
     function togglePlayLog(forceOpen){
       var drawer = document.getElementById('playLogDrawer');
       if (!drawer) return;
       var shouldOpen = (typeof forceOpen === 'boolean') ? forceOpen : !drawer.classList.contains('open');
       drawer.classList.toggle('open', shouldOpen);
       drawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+      setPlayLogButtons(shouldOpen);
+    }
+
+    function setPlayLogButtons(isOpen){
+      var btnDrawer = document.getElementById('btnPlayLog');
+      if (btnDrawer){
+        btnDrawer.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        btnDrawer.classList.toggle('active', isOpen);
+      }
+      var btnTop = document.getElementById('btnPlayLogTop');
+      if (btnTop){
+        btnTop.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        btnTop.classList.toggle('active', isOpen);
+      }
     }
 
     // Spielerleisten je nach Viewport als Drawer oder als versteckbare Spalte steuern.
@@ -7516,6 +7614,8 @@
     if (btnExportDebug) btnExportDebug.onclick = exportDebug;
     var btnPlayLog = document.getElementById('btnPlayLog');
     if (btnPlayLog) btnPlayLog.onclick = function(){ togglePlayLog(); };
+    var btnPlayLogTop = document.getElementById('btnPlayLogTop');
+    if (btnPlayLogTop) btnPlayLogTop.onclick = function(){ togglePlayLog(); };
     var btnPlayTogglePlayers = document.getElementById('btnPlayTogglePlayers');
     if (btnPlayTogglePlayers) btnPlayTogglePlayers.onclick = function(){ togglePlayersPanel(); };
     var btnPlayAutoplay = document.getElementById('btnPlayAutoplay');

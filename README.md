@@ -13,6 +13,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 
 ## UI-Highlights
 
+- Play-Drawer-Leiste ist breiter, zeigt Icons und bietet Hover-Beschreibungen für die wichtigsten Aktionen.
+- Log ist zusätzlich im Hauptmenü verlinkt, damit der Zugriff ohne Scrollen möglich bleibt.
 - Neuer Spielmodus (minimal) mit großem Phasen-Status, Fokus auf Overload/Pool/Karte und Vollbild-Entscheidung Bleib/Camp.
 - Spielmodus-Button zeigt ein Dropdown mit auswählbaren Spielvarianten und deaktiviert sich bei fehlenden Modi mit „in Arbeit“.
 - Modus-Umschalter erklärt jetzt Spielmodus und Dev per Tooltip und zeigt Hinweistext, falls eine Ansicht fehlt.
