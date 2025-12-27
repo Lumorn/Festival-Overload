@@ -41,6 +41,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: Live/Camp-Zahlen in den Spielerleisten sind größer und klarer farbcodiert.
 - Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
 - Spielmodus: Spielerleisten erscheinen auf kleinen Screens als Drawer und lassen sich über den Play-Drawer öffnen/schließen.
+- Spielmodus: Grid-Layout erlaubt der Spielerleiste auf großen Screens mehr Breite, während die Bühne stabil bleibt.
+- Spielmodus: Spielerleisten werden auf mittleren Viewports gedeckelt, damit Eventkarte und Aktionsbuttons priorisiert bleiben.
 - Breite Screens: Grid-Layouts und Kartenflächen skalieren kompakter, damit mehr Luft im Layout bleibt.
 - Spielmodus: Primär-Buttons sind visuell stärker hervorgehoben und eindeutig beschriftet.
 - Buttons haben jetzt deutlichere Hover-Effekte und klarere Active-Zustände für bessere Interaktion.
