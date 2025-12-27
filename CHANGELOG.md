@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- UI: Button-Zustände für „Warten…“, „Weiter“ und „Event aufdecken“ klarer hervorgehoben und mit hilfreichen Tooltipps ergänzt.
+- UI: Disabled-States stärker ausgegraut, aktive Buttons farblich betont.
+- UI: Zusätzliche Hilfetexte für Bot-Entscheidungen ergänzt.
 - UI: Entscheidungsfenster als dunkles Modal-Overlay mit zentrierter Karte und prominentem Countdown gestaltet.
 - UI: Bleib/Camp-Optionen als klar klickbare Aktionskarten mit erklärendem Kurztext ausgearbeitet.
 - UI: Buttons mit deutlicheren Hover-Effekten, klareren Active-Zuständen und stärkerem Schatten-Feedback ausgestattet.

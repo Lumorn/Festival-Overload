@@ -35,6 +35,9 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
 - Spielmodus: Primär-Buttons sind visuell stärker hervorgehoben und eindeutig beschriftet.
 - Buttons haben jetzt deutlichere Hover-Effekte und klarere Active-Zustände für bessere Interaktion.
+- Button-Zustände für „Warten…“, „Weiter“ und „Event aufdecken“ sind visuell klarer hervorgehoben und mit Tooltips ergänzt.
+- Disabled-States sind stärker ausgegraut, aktive Aktionen farblich betont.
+- Zusätzliche Hilfetexte erklären, wann Bots automatisch oder manuell entscheiden.
 - Regelerinnerung im rechten Panel ist jetzt einklappbar, damit sie den Log weniger überdeckt.
 - Kurzregeln sind im Spielmodus zusätzlich oben rechts erreichbar, damit die Hilfe ohne Scrollen sichtbar bleibt.
 - Kompakter Meta-Block im Spielmodus zeigt Aufdecker und Richtung direkt unter dem Overload-Track.
