@@ -20,6 +20,7 @@
 - UI: Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C).
 - UI: Hintergrundverlauf vereinfacht, Kartenflächen geglättet, Typografie vergrößert und Padding für klarere Abstände erhöht.
 - UI: Overload-Track als segmentierte Balkenleiste mit Pfeil/Glow-Marker und größeren Zahlen für die aktuelle Position gestaltet.
+- UI: Overload-Track mit größeren Segmenten, klar abgegrenzten Farbzonen und stärker hervorgehobenem Marker überarbeitet.
 - UI: Modus-Umschalter mit erklärendem Tooltip ergänzt und Hinweistext für nicht verfügbare Ansichten hinzugefügt.
 - UI: Grid-Layouts im Dev- und Spielmodus für breite Screens kompakter skaliert.
 - UI: Kartenflächen auf großen Viewports proportional verkleinert, damit mehr Luft im Layout entsteht.
