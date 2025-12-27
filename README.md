@@ -29,6 +29,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: einblendbare Anleitung als rechter Drawer mit Ziel, Ablauf, Regeln und Symbol-Legende.
 - Autoplay-Toggle im Spielmodus (Play-Drawer) für schnelles Ein/Aus mit Statusanzeige.
 - Spielmodus: kontraststärkeres Farbschema, größere Schrift und klarer hervorgehobene Phasen für bessere Lesbarkeit.
+- Panels und Kartenflächen sind heller abgestimmt, Text/Chips/Buttons nutzen einheitliche Schriftgrößen für konsistenten Kontrast.
 - Spielmodus: Symbol-Legende in den Spielerleisten plus Tooltipps für Live/Camp.
 - Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
 - Spielmodus: Primär-Buttons sind visuell stärker hervorgehoben und eindeutig beschriftet.

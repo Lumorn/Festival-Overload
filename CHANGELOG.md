@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- UI: Panels und Kartenflächen aufgehellt, Textkontrast erhöht und einheitliche Typogrößen für Karten/Chips/Buttons definiert.
 - UI: Kartenflächen beruhigt (reduzierte Textur, leichter Verlauf), kleinere Mindesthöhen/Abstände und größere Karten-Typografie.
 - UI: Schmale Viewports mit kompakteren Buttons/Chips sowie geringeren Karten-Mindesthöhen bei fixiertem Seitenverhältnis.
 - UI: Zusätzliche Responsive-Optimierungen für niedrige Viewports mit reduzierten Abständen, kleineren Mindesthöhen und scrollbaren Nebenbereichen im Dev-Modus.
