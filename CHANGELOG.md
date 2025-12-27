@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- Spielmodus: Kontrast, Schriftgrößen und Panel-Styles für bessere Lesbarkeit verbessert.
+- Spielmodus: aktive Phasen werden deutlich hervorgehoben und per progressiver Unterstreichung markiert.
+- Spielmodus: Symbol-Legende für Live/Camp/Status ergänzt, plus Tooltips in der Spielerleiste.
+- Spielmodus: Spielerleisten können im Play-Drawer ein- oder ausgeblendet werden.
+- Spielmodus: Primär-Buttons visuell verstärkt und eindeutiger benannt.
+- Rechte Spalte: Regelerinnerung als einklappbarer Bereich gestaltet.
 - Spielmodus: Autoplay-Toggle im Play-Drawer ergänzt, inklusive Statusanzeige.
 - Spielmodus: Kurzregeln-Button zusätzlich oben rechts ergänzt, damit die Hilfe ohne Scrollen sichtbar bleibt.
 - Spielmodus: Weiter-Button ergänzt, der abhängig vom Status den nächsten Schritt (Entscheidung/Abschluss) startet.
