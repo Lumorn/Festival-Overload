@@ -158,6 +158,48 @@
     .pill.blue{border-color:rgba(96,165,250,.35)}
     .big{font-size:14px}
 
+    /* Info-Icons: kleine Regelhinweise direkt an wichtigen Begriffen. */
+    .infoIcon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:16px;
+      height:16px;
+      margin-left:4px;
+      border-radius:50%;
+      border:1px solid rgba(148,163,184,.45);
+      background:rgba(15,23,42,.6);
+      font-size:11px;
+      font-weight:800;
+      color:var(--mutedStrong);
+      position:relative;
+      cursor:help;
+      vertical-align:middle;
+    }
+    .infoIcon::after{
+      content:attr(data-tooltip);
+      position:absolute;
+      bottom:calc(100% + 8px);
+      left:50%;
+      transform:translateX(-50%) translateY(4px);
+      min-width:180px;
+      max-width:240px;
+      padding:8px 10px;
+      border-radius:10px;
+      background:rgba(20,30,52,.96);
+      border:1px solid rgba(148,163,184,.3);
+      color:var(--mutedStrong);
+      font-size:11px;
+      line-height:1.35;
+      box-shadow:var(--shadow);
+      opacity:0;
+      pointer-events:none;
+      transition:.12s opacity,.12s transform;
+      z-index:30;
+    }
+    .infoIcon:focus-visible::after,
+    .infoIcon:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+
     .bar{height:12px;background:rgba(148,163,184,.14);border-radius:999px;overflow:hidden;border:1px solid var(--stroke2);position:relative}
     .bar > div{height:100%;background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444);width:0%;transition:width .18s ease}
     .bar:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
@@ -763,6 +805,15 @@
     .playRulesSection ul{padding-left:16px}
     .playRulesLegend{display:flex;flex-wrap:wrap;gap:6px}
     .playRulesLegend .legendChip{font-size:11px}
+    /* Beispielrunde in der Anleitung: visuelle Kärtchen für die Schrittfolge. */
+    .exampleRoundGrid{display:grid;gap:10px}
+    .exampleRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .exampleCard{flex:1;min-width:180px;padding:10px;border-radius:12px;background:rgba(17,24,39,.55);border:1px solid rgba(148,163,184,.16)}
+    .exampleLabel{font-size:12px;color:var(--mutedStrong);margin-bottom:6px}
+    .exampleChips{display:flex;flex-wrap:wrap;gap:6px}
+    .exampleChip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:rgba(31,42,68,.7);border:1px solid rgba(148,163,184,.2);font-size:12px}
+    .exampleChip strong{font-weight:800}
+    .exampleArrow{font-size:18px;color:var(--mutedStrong)}
     .playLogDrawer{
       position:fixed;
       left:12px;
@@ -1287,7 +1338,10 @@
         </div>
 
         <div class="playPoolRow">
-          <div class="playPoolChip">Pool: <span id="poolValuePlay">0</span></div>
+          <div class="playPoolChip">
+            Pool <span class="infoIcon" data-tooltip="Pool sammelt Bonuspunkte. Beim Campen kann der Pool als Pool-Bonus in Camp umgewandelt werden." aria-label="Info Pool-Bonus" tabindex="0">i</span>:
+            <span id="poolValuePlay">0</span>
+          </div>
           <div class="playCountdownBadge" id="playCountdownBadge">Countdown +1</div>
         </div>
 
@@ -1327,7 +1381,7 @@
                 <small>Bleib aktiv, kassiere weiter Pool-Chancen und riskiere Overload.</small>
               </button>
               <button class="decisionBtn warn" id="btnCamp">
-                <strong>CAMP</strong>
+                <strong>CAMP <span class="infoIcon" data-tooltip="Camp: Du sicherst alle Live als Camp. Pool-Bonus gibt es nur, wenn Gate und Live-Schwelle erfüllt sind." aria-label="Info Camp" tabindex="0">i</span></strong>
                 <small id="campHint">Sichere dein Live, nimm den Pool-Bonus und geh aus dem Risiko.</small>
               </button>
             </div>
@@ -1404,10 +1458,51 @@
           <h3>Wichtige Regeln</h3>
           <ul>
             <li>Campen ist nur mit mindestens <b>1 Live</b> möglich.</li>
-            <li>Pool-Bonus gibt es nur bei genug Live (≥2 / ≥3 bei Richtungswechsel).</li>
+            <li>Pool-Bonus gibt es nur bei genug Live (≥2 / ≥3 bei Richtungswechsel). <span class="infoIcon" data-tooltip="Pool-Bonus: Ein Teil des Pool wird beim Campen in Camp transferiert, wenn Live-Schwelle und Gate erfüllt sind." aria-label="Info Pool-Bonus" tabindex="0">i</span></li>
             <li>Overload 12 triggert den Katastrophen-Check.</li>
             <li>Twists gelten bis zum Rundenende.</li>
           </ul>
+        </section>
+        <section class="playRulesSection">
+          <h3>Beispielrunde (kurz)</h3>
+          <div class="exampleRoundGrid">
+            <div class="exampleCard">
+              <div class="exampleLabel">Ausgangslage</div>
+              <div class="exampleChips">
+                <span class="exampleChip">Overload <strong>6</strong></span>
+                <span class="exampleChip">Pool <strong>2</strong></span>
+                <span class="exampleChip">Live <strong>3</strong></span>
+              </div>
+            </div>
+            <div class="exampleRow">
+              <span class="exampleArrow" aria-hidden="true">➡️</span>
+              <div class="exampleCard">
+                <div class="exampleLabel">Event: „Crowd Surf“</div>
+                <div class="exampleChips">
+                  <span class="exampleChip">Overload <strong>+2</strong></span>
+                  <span class="exampleChip">Live <strong>+1</strong></span>
+                  <span class="exampleChip">Pool <strong>+1</strong></span>
+                </div>
+              </div>
+              <span class="exampleArrow" aria-hidden="true">➡️</span>
+              <div class="exampleCard">
+                <div class="exampleLabel">Countdown aktiv</div>
+                <div class="exampleChips">
+                  <span class="exampleChip">Overload <strong>+1</strong></span>
+                  <span class="exampleChip">Gate <strong>1</strong></span>
+                </div>
+              </div>
+              <span class="exampleArrow" aria-hidden="true">➡️</span>
+              <div class="exampleCard">
+                <div class="exampleLabel">Camp-Entscheidung</div>
+                <div class="exampleChips">
+                  <span class="exampleChip">Live → Camp <strong>+4</strong></span>
+                  <span class="exampleChip">Pool-Bonus <strong>+1</strong></span>
+                  <span class="exampleChip">Camp gesamt <strong>+5</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
         <section class="playRulesSection">
           <h3>Symbole/Legende</h3>
@@ -1431,7 +1526,7 @@
         <div class="stageTop">
           <div class="stageMeta">
             <div class="stageChip" id="overloadChip"><b>Overload</b> <span id="overloadValue">0</span> / 12</div>
-            <div class="stageChip blue" id="poolChip"><b>Pool</b> <span id="poolValue">0</span></div>
+            <div class="stageChip blue" id="poolChip"><b>Pool</b> <span class="infoIcon" data-tooltip="Pool-Bonus: Beim Campen kann Pool in Camp umgewandelt werden (Gate + Live-Schwelle beachten)." aria-label="Info Pool-Bonus" tabindex="0">i</span> <span id="poolValue">0</span></div>
             <div class="stageChip" id="deckChip"><b>Deck</b> <span id="deckCount">0</span></div>
             <div class="stageChip" id="discardChip"><b>Ablage</b> <span id="discardCount">0</span></div>
           </div>
@@ -1514,7 +1609,9 @@
                 <div class="poolCard"></div>
                 <div class="poolCard"></div>
               </div>
-              <div class="mini" id="poolHint">Camp-Bonus: Gate 0/1/2 (Overload), Live ≥2/3</div>
+            <div class="mini" id="poolHint">
+              Camp-Bonus: Gate <span class="infoIcon" data-tooltip="Gate begrenzt den maximalen Pool-Bonus je Camper (0/1/2 je nach Overload)." aria-label="Info Gate" tabindex="0">i</span> 0/1/2 (Overload), Live ≥2/3
+            </div>
             </div>
 
             <div class="tableau">
@@ -1725,6 +1822,14 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.63',
+        date: '2026-08-06',
+        items: [
+          'UI: Info-Icons mit Tooltipps für Pool-Bonus, Gate und Camp direkt an den relevanten Elementen ergänzt.',
+          'UI: Anleitung im Spielmodus um eine kurze Beispielrunde mit visueller Schrittfolge erweitert.'
+        ]
+      },
       {
         ver: 'v0.62',
         date: '2026-07-30',
@@ -3633,7 +3738,9 @@
       if (poolHint){
         var gate = maxPoolToCampThisCamp();
         var poolTake = poolTakeFor(state.pool, gate);
-        poolHint.textContent = 'Camp-Bonus (max): +' + poolTake + ' (Live ≥' + minLiveForPool() + ', Overload-Gate ' + gate + ')';
+        // Hinweiszeile mit Gate-Info als Tooltip, damit der Begriff sichtbar bleibt.
+        poolHint.innerHTML = 'Camp-Bonus (max): +' + poolTake + ' (Live ≥' + minLiveForPool() + ', Overload-Gate ' + gate + ')' +
+          ' <span class="infoIcon" data-tooltip="Gate = Limit pro Camper für den Pool-Bonus (0/1/2 abhängig vom Overload)." aria-label="Info Gate" tabindex="0">i</span>';
       }
 
       var pill = document.getElementById('stateChip');

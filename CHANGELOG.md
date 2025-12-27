@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- UI: Info-Icons mit Tooltipps für Pool-Bonus, Gate und Camp direkt an den relevanten Elementen ergänzt.
+- UI: Anleitung im Spielmodus um eine kurze Beispielrunde mit visueller Schrittfolge ergänzt.
 - UI: Spielmodus-Grid so angepasst, dass die Spielerleiste auf großen Screens mehr Breite mitnehmen kann.
 - UI: Spielerleisten werden auf mittleren Viewports in der Höhe gedeckelt, damit Eventkarte und Buttons priorisiert bleiben.
 - UI: Top-Bar-Buttons für Anleitung/Spielmodus/Dev mit Icons, stärkerem Hover-Feedback und aktivem Zustand ergänzt.
