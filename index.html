@@ -612,7 +612,15 @@
     .playPlayersHeader{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:15px}
     .playPlayersList{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0;flex:1}
     .playPlayersLegend{display:flex;flex-wrap:wrap;gap:6px}
-    .legendChip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:rgba(0,0,0,.18);border:1px solid rgba(148,163,184,.18);font-size:11px;color:var(--mutedStrong)}
+    /* Symbol-Legende: größere Icons und klar getrennte Farben. */
+    .legendChip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.18);border:1px solid rgba(148,163,184,.18);font-size:12px;font-weight:700;color:var(--mutedStrong)}
+    .legendChip .legendIcon{font-size:15px;line-height:1}
+    .legendChip.live{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.12);color:rgba(214,255,226,.9)}
+    .legendChip.camp{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.15);color:rgba(255,236,204,.95)}
+    .legendChip.reveal{border-color:rgba(96,165,250,.55);background:rgba(96,165,250,.14);color:rgba(214,233,255,.95)}
+    .legendChip.status-active{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.14);color:rgba(214,255,226,.9)}
+    .legendChip.status-camped{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.18);color:rgba(255,236,204,.95)}
+    .legendChip.status-out{border-color:rgba(239,68,68,.55);background:rgba(239,68,68,.18);color:rgba(255,210,210,.95)}
     .playPlayer{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.16)}
     .playPlayerMain{display:flex;align-items:center;gap:8px;font-weight:800}
     .playPlayerRight{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
@@ -620,7 +628,12 @@
     .playStatus.active{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.4)}
     .playStatus.camped{background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.4)}
     .playStatus.out{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4)}
+    /* Spielerwerte: Icon-Chips mit stärkerer Farbtrennung. */
     .playStats{display:flex;gap:8px;font-size:12px;color:var(--mutedStrong)}
+    .playStat{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.2);background:rgba(0,0,0,.18);font-weight:700}
+    .playStatIcon{font-size:15px;line-height:1}
+    .playStat.live{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.14);color:rgba(214,255,226,.9)}
+    .playStat.camp{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.18);color:rgba(255,236,204,.95)}
     .playRevealer{font-size:12px;padding:2px 6px;border-radius:999px;background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.4)}
 
     .playDrawer{
@@ -1122,12 +1135,12 @@
           <span class="pill blue" id="leaderSummaryPlay">Leader: — · Camp — · Abstand —</span>
         </div>
         <div class="playPlayersLegend" aria-label="Symbol-Legende">
-          <span class="legendChip" title="Live">🎟️ Live</span>
-          <span class="legendChip" title="Camp">⛺ Camp</span>
-          <span class="legendChip" title="Aufdecker">⬅️ Aufdecker</span>
-          <span class="legendChip" title="Status aktiv">🟢 Aktiv</span>
-          <span class="legendChip" title="Status gecampt">🟠 Gecampt</span>
-          <span class="legendChip" title="Status raus">🔴 Raus</span>
+          <span class="legendChip live" title="Live" aria-label="Live"><span class="legendIcon" aria-hidden="true">🎟️</span><span class="legendLabel">Live</span></span>
+          <span class="legendChip camp" title="Camp" aria-label="Camp"><span class="legendIcon" aria-hidden="true">⛺</span><span class="legendLabel">Camp</span></span>
+          <span class="legendChip reveal" title="Aufdecker" aria-label="Aufdecker"><span class="legendIcon" aria-hidden="true">⬅️</span><span class="legendLabel">Aufdecker</span></span>
+          <span class="legendChip status-active" title="Status aktiv" aria-label="Status aktiv"><span class="legendIcon" aria-hidden="true">🟢</span><span class="legendLabel">Aktiv</span></span>
+          <span class="legendChip status-camped" title="Status gecampt" aria-label="Status gecampt"><span class="legendIcon" aria-hidden="true">🟠</span><span class="legendLabel">Gecampt</span></span>
+          <span class="legendChip status-out" title="Status raus" aria-label="Status raus"><span class="legendIcon" aria-hidden="true">🔴</span><span class="legendLabel">Raus</span></span>
         </div>
         <div class="playPlayersList" id="playersPlay"></div>
       </section>
@@ -1179,12 +1192,12 @@
         <section class="playRulesSection">
           <h3>Symbole/Legende</h3>
           <div class="playRulesLegend" aria-label="Symbol-Legende">
-            <span class="legendChip" title="Live">🎟️ Live</span>
-            <span class="legendChip" title="Camp">⛺ Camp</span>
-            <span class="legendChip" title="Aufdecker">⬅️ Aufdecker</span>
-            <span class="legendChip" title="Status aktiv">🟢 Aktiv</span>
-            <span class="legendChip" title="Status gecampt">🟠 Gecampt</span>
-            <span class="legendChip" title="Status raus">🔴 Raus</span>
+            <span class="legendChip live" title="Live" aria-label="Live"><span class="legendIcon" aria-hidden="true">🎟️</span><span class="legendLabel">Live</span></span>
+            <span class="legendChip camp" title="Camp" aria-label="Camp"><span class="legendIcon" aria-hidden="true">⛺</span><span class="legendLabel">Camp</span></span>
+            <span class="legendChip reveal" title="Aufdecker" aria-label="Aufdecker"><span class="legendIcon" aria-hidden="true">⬅️</span><span class="legendLabel">Aufdecker</span></span>
+            <span class="legendChip status-active" title="Status aktiv" aria-label="Status aktiv"><span class="legendIcon" aria-hidden="true">🟢</span><span class="legendLabel">Aktiv</span></span>
+            <span class="legendChip status-camped" title="Status gecampt" aria-label="Status gecampt"><span class="legendIcon" aria-hidden="true">🟠</span><span class="legendLabel">Gecampt</span></span>
+            <span class="legendChip status-out" title="Status raus" aria-label="Status raus"><span class="legendIcon" aria-hidden="true">🔴</span><span class="legendLabel">Raus</span></span>
           </div>
         </section>
       </div>
@@ -1475,6 +1488,13 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.53',
+        date: '2026-05-28',
+        items: [
+          'UI: Spielerleisten-Legende und Werte-Icons vergrößert, farblich stärker differenziert und mit Tooltipps/Labels ergänzt.'
+        ]
+      },
       {
         ver: 'v0.52',
         date: '2026-05-21',
@@ -3819,7 +3839,7 @@
 
         var stats = document.createElement('div');
         stats.className = 'playStats';
-        stats.innerHTML = '<span title="Live">🎟️ ' + p.live + '</span><span title="Camp">⛺ ' + p.camp + '</span>';
+        stats.innerHTML = '<span class="playStat live" title="Live" aria-label="Live"><span class="playStatIcon" aria-hidden="true">🎟️</span><span class="playStatValue">' + p.live + '</span></span><span class="playStat camp" title="Camp" aria-label="Camp"><span class="playStatIcon" aria-hidden="true">⛺</span><span class="playStatValue">' + p.camp + '</span></span>';
 
         right.appendChild(status);
         right.appendChild(stats);
