@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- UI: Untere Aktionsbuttons stärker ausgegraut, aktive Toggles im Play-Drawer farblich hervorgehoben.
+- UI: Bot-Hinweis als sichtbares Banner in den Dev-Einstellungen ergänzt.
+- UI: Primäraktionen im Spielmodus erhalten bei aktiven Schritten mehr visuelle Betonung.
 - UI: Anleitung im Spielmodus als modales Overlay mit größerer Schrift und breiterem Scrollbereich umgesetzt.
 - UI: Externer Hilfe-Link in der Anleitung ergänzt und Close-Button visuell stärker hervorgehoben.
 - UI: Eventkarten-Typografie vergrößert, Zeilenhöhen optimiert und Inhalte vertikal kompakter zentriert.

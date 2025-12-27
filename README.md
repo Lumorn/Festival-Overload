@@ -53,6 +53,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: Aktive Aktionsbuttons füllen ihre Farbakzente deutlicher aus, Disabled-States sind klar ausgegraut.
 - Spielmodus: Bot-Hinweis ist prominent oberhalb der Aktionsbuttons platziert.
 - Disabled-States sind stärker ausgegraut, aktive Aktionen farblich betont.
+- Untere Aktionsbuttons (Play-Drawer/Primäraktionen) heben aktive Zustände farblich stärker hervor und zeigen deutlichere Disabled-Graustufen.
+- Dev-Einstellungen zeigen den aktuellen Bot-Steuerungsmodus als sichtbares Banner.
 - Zusätzliche Hilfetexte erklären, wann Bots automatisch oder manuell entscheiden.
 - Top-Bar: Anleitung/Spielmodus/Dev mit klaren Icons, deutlicherem Hover-Feedback und aktivem Zustand; Spielmodus zeigt einen Dropdown-Hinweis.
 - Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C), damit Auswahl-Chips eindeutiger sind.
