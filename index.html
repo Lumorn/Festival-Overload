@@ -25,9 +25,9 @@
       --fs-chip-compact:11px;
       --fs-button:13px;
       --fs-button-compact:12px;
-      --fs-card-title:18px;
-      --fs-card-text:14px;
-      --fs-card-meta:13px;
+      --fs-card-title:20px;
+      --fs-card-text:15px;
+      --fs-card-meta:14px;
     }
     *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
     html, body{height:100%}
@@ -293,14 +293,18 @@
     .eventCard{
       position:relative;
       border-radius:18px;
-      padding:14px 14px 16px;
+      padding:12px 14px 14px;
       border:2px solid rgba(148,163,184,.32);
       box-shadow:0 14px 34px rgba(0,0,0,.38);
       background:
         linear-gradient(180deg, rgba(52,68,102,.95), rgba(32,44,70,.96));
-      min-height:104px;
+      min-height:96px;
       aspect-ratio:2.5 / 3.5;
       overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:6px;
     }
     /* Dezenter Lichtakzent statt starker Textur für ruhigere Karten. */
     .eventCard:before{
@@ -327,12 +331,12 @@
     .eventCard[data-type="twist"] .stripe{background:rgba(245,158,11,.85)}
     .eventCard[data-type="encore"] .stripe{background:rgba(96,165,250,.85)}
 
-    .kTop{display:flex;justify-content:space-between;align-items:center;margin-top:8px;margin-bottom:10px;gap:10px;position:relative;z-index:2}
-    /* Karten-Typografie größer und kontrastreicher für bessere Lesbarkeit. */
-    .kName{font-weight:950;letter-spacing:.2px;font-size:var(--fs-card-title);line-height:1.2;color:var(--text)}
+    .kTop{display:flex;justify-content:space-between;align-items:center;margin-top:4px;margin-bottom:6px;gap:10px;position:relative;z-index:2}
+    /* Karten-Typografie größer und mit optimierter Zeilenhöhe für bessere Lesbarkeit. */
+    .kName{font-weight:950;letter-spacing:.2px;font-size:var(--fs-card-title);line-height:1.15;color:var(--text)}
     .kType{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-card-meta);color:var(--mutedStrong);white-space:nowrap}
     .dot{width:8px;height:8px;border-radius:999px;display:inline-block}
-    .kText{font-size:var(--fs-card-text);color:var(--mutedStrong);line-height:1.5;position:relative;z-index:2}
+    .kText{font-size:var(--fs-card-text);color:var(--mutedStrong);line-height:1.6;position:relative;z-index:2}
 
     .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:0;justify-content:flex-end}
     /* Standard-Buttons mit klarer Fläche und sichtbarem Hover. */
@@ -550,17 +554,20 @@
       pointer-events:none;
     }
 
-    /* Effektliste direkt in der Eventkarte: kompakt, damit sie unter dem Titel bleibt. */
-    .impact{display:flex;gap:8px;flex-wrap:wrap;margin:-2px 0 10px;position:relative;z-index:2}
-    .imp{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;border:1px solid rgba(148,163,184,.14);background:rgba(0,0,0,.12);font-size:12px;color:#e8edf7}
+    /* Effektliste direkt in der Eventkarte: als integrierte Liste mit klarer Hierarchie. */
+    .impactList{display:flex;flex-direction:column;gap:4px;position:relative;z-index:2}
+    .impactTitle{font-size:11px;letter-spacing:.25px;text-transform:uppercase;color:rgba(214,221,236,.8);font-weight:800}
+    .impact{display:flex;flex-direction:column;gap:6px;margin:0;position:relative;z-index:2}
+    .imp{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.14);background:rgba(0,0,0,.12);font-size:13px;color:#e8edf7}
     .imp b{font-weight:950}
     .imp.good{border-color:rgba(34,197,94,.28);background:rgba(34,197,94,.06)}
     .imp.warn{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.06)}
     .imp.bad{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.06)}
     .imp.blue{border-color:rgba(96,165,250,.28);background:rgba(96,165,250,.06)}
-    /* Kompakte Variante für den Spielmodus: kleinere Chips mit engerem Abstand. */
-    .impact.compact{gap:6px;margin:2px 0 8px}
-    .impact.compact .imp{padding:4px 8px;font-size:11px;gap:6px}
+    /* Kompakte Variante für den Spielmodus: kleinere Listenelemente mit engerem Abstand. */
+    .impactList.compact .impactTitle{font-size:10px}
+    .impact.compact{gap:4px}
+    .impact.compact .imp{padding:4px 8px;font-size:12px;gap:6px;border-radius:10px}
 
     /* Spieler: deutlicher Live/Camp als Karten-Icons + Deltazeile */
     .pPills{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -668,19 +675,20 @@
     @keyframes trackShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
 
     /* Kompakte Spielkarte mit ruhiger Fläche und mehr Innenabstand. */
+    /* Spielmodus-Karte: weniger Leeraum und zentrierte Inhalte für kompaktere Wirkung. */
     .playCard{
-      min-height:clamp(200px, 26vh, 300px);
+      min-height:clamp(185px, 22vh, 270px);
       border-radius:20px;
-      padding:14px;
+      padding:12px;
       border:1px solid rgba(148,163,184,.26);
       background:
         linear-gradient(180deg, rgba(38,52,82,.92), rgba(25,34,56,.96));
       box-shadow:0 18px 36px rgba(0,0,0,.45), inset 0 0 20px rgba(0,0,0,.28);
     }
-    .playStage .playCard{flex:0 0 auto;display:flex;flex-direction:column}
-    .playCard .kName{font-size:21px;line-height:1.2}
-    .playCard .kType{font-size:12px}
-    .playCard .kText{font-size:16px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .playStage .playCard{flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;gap:6px}
+    .playCard .kName{font-size:22px;line-height:1.15}
+    .playCard .kType{font-size:13px}
+    .playCard .kText{font-size:17px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     /* Spielmodus: Effekte erscheinen direkt in der Karte als kompakte Liste. */
     .playChips{display:flex;gap:8px;flex-wrap:wrap}
     .playMeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -995,11 +1003,10 @@
     .overloadHint .chip{padding:4px 8px;border-radius:999px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);font-size:11px}
 
     .stageGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:12px;min-height:0}
-    /* Aktuelle Karte mit ruhiger Fläche und mehr Innenabstand. */
-    .currentCard{min-height:210px;aspect-ratio:2.5 / 3.5;border-radius:20px;padding:14px;border:1px solid rgba(148,163,184,.22);background:linear-gradient(180deg, rgba(38,52,82,.92), rgba(25,34,56,.96));box-shadow:0 18px 38px rgba(0,0,0,.45), inset 0 0 22px rgba(0,0,0,.28);position:relative;overflow:hidden}
-    .currentCard .kName{font-size:19px;line-height:1.2}
-    .currentCard .kText{font-size:15px;line-height:1.5}
-    .currentCard .impact{margin-top:4px}
+    /* Aktuelle Karte: etwas kompakter, mit größerer Typo und zentriertem Inhalt. */
+    .currentCard{min-height:195px;aspect-ratio:2.5 / 3.5;border-radius:20px;padding:12px;border:1px solid rgba(148,163,184,.22);background:linear-gradient(180deg, rgba(38,52,82,.92), rgba(25,34,56,.96));box-shadow:0 18px 38px rgba(0,0,0,.45), inset 0 0 22px rgba(0,0,0,.28);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:6px}
+    .currentCard .kName{font-size:20px;line-height:1.15}
+    .currentCard .kText{font-size:16px;line-height:1.55}
 
     .poolPanel{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
     .poolChip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(96,165,250,.16);border:1px solid rgba(96,165,250,.38);font-size:14px;font-weight:900}
@@ -1363,7 +1370,10 @@
             <div class="kName" id="playEventName">Bereit</div>
             <div class="kType" id="playEventType"><span class="dot" style="background:rgba(148,163,184,.6)"></span> ⏺️ Event</div>
           </div>
-          <div class="impact compact" id="playEventChips">—</div>
+          <div class="impactList compact">
+            <div class="impactTitle">Effekte</div>
+            <div class="impact compact" id="playEventChips">—</div>
+          </div>
           <div class="kText" id="playEventText">Klicke auf „Event aufdecken“, um zu starten.</div>
         </div>
 
@@ -1609,7 +1619,10 @@
                 <div class="kName" id="eventName">Bereit</div>
                 <div class="kType" id="eventType"><span class="dot" style="background:rgba(148,163,184,.6)"></span> ⏺️ Event</div>
               </div>
-              <div class="impact" id="eventImpact">—</div>
+              <div class="impactList">
+                <div class="impactTitle">Effekte</div>
+                <div class="impact" id="eventImpact">—</div>
+              </div>
               <div class="kText" id="eventText">Klicke auf „Event aufdecken“, um zu starten.</div>
             </div>
 

@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- UI: Eventkarten-Typografie vergrößert, Zeilenhöhen optimiert und Inhalte vertikal kompakter zentriert.
+- UI: Effekte (Overload/Live/Pool) als integrierte Liste in den Eventkarten mit Label „Effekte“ dargestellt.
 - UI: Mini-Legende oberhalb der Overload-Leiste ergänzt, damit die Farbzonen sofort sichtbar sind.
 - UI: Spielerleisten mit größeren Icons/Zahlen und stärker differenzierten Farben versehen.
 - UI: Status- und Aufdecker-Hinweise in den Spielerleisten mit Tooltipps (title/aria-label) ergänzt.
