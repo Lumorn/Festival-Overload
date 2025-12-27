@@ -17,7 +17,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Weiter-Button im Spielmodus, der je nach Status die nächste Aktion (Entscheidung/Abschluss) anstößt.
 - Kompakte Phasenleiste im Spielmodus unter dem Overload-Track, synchron zum aktuellen Status.
 - „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
-- Overload-Track als 0–12 Pills mit deutlicher Markierung von Gefahrenschwellen sowie Status-Chips (Countdown, Bühnenregel, Twist-Effekte, Endkarte).
+- Overload-Track als horizontale Zonenleiste (grün/gelb/rot) mit klarer Marker-Position und Schwellenmarkierung.
 - Spielerleisten als große Karten mit Live/Camp-Zahlenchips, Status-Badges und Wahl-Markern für simultane Entscheidungen.
 - Simultane Bleib/Camp-Entscheidung als integriertes Entscheidungsfeld im Spielbereich inkl. Vorschau auf Pool-Bonus und Gesamtstand.
 - Entscheidungsfeld im Spielmodus bleibt in der linken Bühne verankert, damit Bleib/Camp sauber ausgerichtet sind.

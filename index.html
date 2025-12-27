@@ -549,7 +549,9 @@
       min-height:0;
     }
     .playOverloadTrack{padding:14px;border-radius:18px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
-    .playOverloadTrack .overloadPill{font-size:12px;padding:8px 0}
+    /* Spielmodus: Overload-Leiste etwas höher, damit der Marker klar sitzt. */
+    .playOverloadTrack .overloadBar{height:20px}
+    .playOverloadTrack .overloadMarkerLabel{font-size:12px}
     .playOverloadTrack.pulse{animation:trackPulse .55s ease}
     .playOverloadTrack.pulseStrong{animation:trackPulseStrong .6s ease}
     .playOverloadTrack.shake{animation:trackShake .5s ease}
@@ -715,13 +717,87 @@
     .stageChip.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.12)}
     .stageChip.bad{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.12)}
 
-    .overloadTrack{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:rgba(11,15,23,.45);border:1px solid rgba(148,163,184,.14)}
+    .overloadTrack{
+      --overload-count:13;
+      --overload-good:7;
+      --overload-warn:4;
+      --overload-bad:2;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:10px;
+      border-radius:16px;
+      background:rgba(11,15,23,.45);
+      border:1px solid rgba(148,163,184,.14)
+    }
     .overloadTrackHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-    .overloadPills{display:grid;grid-template-columns:repeat(13, minmax(0,1fr));gap:6px}
-    .overloadPill{display:flex;align-items:center;justify-content:center;padding:6px 0;border-radius:999px;border:1px solid rgba(148,163,184,.22);background:rgba(31,42,68,.6);font-size:11px;color:var(--muted)}
-    .overloadPill.mark{border-color:rgba(245,158,11,.4);color:#fff}
-    .overloadPill.danger{border-color:rgba(239,68,68,.45);color:#fff}
-    .overloadPill.active{box-shadow:0 0 0 2px rgba(255,255,255,.12), 0 0 16px rgba(99,102,241,.25);background:rgba(99,102,241,.28);color:#fff;font-weight:900}
+    /* Overload-Leiste: horizontale Zonen plus Skala darunter. */
+    .overloadPills{display:flex;flex-direction:column;gap:8px}
+    .overloadBar{
+      position:relative;
+      display:flex;
+      height:18px;
+      border-radius:999px;
+      overflow:hidden;
+      border:1px solid rgba(148,163,184,.26);
+      background:rgba(15,23,42,.6);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .overloadZone{height:100%;display:block}
+    .overloadZone.good{width:calc(var(--overload-good) / var(--overload-count) * 100%);background:linear-gradient(90deg, rgba(34,197,94,.75), rgba(34,197,94,.4))}
+    .overloadZone.warn{width:calc(var(--overload-warn) / var(--overload-count) * 100%);background:linear-gradient(90deg, rgba(245,158,11,.8), rgba(245,158,11,.45))}
+    .overloadZone.bad{width:calc(var(--overload-bad) / var(--overload-count) * 100%);background:linear-gradient(90deg, rgba(239,68,68,.85), rgba(239,68,68,.5))}
+    /* Marker mit Label für die aktuelle Overload-Position. */
+    .overloadMarker{
+      position:absolute;
+      left:var(--overload-position, 0%);
+      top:50%;
+      transform:translate(-50%, -50%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      pointer-events:none;
+      z-index:2;
+    }
+    .overloadMarkerDot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:#fff;
+      box-shadow:0 0 0 2px rgba(255,255,255,.35), 0 0 12px rgba(255,255,255,.45);
+    }
+    .overloadMarkerLabel{
+      padding:2px 6px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      color:#fff;
+      background:rgba(17,24,39,.85);
+      border:1px solid rgba(148,163,184,.24);
+      box-shadow:0 8px 18px rgba(0,0,0,.35);
+    }
+    .overloadMarker.good .overloadMarkerDot{background:rgba(34,197,94,.9);box-shadow:0 0 0 2px rgba(34,197,94,.4), 0 0 12px rgba(34,197,94,.45)}
+    .overloadMarker.warn .overloadMarkerDot{background:rgba(245,158,11,.95);box-shadow:0 0 0 2px rgba(245,158,11,.4), 0 0 12px rgba(245,158,11,.45)}
+    .overloadMarker.bad .overloadMarkerDot{background:rgba(239,68,68,.95);box-shadow:0 0 0 2px rgba(239,68,68,.4), 0 0 12px rgba(239,68,68,.45)}
+    .overloadScale{display:grid;grid-template-columns:repeat(13, minmax(0,1fr));gap:6px}
+    .overloadTick{
+      text-align:center;
+      padding:2px 0;
+      border-radius:999px;
+      font-size:11px;
+      color:var(--muted);
+      border:1px solid transparent;
+    }
+    .overloadTick.mark{border-color:rgba(245,158,11,.35);color:#fff}
+    .overloadTick.danger{border-color:rgba(239,68,68,.4);color:#fff}
+    .overloadTick.active{
+      color:#fff;
+      font-weight:900;
+      background:rgba(99,102,241,.25);
+      border-color:rgba(99,102,241,.45);
+      box-shadow:0 0 0 2px rgba(255,255,255,.12), 0 0 14px rgba(99,102,241,.25);
+    }
     .overloadHint{font-size:12px;color:var(--mutedStrong)}
     .overloadHint .chip{padding:4px 8px;border-radius:999px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);font-size:11px}
 
@@ -1366,7 +1442,7 @@
   (function(){
     'use strict';
 
-    var VERSION = 'v0.50';
+    var VERSION = 'v0.52';
     var RULESET_VERSION = '0.8';
     var OVERLOAD_RESET_AFTER_CHECK = 10;
     var STAGE_DIVE_REPLACEMENT = 'overload';
@@ -1399,6 +1475,13 @@
 
     // Patchnotes: Neueste Einträge zuerst
     var PATCH_NOTES = [
+      {
+        ver: 'v0.52',
+        date: '2026-05-21',
+        items: [
+          'UI: Overload-Track als farbige Zonenleiste umgesetzt, inklusive klarer Marker-/Label-Position.'
+        ]
+      },
       {
         ver: 'v0.51',
         date: '2026-05-14',
@@ -3461,22 +3544,59 @@
         if (!wrap) continue;
         if (!wrap.dataset.ready){
           wrap.innerHTML = '';
+          var bar = document.createElement('div');
+          bar.className = 'overloadBar';
+          var zoneGood = document.createElement('span');
+          zoneGood.className = 'overloadZone good';
+          var zoneWarn = document.createElement('span');
+          zoneWarn.className = 'overloadZone warn';
+          var zoneBad = document.createElement('span');
+          zoneBad.className = 'overloadZone bad';
+          var marker = document.createElement('div');
+          marker.className = 'overloadMarker';
+          var markerDot = document.createElement('span');
+          markerDot.className = 'overloadMarkerDot';
+          var markerLabel = document.createElement('span');
+          markerLabel.className = 'overloadMarkerLabel';
+          marker.appendChild(markerDot);
+          marker.appendChild(markerLabel);
+          bar.appendChild(zoneGood);
+          bar.appendChild(zoneWarn);
+          bar.appendChild(zoneBad);
+          bar.appendChild(marker);
+
+          var scale = document.createElement('div');
+          scale.className = 'overloadScale';
           for (var i=0;i<=MAX_OVERLOAD;i++){
-            var pill = document.createElement('span');
-            pill.className = 'overloadPill';
-            pill.textContent = String(i);
-            pill.dataset.val = String(i);
-            wrap.appendChild(pill);
+            var tick = document.createElement('span');
+            tick.className = 'overloadTick';
+            tick.textContent = String(i);
+            tick.dataset.val = String(i);
+            scale.appendChild(tick);
           }
+          wrap.appendChild(bar);
+          wrap.appendChild(scale);
           wrap.dataset.ready = 'true';
         }
 
-        var pills = wrap.querySelectorAll('.overloadPill');
-        for (var j=0;j<pills.length;j++){
-          var v = Number(pills[j].dataset.val || j);
-          pills[j].classList.toggle('active', v === state.overload);
-          pills[j].classList.toggle('mark', v === 8);
-          pills[j].classList.toggle('danger', v === 12);
+        wrap.style.setProperty('--overload-position', (state.overload / MAX_OVERLOAD * 100) + '%');
+        var markerEl = wrap.querySelector('.overloadMarker');
+        var markerLabelEl = wrap.querySelector('.overloadMarkerLabel');
+        if (markerEl){
+          markerEl.classList.toggle('good', state.overload <= 6);
+          markerEl.classList.toggle('warn', state.overload >= 7 && state.overload <= 10);
+          markerEl.classList.toggle('bad', state.overload >= 11);
+        }
+        if (markerLabelEl){
+          markerLabelEl.textContent = String(state.overload);
+        }
+
+        var ticks = wrap.querySelectorAll('.overloadTick');
+        for (var j=0;j<ticks.length;j++){
+          var v = Number(ticks[j].dataset.val || j);
+          ticks[j].classList.toggle('active', v === state.overload);
+          ticks[j].classList.toggle('mark', v === 8);
+          ticks[j].classList.toggle('danger', v === 12);
         }
       }
     }
