@@ -17,6 +17,8 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Modus-Umschalter erklärt jetzt Spielmodus und Dev per Tooltip und zeigt Hinweistext, falls eine Ansicht fehlt.
 - Weiter-Button im Spielmodus, der je nach Status die nächste Aktion (Entscheidung/Abschluss) anstößt.
 - Kompakte Phasenleiste im Spielmodus unter dem Overload-Track, synchron zum aktuellen Status.
+- Phasen-Pills sind lokalisiert und die aktive Phase ist farbkräftig als gefülltes Pill hervorgehoben.
+- Kleine Phasen-Fortschrittsleiste oberhalb der Kartenflächen für schnelle Orientierung.
 - „Scorett“-Layout mit Top-Bar, 3-Spalten-Aufbau und klaren Chips für Overload/Pool/Deck/Ablage, damit der Spielfluss sofort sichtbar ist.
 - Overload-Track als segmentierte Balkenleiste (grün/gelb/rot) mit Marker-Pfeil, Glow und größerer Zahl zur aktuellen Position.
 - Overload-Track: dauerhafte Legende oberhalb der Leiste für sichere/warnende/gefährliche Zonen.
