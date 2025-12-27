@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- UI: Phasen-Pills lokalisiert und aktive Phase mit kräftiger Vollflächenfarbe hervorgehoben.
+- UI: Kleine Phasen-Fortschrittsleiste oberhalb der Karten ergänzt.
 - UI: Dauerhafte Overload-Legende oberhalb der Leiste ergänzt (Sicher/Warnung/Gefahr).
 - UI: Live/Camp-Werte in der Spielerleiste vergrößert und farblich klarer getrennt.
 - UI: Entscheidungsübersicht zeigt Bot-Namen ausgeschrieben (Bot A/B/C).
