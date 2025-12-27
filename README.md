@@ -30,7 +30,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Steuerungsmodi für Bots (Bots automatisch, Bots manuell, alles automatisch) und auswählbares Bot-Profil für modular erweiterbare KI.
 - Bot-Anzahl vor Spielstart direkt in den Einstellungen per „Bot hinzufügen/entfernen“ anpassbar.
 - Log als Drawer (per Button) und Kurzregeln im Spielmodus, Dev-Settings in der rechten Spalte, damit die Bühne frei bleibt und trotzdem alles erreichbar ist.
-- Spielmodus: einblendbare Anleitung als rechter Drawer mit Ziel, Ablauf, Regeln und Symbol-Legende.
+- Spielmodus: einblendbare Anleitung als rechter Drawer mit Ziel, Ablauf, Regeln, Beispielrunde und Symbol-Legende.
 - Autoplay-Toggle im Spielmodus (Play-Drawer) für schnelles Ein/Aus mit Statusanzeige.
 - Spielmodus: kontraststärkeres Farbschema, größere Schrift und klarer hervorgehobene Phasen für bessere Lesbarkeit.
 - Panels und Kartenflächen sind heller abgestimmt, Text/Chips/Buttons nutzen einheitliche Schriftgrößen für konsistenten Kontrast.
@@ -38,6 +38,7 @@ Wichtig: Die Startseite liegt in `index.html` im Repository-Root.
 - Spielmodus: Symbol-Legende in den Spielerleisten plus Tooltipps für Live/Camp.
 - Spielerleisten: kompakte Symbol-Legenden direkt im Bereich platziert, mit dezenteren Chips.
 - Spielmodus: Spielerleisten-Legende und Werte-Icons sind größer, farblich stärker differenziert und mit klaren Tooltipps/Labels versehen.
+- Info-Icons markieren Pool-Bonus, Gate und Camp direkt im UI und zeigen kurze Tooltips.
 - Spielmodus: Live/Camp-Zahlen in den Spielerleisten sind größer und klarer farbcodiert.
 - Spielmodus: Spielerleisten lassen sich im Play-Drawer ein- und ausblenden, damit die Eventkarte dynamisch mehr Platz nutzen kann.
 - Spielmodus: Spielerleisten erscheinen auf kleinen Screens als Drawer und lassen sich über den Play-Drawer öffnen/schließen.
